@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
     "httpx>=0.25.0",
     "pydantic>=2.0",
+    "python-dotenv>=1.0",
     "sqlalchemy>=2.0",
     "beautifulsoup4>=4.12",
     "lxml>=4.9",

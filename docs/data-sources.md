@@ -104,6 +104,74 @@ For each law:
 
 ---
 
+## California Legislature
+
+### Official Source
+
+- **URL:** https://downloads.leginfo.legislature.ca.gov/
+- **Format:** ZIP archives containing tab-delimited (.dat) files
+- **Access:** Public, free, no authentication
+- **Coverage:** 1989-present (all sessions)
+- **Update Frequency:** Daily updates available
+
+### Available Data Files
+
+| File | Description |
+|------|-------------|
+| `pubinfo_YYYY.zip` | Full session data for year YYYY |
+| `pubinfo_Mon.zip` - `pubinfo_Sat.zip` | Daily incremental updates |
+| `pubinfo_daily_*.zip` | Full current session (excluding codes) |
+
+### Database Tables
+
+| Table | Description | Status |
+|-------|-------------|--------|
+| `BILL_TBL` | Bills and resolutions | ✅ Implemented |
+| `BILL_VERSION_TBL` | Bill versions with full text (XML) | ✅ Implemented |
+| `BILL_VERSION_AUTHORS_TBL` | Authors and coauthors | ✅ Implemented |
+| `BILL_HISTORY_TBL` | Bill actions and history | ✅ Implemented |
+| `BILL_ANALYSIS_TBL` | Committee analyses | ✅ Implemented |
+| `BILL_SUMMARY_VOTE_TBL` | Vote summaries (ayes/noes) | ✅ Implemented |
+| `BILL_DETAIL_VOTE_TBL` | Individual legislator votes | ✅ Implemented |
+| `LEGISLATOR_TBL` | State legislators | ✅ Implemented |
+| `LAW_SECTION_TBL` | California law code sections | ✅ Implemented |
+| `CODES_TBL` | Law code names | ✅ Implemented |
+| `VETO_MESSAGE_TBL` | Governor veto messages | ✅ Implemented |
+| `COMMITTEE_HEARING_TBL` | Committee hearings | ✅ Implemented |
+| `LOCATION_CODE_TBL` | Location/committee codes | ✅ Implemented |
+
+### Data to Extract
+
+For each bill:
+- Bill ID and citation (e.g., "AB 1234")
+- Session year
+- Measure type (AB, SB, ACA, SCA, etc.)
+- Current status and location
+- Chapter number (if enacted)
+- Full bill text (XML format)
+- Subject/digest
+- Vote requirements
+- Fiscal committee flag
+- Authors and coauthors
+- Complete action history
+- Vote records (summary and individual)
+- Committee analyses
+
+### California Law Codes
+
+| Code | Title |
+|------|-------|
+| `GOV` | Government Code |
+| `PRC` | Public Resources Code |
+| `WAT` | Water Code |
+| `FGC` | Fish and Game Code |
+| `HSC` | Health and Safety Code |
+| `PEN` | Penal Code |
+| `CIV` | Civil Code |
+| ... | (30 total codes) |
+
+---
+
 ## Secondary Sources (Future)
 
 ### CourtListener (Free Law Project)

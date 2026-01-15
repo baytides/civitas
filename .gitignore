@@ -54,3 +54,4 @@ secrets.json
 
 # Jupyter
 .ipynb_checkpoints/
+data/

@@ -1,26 +1,113 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
-import { getCourtCase, getAllCourtCaseIds } from "@/lib/data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate, snakeToTitle } from "@/lib/utils";
 
-// Generate static paths for all cases
-export async function generateStaticParams() {
-  return getAllCourtCaseIds().map((id) => ({ id }));
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+interface LinkedObjective {
+  id: number;
+  section: string;
+  agency: string;
+  proposal_text: string;
+  proposal_summary: string | null;
+  category: string;
+  status: string;
 }
 
-export default async function CaseDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const courtCase = getCourtCase(id);
+interface CourtCaseDetail {
+  id: number;
+  citation: string;
+  case_name: string;
+  court_level: string;
+  court: string;
+  decision_date: string | null;
+  status: string | null;
+  docket_number: string | null;
+  holding: string | null;
+  majority_author: string | null;
+  dissent_author: string | null;
+  source_url: string | null;
+  linked_objectives: LinkedObjective[];
+}
 
-  if (!courtCase) {
-    notFound();
+export default function CaseDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [courtCase, setCourtCase] = useState<CourtCaseDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchCase() {
+      try {
+        const response = await fetch(`${API_BASE}/cases/${id}`);
+        if (response.ok) {
+          setCourtCase(await response.json());
+        } else if (response.status === 404) {
+          setError("Court case not found");
+        } else {
+          setError("Failed to load court case");
+        }
+      } catch {
+        setError("Failed to connect to server");
+      }
+      setLoading(false);
+    }
+
+    if (id) fetchCase();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <Skeleton className="h-4 w-48 mb-6" />
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <div>
+              <Skeleton className="h-6 w-32 mb-3" />
+              <Skeleton className="h-8 w-3/4 mb-2" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </div>
+          <div>
+            <Skeleton className="h-48 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !courtCase) {
+    return (
+      <div className="container py-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link href="/tracker" className="hover:text-foreground">
+            Tracker
+          </Link>
+          <span>/</span>
+          <span className="text-foreground">Not Found</span>
+        </nav>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground text-lg">
+              {error || "Court case not found"}
+            </p>
+            <Link href="/tracker">
+              <Button variant="outline" className="mt-4">
+                Back to Tracker
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
@@ -33,7 +120,9 @@ export default async function CaseDetailPage({
         <span>/</span>
         <span>Court Cases</span>
         <span>/</span>
-        <span className="text-foreground truncate max-w-[200px]">{courtCase.caseName}</span>
+        <span className="text-foreground truncate max-w-[200px]">
+          {courtCase.case_name}
+        </span>
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -41,100 +130,58 @@ export default async function CaseDetailPage({
         <div className="lg:col-span-2 space-y-6">
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <Badge variant="outline">{courtCase.status.toUpperCase()}</Badge>
-              <Badge variant="outline">Court Case</Badge>
+              {courtCase.status && (
+                <Badge variant="outline">{courtCase.status.toUpperCase()}</Badge>
+              )}
+              <Badge variant="outline">
+                {snakeToTitle(courtCase.court_level)}
+              </Badge>
             </div>
 
-            <h1 className="text-2xl font-bold mb-2">{courtCase.caseName}</h1>
+            <h1 className="text-2xl font-bold mb-2">{courtCase.case_name}</h1>
             <p className="text-muted-foreground mb-4">{courtCase.citation}</p>
 
-            <p className="text-muted-foreground">{courtCase.summary}</p>
+            {courtCase.holding && (
+              <div className="p-4 rounded-lg bg-muted/50 border">
+                <p className="text-sm font-medium text-muted-foreground mb-1">
+                  Holding
+                </p>
+                <p className="text-sm">{courtCase.holding}</p>
+              </div>
+            )}
           </div>
 
-          {/* Parties */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Parties</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">Plaintiffs</p>
-                <ul className="space-y-1">
-                  {courtCase.plaintiffs.map((p, idx) => (
-                    <li key={idx} className="text-sm">{p}</li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-2">Defendants</p>
-                <ul className="space-y-1">
-                  {courtCase.defendants.map((d, idx) => (
-                    <li key={idx} className="text-sm">{d}</li>
-                  ))}
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Docket */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Docket</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {courtCase.docket.map((entry, idx) => (
-                  <div key={idx} className="flex gap-4 items-start">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">
-                      {formatDate(entry.date)}
-                    </span>
-                    <p className="text-sm">{entry.entry}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Related P2025 Objectives */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Related P2025 Objectives</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {courtCase.relatedObjectives.map((obj) => (
-                  <Link
-                    key={obj.id}
-                    href={`/tracker/${obj.id}`}
-                    className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <p className="font-medium">{obj.title}</p>
-                    <p className="text-sm text-muted-foreground">ID: {obj.id}</p>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Related Executive Orders */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Related Executive Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {courtCase.relatedExecutiveOrders.map((eo) => (
-                  <Link
-                    key={eo.id}
-                    href={`/executive-orders/${eo.id}`}
-                    className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <p className="font-medium">EO {eo.orderNumber}: {eo.title}</p>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {courtCase.linked_objectives.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Related P2025 Objectives</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {courtCase.linked_objectives.map((obj) => (
+                    <Link
+                      key={obj.id}
+                      href={`/tracker/${obj.id}`}
+                      className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="font-medium">
+                        {obj.proposal_summary || obj.proposal_text.slice(0, 120) + "..."}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          {snakeToTitle(obj.category)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {obj.agency}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -149,31 +196,78 @@ export default async function CaseDetailPage({
                 <p className="font-medium text-sm">{courtCase.court}</p>
               </div>
               <div>
+                <p className="text-sm text-muted-foreground">Court Level</p>
+                <p className="font-medium">{snakeToTitle(courtCase.court_level)}</p>
+              </div>
+              <div>
                 <p className="text-sm text-muted-foreground">Citation</p>
                 <p className="font-medium">{courtCase.citation}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Filed</p>
-                <p className="font-medium">{formatDate(courtCase.filedDate)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Status</p>
-                <Badge variant="outline">{courtCase.status}</Badge>
-              </div>
+              {courtCase.docket_number && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Docket</p>
+                  <p className="font-medium">{courtCase.docket_number}</p>
+                </div>
+              )}
+              {courtCase.decision_date && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Decision Date</p>
+                  <p className="font-medium">{formatDate(courtCase.decision_date)}</p>
+                </div>
+              )}
+              {courtCase.status && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <Badge variant="outline">{courtCase.status}</Badge>
+                </div>
+              )}
+              {courtCase.majority_author && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Majority Author</p>
+                  <p className="font-medium">{courtCase.majority_author}</p>
+                </div>
+              )}
+              {courtCase.dissent_author && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Dissent Author</p>
+                  <p className="font-medium">{courtCase.dissent_author}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
+          {courtCase.source_url && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Resources</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline" asChild>
+                  <a
+                    href={courtCase.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View Source
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="border-green-500/50">
             <CardHeader>
-              <CardTitle>Support This Case</CardTitle>
+              <CardTitle>Support Legal Action</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                Legal challenges are critical to defending democracy. Support organizations fighting these battles.
+                Legal challenges are critical to defending democracy.
               </p>
-              <Button className="w-full" variant="action">
-                Find Legal Aid Organizations
-              </Button>
+              <Link href="/resistance">
+                <Button className="w-full" variant="action">
+                  View Resistance Strategy
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

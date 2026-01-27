@@ -1,41 +1,123 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate } from "@/lib/utils";
-import { getState, getAllStateCodes } from "@/lib/data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate } from "@/lib/utils";
 
-// Generate static paths for all states
-export async function generateStaticParams() {
-  return getAllStateCodes().map((code) => ({ code }));
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+interface StateBill {
+  id: number;
+  identifier: string;
+  title: string | null;
+  chamber: string;
+  session: string;
+  status: string | null;
+  introduced_date: string | null;
 }
 
-const protectionLevelColors = {
-  strong: "bg-green-500",
-  moderate: "bg-yellow-500",
-  weak: "bg-orange-500",
-  hostile: "bg-red-500",
-};
+interface StateLegislator {
+  id: number;
+  full_name: string;
+  chamber: string;
+  district: string | null;
+  party: string;
+  state: string;
+}
 
-const protectionLevelLabels = {
-  strong: "Strong Protections",
-  moderate: "Moderate Protections",
-  weak: "Weak Protections",
-  hostile: "Hostile Environment",
-};
+interface StateDetail {
+  code: string;
+  name: string;
+  bill_count: number;
+  legislator_count: number;
+  resistance_action_count: number;
+  recent_bills: StateBill[];
+  legislators: StateLegislator[];
+}
 
-export default async function StateDetailPage({
-  params,
-}: {
-  params: Promise<{ code: string }>;
-}) {
-  const { code } = await params;
-  const state = getState(code);
+export default function StateDetailPage() {
+  const params = useParams();
+  const code = params.code as string;
+  const [state, setState] = useState<StateDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!state) {
-    notFound();
+  useEffect(() => {
+    async function fetchState() {
+      try {
+        const response = await fetch(`${API_BASE}/states/${code}`);
+        if (response.ok) {
+          setState(await response.json());
+        } else if (response.status === 404) {
+          setError("State not found");
+        } else {
+          setError("Failed to load state data");
+        }
+      } catch {
+        setError("Failed to connect to server");
+      }
+      setLoading(false);
+    }
+
+    if (code) fetchState();
+  }, [code]);
+
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <Skeleton className="h-4 w-48 mb-6" />
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-10 w-48 mb-4" />
+            <div className="grid grid-cols-3 gap-4">
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+              <Skeleton className="h-20" />
+            </div>
+            <Skeleton className="h-48 w-full" />
+          </div>
+          <div>
+            <Skeleton className="h-48 w-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
+
+  if (error || !state) {
+    return (
+      <div className="container py-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link href="/states" className="hover:text-foreground">
+            States
+          </Link>
+          <span>/</span>
+          <span className="text-foreground">Not Found</span>
+        </nav>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground text-lg">
+              {error || "State not found"}
+            </p>
+            <Link href="/states">
+              <Button variant="outline" className="mt-4">
+                Back to All States
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Group legislators by chamber
+  const senateMembers = state.legislators.filter(l => l.chamber.toLowerCase() === "senate" || l.chamber.toLowerCase() === "upper");
+  const houseMembers = state.legislators.filter(l => l.chamber.toLowerCase() !== "senate" && l.chamber.toLowerCase() !== "upper");
 
   return (
     <div className="container py-8">
@@ -51,106 +133,166 @@ export default async function StateDetailPage({
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Header */}
           <div>
-            <div className="flex items-center gap-3 mb-4">
-              <h1 className="text-3xl font-bold">{state.name}</h1>
-              <Badge
-                className={cn(
-                  "text-white",
-                  protectionLevelColors[state.protectionLevel]
-                )}
-              >
-                {protectionLevelLabels[state.protectionLevel]}
-              </Badge>
-            </div>
-
-            {/* Resistance Score */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-muted-foreground">Resistance Score</span>
-                <span className="text-2xl font-bold">{state.resistanceScore}%</span>
-              </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    protectionLevelColors[state.protectionLevel]
-                  )}
-                  style={{ width: `${state.resistanceScore}%` }}
-                />
-              </div>
-            </div>
+            <h1 className="text-3xl font-bold mb-4">{state.name}</h1>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
-                <p className="text-sm text-muted-foreground">Active Protections</p>
-                <p className="text-2xl font-bold text-green-600">{state.activeProtections}</p>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg border text-center">
+                <p className="text-2xl font-bold">{state.bill_count}</p>
+                <p className="text-sm text-muted-foreground">Bills Tracked</p>
               </div>
-              <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
-                <p className="text-sm text-muted-foreground">Pending Threats</p>
-                <p className="text-2xl font-bold text-red-600">{state.pendingThreats}</p>
+              <div className="p-4 rounded-lg border text-center">
+                <p className="text-2xl font-bold">{state.legislator_count}</p>
+                <p className="text-sm text-muted-foreground">Legislators</p>
+              </div>
+              <div className="p-4 rounded-lg border text-center">
+                <p className="text-2xl font-bold">{state.resistance_action_count}</p>
+                <p className="text-sm text-muted-foreground">Actions</p>
               </div>
             </div>
           </div>
 
-          {/* Key Actions */}
+          {/* Recent Bills */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Actions</CardTitle>
+              <CardTitle>Recent Bills</CardTitle>
             </CardHeader>
             <CardContent>
-              {state.keyActions.length > 0 ? (
+              {state.recent_bills.length > 0 ? (
                 <div className="space-y-3">
-                  {state.keyActions.map((action, index) => (
+                  {state.recent_bills.map((bill) => (
                     <div
-                      key={index}
-                      className="flex items-start gap-4 p-3 rounded-lg border"
+                      key={bill.id}
+                      className="p-3 rounded-lg border"
                     >
-                      <div className="flex-1">
-                        <p className="font-medium">{action.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-muted-foreground">
-                            {formatDate(action.date)}
-                          </span>
-                          <Badge variant="outline" className="text-xs">
-                            {action.type}
-                          </Badge>
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-medium">{bill.identifier}</p>
+                          {bill.title && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {bill.title}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {bill.chamber}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {bill.session}
+                            </span>
+                            {bill.introduced_date && (
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(bill.introduced_date)}
+                              </span>
+                            )}
+                          </div>
                         </div>
+                        {bill.status && (
+                          <Badge variant="outline" className="shrink-0 text-xs">
+                            {bill.status}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">No recent actions tracked</p>
+                <p className="text-muted-foreground">No bills tracked for this state</p>
               )}
             </CardContent>
           </Card>
 
-          {/* Resources */}
-          {state.resources.length > 0 && (
+          {/* Legislators */}
+          {state.legislators.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Resources</CardTitle>
+                <CardTitle>Legislators</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {state.resources.map((resource, index) => (
-                    <a
-                      key={index}
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                    >
-                      <p className="font-medium text-primary">{resource.name}</p>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {resource.url}
-                      </p>
-                    </a>
-                  ))}
-                </div>
+              <CardContent className="space-y-4">
+                {senateMembers.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      Senate ({senateMembers.length})
+                    </p>
+                    <div className="space-y-1">
+                      {senateMembers.slice(0, 20).map((leg) => (
+                        <div
+                          key={leg.id}
+                          className="flex items-center justify-between p-2 rounded border text-sm"
+                        >
+                          <span className="font-medium">{leg.full_name}</span>
+                          <div className="flex items-center gap-2">
+                            {leg.district && (
+                              <span className="text-xs text-muted-foreground">
+                                Dist. {leg.district}
+                              </span>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={
+                                leg.party === "D" || leg.party === "Democratic"
+                                  ? "border-blue-500 text-blue-600"
+                                  : leg.party === "R" || leg.party === "Republican"
+                                    ? "border-red-500 text-red-600"
+                                    : ""
+                              }
+                            >
+                              {leg.party}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {senateMembers.length > 20 && (
+                        <p className="text-xs text-muted-foreground text-center pt-1">
+                          and {senateMembers.length - 20} more
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {houseMembers.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-2">
+                      House/Assembly ({houseMembers.length})
+                    </p>
+                    <div className="space-y-1">
+                      {houseMembers.slice(0, 20).map((leg) => (
+                        <div
+                          key={leg.id}
+                          className="flex items-center justify-between p-2 rounded border text-sm"
+                        >
+                          <span className="font-medium">{leg.full_name}</span>
+                          <div className="flex items-center gap-2">
+                            {leg.district && (
+                              <span className="text-xs text-muted-foreground">
+                                Dist. {leg.district}
+                              </span>
+                            )}
+                            <Badge
+                              variant="outline"
+                              className={
+                                leg.party === "D" || leg.party === "Democratic"
+                                  ? "border-blue-500 text-blue-600"
+                                  : leg.party === "R" || leg.party === "Republican"
+                                    ? "border-red-500 text-red-600"
+                                    : ""
+                              }
+                            >
+                              {leg.party}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {houseMembers.length > 20 && (
+                        <p className="text-xs text-muted-foreground text-center pt-1">
+                          and {houseMembers.length - 20} more
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -158,74 +300,28 @@ export default async function StateDetailPage({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Government Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Government</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Governor</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{state.governorName}</p>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      state.governorParty === "D"
-                        ? "border-blue-500 text-blue-600"
-                        : "border-red-500 text-red-600"
-                    )}
-                  >
-                    {state.governorParty}
-                  </Badge>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Legislature Control</p>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    state.legislatureControl === "D"
-                      ? "border-blue-500 text-blue-600"
-                      : state.legislatureControl === "R"
-                        ? "border-red-500 text-red-600"
-                        : "border-purple-500 text-purple-600"
-                  )}
-                >
-                  {state.legislatureControl === "D"
-                    ? "Democratic"
-                    : state.legislatureControl === "R"
-                      ? "Republican"
-                      : "Split Control"}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Take Action */}
           <Card className="border-green-500/50">
             <CardHeader>
               <CardTitle>Take Action in {state.name}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
-                {state.protectionLevel === "strong" || state.protectionLevel === "moderate"
-                  ? "Support and strengthen existing protections in your state."
-                  : "Help build resistance infrastructure in your state."}
+                Support resistance efforts in your state.
               </p>
-              <Button className="w-full" variant="action">
-                Find Local Organizations
-              </Button>
+              <Link href="/resistance">
+                <Button className="w-full" variant="action">
+                  View Resistance Strategy
+                </Button>
+              </Link>
               <Button className="w-full" variant="outline">
                 Contact Your Representatives
               </Button>
             </CardContent>
           </Card>
 
-          {/* Back Link */}
           <Link href="/states">
             <Button variant="outline" className="w-full">
-              ← Back to All States
+              Back to All States
             </Button>
           </Link>
         </div>

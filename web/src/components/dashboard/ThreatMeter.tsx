@@ -135,3 +135,46 @@ export function ThreatMeterCompact({
     </div>
   );
 }
+
+function getLevel(progress: number): "critical" | "high" | "elevated" | "moderate" {
+  if (progress >= 75) return "critical";
+  if (progress >= 50) return "high";
+  if (progress >= 25) return "elevated";
+  return "moderate";
+}
+
+export function DynamicThreatMeter() {
+  const [progress, setProgress] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProgress() {
+      try {
+        const response = await fetch(`${API_BASE}/objectives/stats`);
+        if (response.ok) {
+          const data = await response.json();
+          setProgress(Math.round(data.completion_percentage || 0));
+        } else {
+          setProgress(0);
+        }
+      } catch {
+        setProgress(0);
+      }
+      setLoading(false);
+    }
+    fetchProgress();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center">
+        <Skeleton className="w-48 h-24 rounded-full" />
+        <Skeleton className="w-24 h-6 mt-4" />
+      </div>
+    );
+  }
+
+  const level = getLevel(progress ?? 0);
+
+  return <ThreatMeter level={level} progress={progress ?? 0} />;
+}

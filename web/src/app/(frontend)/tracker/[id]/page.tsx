@@ -1,33 +1,159 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate, formatPercentage, snakeToTitle } from "@/lib/utils";
-import { getObjective, getAllObjectiveIds } from "@/lib/data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, formatDate, snakeToTitle } from "@/lib/utils";
 
-// Generate static paths for all objectives
-export async function generateStaticParams() {
-  return getAllObjectiveIds().map((id) => ({ id }));
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+interface ObjectiveDetail {
+  id: number;
+  section: string;
+  chapter: string | null;
+  agency: string;
+  proposal_text: string;
+  proposal_summary: string | null;
+  page_number: number;
+  category: string;
+  action_type: string;
+  priority: string;
+  implementation_timeline: string;
+  status: string;
+  confidence: number;
+  keywords: string[];
+  constitutional_concerns: string[];
+  matching_eo_ids: number[];
+  matching_legislation_ids: number[];
+  implementation_notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export default async function ObjectiveDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const objective = getObjective(id);
+interface EOSummary {
+  id: number;
+  executive_order_number: number | null;
+  title: string;
+  signing_date: string | null;
+}
 
-  if (!objective) {
-    notFound();
+export default function ObjectiveDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const [objective, setObjective] = useState<ObjectiveDetail | null>(null);
+  const [matchedEOs, setMatchedEOs] = useState<EOSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchObjective() {
+      try {
+        const response = await fetch(`${API_BASE}/objectives/${id}`);
+        if (response.ok) {
+          const data: ObjectiveDetail = await response.json();
+          setObjective(data);
+
+          // Fetch matched EOs if any
+          if (data.matching_eo_ids && data.matching_eo_ids.length > 0) {
+            const eoPromises = data.matching_eo_ids.map(async (eoId) => {
+              try {
+                const eoRes = await fetch(`${API_BASE}/executive-orders/${eoId}`);
+                if (eoRes.ok) {
+                  const eoData = await eoRes.json();
+                  return {
+                    id: eoData.id,
+                    executive_order_number: eoData.executive_order_number,
+                    title: eoData.title,
+                    signing_date: eoData.signing_date,
+                  } as EOSummary;
+                }
+              } catch {
+                // skip failed EO fetches
+              }
+              return null;
+            });
+            const eos = (await Promise.all(eoPromises)).filter(Boolean) as EOSummary[];
+            setMatchedEOs(eos);
+          }
+        } else if (response.status === 404) {
+          setError("Policy not found");
+        } else {
+          setError("Failed to load policy details");
+        }
+      } catch {
+        setError("Failed to connect to server");
+      }
+      setLoading(false);
+    }
+
+    if (id) fetchObjective();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <Skeleton className="h-4 w-48 mb-6" />
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            <div>
+              <div className="flex gap-2 mb-3">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-24" />
+              </div>
+              <Skeleton className="h-8 w-3/4 mb-4" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </div>
+          <div>
+            <Skeleton className="h-48 w-full" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const threatColors = {
-    critical: "bg-red-500",
-    high: "bg-orange-500",
-    elevated: "bg-yellow-500",
-    moderate: "bg-green-500",
+  if (error || !objective) {
+    return (
+      <div className="container py-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <Link href="/tracker" className="hover:text-foreground">
+            Tracker
+          </Link>
+          <span>/</span>
+          <span className="text-foreground">Not Found</span>
+        </nav>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground text-lg">
+              {error || "Policy not found"}
+            </p>
+            <Link href="/tracker">
+              <Button variant="outline" className="mt-4">
+                Back to Tracker
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const statusVariant = objective.status === "enacted"
+    ? "enacted"
+    : objective.status === "in_progress"
+      ? "in_progress"
+      : objective.status === "blocked"
+        ? "blocked"
+        : "proposed";
+
+  const priorityColors: Record<string, string> = {
+    high: "text-red-600",
+    medium: "text-orange-600",
+    low: "text-muted-foreground",
   };
 
   return (
@@ -45,88 +171,63 @@ export default async function ObjectiveDetailPage({
           {snakeToTitle(objective.category)}
         </Link>
         <span>/</span>
-        <span className="text-foreground">{objective.title}</span>
+        <span className="text-foreground">Policy #{objective.id}</span>
       </nav>
 
-      {/* Header */}
       <div className="grid gap-8 lg:grid-cols-3">
+        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Title & Status */}
+          {/* Header */}
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-3">
               <Badge variant="outline">{snakeToTitle(objective.category)}</Badge>
-              <Badge
-                variant={
-                  objective.implementationStatus as
-                    | "enacted"
-                    | "in_progress"
-                    | "proposed"
-                    | "blocked"
-                }
-              >
-                {snakeToTitle(objective.implementationStatus)}
+              <Badge variant={statusVariant as "enacted" | "in_progress" | "proposed" | "blocked"}>
+                {snakeToTitle(objective.status)}
               </Badge>
-              <Badge
-                variant={
-                  objective.threatLevel as
-                    | "critical"
-                    | "high"
-                    | "elevated"
-                    | "moderate"
-                }
-              >
-                {objective.threatLevel.toUpperCase()} THREAT
-              </Badge>
+              <Badge variant="outline">{snakeToTitle(objective.priority)} Priority</Badge>
             </div>
 
-            <h1 className="text-3xl font-bold mb-4">{objective.title}</h1>
-            <p className="text-muted-foreground">{objective.description}</p>
+            <h1 className="text-2xl font-bold mb-4">
+              {objective.proposal_summary || objective.proposal_text.slice(0, 150)}
+            </h1>
 
-            <p className="text-sm text-muted-foreground mt-4">
-              <strong>Source:</strong> Mandate for Leadership, page{" "}
-              {objective.sourcePage}
-            </p>
+            <div className="p-4 rounded-lg bg-muted/50 border">
+              <p className="text-sm font-medium text-muted-foreground mb-1">Full Proposal Text</p>
+              <p className="text-sm">{objective.proposal_text}</p>
+            </div>
+
+            <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
+              <span>
+                <strong>Source:</strong> {objective.section}
+                {objective.chapter && `, ${objective.chapter}`}
+              </span>
+              <span>
+                <strong>Page:</strong> {objective.page_number}
+              </span>
+              <span>
+                <strong>Agency:</strong> {objective.agency}
+              </span>
+            </div>
           </div>
 
-          {/* Related Legislation */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Related Legislation</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {objective.relatedLegislation.length > 0 ? (
-                <div className="space-y-3">
-                  {objective.relatedLegislation.map((leg) => (
-                    <Link
-                      key={leg.id}
-                      href={`/legislation/${leg.id}`}
-                      className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-medium">{leg.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {leg.jurisdiction}
-                          </p>
-                        </div>
-                        <Badge
-                          variant={
-                            leg.status as "enacted" | "proposed" | "in_progress" | "blocked"
-                          }
-                        >
-                          {snakeToTitle(leg.status)}
-                        </Badge>
-                      </div>
-                    </Link>
+          {/* Constitutional Concerns */}
+          {objective.constitutional_concerns.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Constitutional Concerns</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {objective.constitutional_concerns.map((concern, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                      {concern}
+                    </li>
                   ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground">
-                  No related legislation tracked
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Related Executive Orders */}
           <Card>
@@ -134,9 +235,9 @@ export default async function ObjectiveDetailPage({
               <CardTitle>Related Executive Orders</CardTitle>
             </CardHeader>
             <CardContent>
-              {objective.relatedExecutiveOrders.length > 0 ? (
+              {matchedEOs.length > 0 ? (
                 <div className="space-y-3">
-                  {objective.relatedExecutiveOrders.map((eo) => (
+                  {matchedEOs.map((eo) => (
                     <Link
                       key={eo.id}
                       href={`/executive-orders/${eo.id}`}
@@ -145,122 +246,85 @@ export default async function ObjectiveDetailPage({
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="font-medium">
-                            EO {eo.orderNumber}: {eo.title}
+                            {eo.executive_order_number
+                              ? `EO ${eo.executive_order_number}: ${eo.title}`
+                              : eo.title}
                           </p>
-                          <p className="text-sm text-muted-foreground">
-                            Signed {formatDate(eo.signingDate)}
-                          </p>
+                          {eo.signing_date && (
+                            <p className="text-sm text-muted-foreground">
+                              Signed {formatDate(eo.signing_date)}
+                            </p>
+                          )}
                         </div>
-                        <Badge variant="destructive">{eo.status}</Badge>
                       </div>
                     </Link>
                   ))}
                 </div>
               ) : (
                 <p className="text-muted-foreground">
-                  No related executive orders
+                  No related executive orders tracked
                 </p>
               )}
             </CardContent>
           </Card>
 
-          {/* Related Court Cases */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Related Court Cases</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {objective.relatedCourtCases.length > 0 ? (
-                <div className="space-y-3">
-                  {objective.relatedCourtCases.map((courtCase) => (
-                    <Link
-                      key={courtCase.id}
-                      href={`/cases/${courtCase.id}`}
-                      className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-medium">{courtCase.caseName}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {courtCase.court} • {courtCase.citation}
-                          </p>
-                        </div>
-                        <Badge variant="outline">{courtCase.status}</Badge>
-                      </div>
-                    </Link>
+          {/* Keywords */}
+          {objective.keywords.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Keywords</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {objective.keywords.map((keyword, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {keyword}
+                    </Badge>
                   ))}
                 </div>
-              ) : (
-                <p className="text-muted-foreground">No related court cases</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-0">
-                {objective.timeline.map((event, index) => (
-                  <div key={index} className="timeline-item">
-                    <div className="timeline-dot" />
-                    <div className="mb-1">
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(event.date)}
-                      </span>
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        {snakeToTitle(event.eventType)}
-                      </Badge>
-                    </div>
-                    <h4 className="font-medium">{event.title}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {event.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Progress Card */}
+          {/* Details Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Implementation Progress</CardTitle>
+              <CardTitle>Details</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center mb-4">
-                <span
-                  className={cn(
-                    "text-4xl font-bold",
-                    objective.progressPercentage > 50
-                      ? "text-red-600"
-                      : objective.progressPercentage > 25
-                        ? "text-orange-600"
-                        : "text-muted-foreground"
-                  )}
-                >
-                  {formatPercentage(objective.progressPercentage)}
-                </span>
+            <CardContent className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Status</p>
+                <Badge variant={statusVariant as "enacted" | "in_progress" | "proposed" | "blocked"}>
+                  {snakeToTitle(objective.status)}
+                </Badge>
               </div>
-              <div className="h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all",
-                    threatColors[
-                      objective.threatLevel as keyof typeof threatColors
-                    ]
-                  )}
-                  style={{ width: `${objective.progressPercentage}%` }}
-                />
+              <div>
+                <p className="text-sm text-muted-foreground">Priority</p>
+                <p className={cn("font-medium", priorityColors[objective.priority] || "")}>
+                  {snakeToTitle(objective.priority)}
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground mt-3 text-center">
-                Based on legislative, executive, and judicial actions
-              </p>
+              <div>
+                <p className="text-sm text-muted-foreground">Action Type</p>
+                <p className="font-medium">{snakeToTitle(objective.action_type)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Timeline</p>
+                <p className="font-medium">{snakeToTitle(objective.implementation_timeline)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Confidence</p>
+                <p className="font-medium">{Math.round(objective.confidence * 100)}%</p>
+              </div>
+              {objective.implementation_notes && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Notes</p>
+                  <p className="text-sm">{objective.implementation_notes}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -273,54 +337,14 @@ export default async function ObjectiveDetailPage({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {objective.resistanceActions.map((action) => (
-                <div
-                  key={action.id}
-                  className="p-3 rounded-lg border bg-green-50 dark:bg-green-950/20"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge
-                      className={cn(
-                        "text-xs",
-                        action.urgency === "high"
-                          ? "bg-orange-500"
-                          : action.urgency === "medium"
-                            ? "bg-yellow-500"
-                            : "bg-blue-500"
-                      )}
-                    >
-                      {action.urgency}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      Tier {action.tier}
-                    </span>
-                  </div>
-                  <h4 className="font-medium">{action.title}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {action.description}
-                  </p>
-                </div>
-              ))}
+              <p className="text-sm text-muted-foreground">
+                Help resist the implementation of this policy proposal.
+              </p>
               <Link href="/resistance">
-                <Button className="w-full mt-2" variant="action">
-                  View All Actions
+                <Button className="w-full" variant="action">
+                  View Resistance Strategy
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
-
-          {/* Share */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Share</CardTitle>
-            </CardHeader>
-            <CardContent className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1">
-                Copy Link
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                Twitter
-              </Button>
             </CardContent>
           </Card>
         </div>

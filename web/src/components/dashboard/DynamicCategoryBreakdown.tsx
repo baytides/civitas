@@ -12,6 +12,7 @@ interface CategoryData {
   name: string;
   slug: string;
   total: number;
+  proposed: number;
   enacted: number;
   inProgress: number;
   blocked: number;
@@ -26,7 +27,8 @@ interface ObjectiveStats {
   completion_percentage: number;
 }
 
-const categoryNames: Record<string, string> = {
+const categoryDisplayNames: Record<string, string> = {
+  general: "General",
   immigration: "Immigration",
   environment: "Environment",
   healthcare: "Healthcare",
@@ -38,9 +40,13 @@ const categoryNames: Record<string, string> = {
   defense: "Defense",
   justice: "Justice",
   foreign_policy: "Foreign Policy",
+  energy: "Energy",
+  housing: "Housing",
+  infrastructure: "Infrastructure",
 };
 
 const categoryIcons: Record<string, React.ReactNode> = {
+  general: <FolderIcon />,
   immigration: <UsersIcon />,
   environment: <LeafIcon />,
   healthcare: <HeartIcon />,
@@ -52,21 +58,16 @@ const categoryIcons: Record<string, React.ReactNode> = {
   justice: <GavelIcon />,
   government_structure: <BuildingIcon />,
   foreign_policy: <GlobeIcon />,
+  energy: <TrendingIcon />,
+  housing: <BuildingIcon />,
+  infrastructure: <BuildingIcon />,
 };
-
-// Fallback data when API is not available
-const fallbackCategories: CategoryData[] = [
-  { name: "Immigration", slug: "immigration", total: 42, enacted: 18, inProgress: 12, blocked: 2 },
-  { name: "Environment", slug: "environment", total: 38, enacted: 14, inProgress: 8, blocked: 3 },
-  { name: "Healthcare", slug: "healthcare", total: 45, enacted: 16, inProgress: 10, blocked: 2 },
-  { name: "Education", slug: "education", total: 28, enacted: 12, inProgress: 6, blocked: 1 },
-  { name: "Civil Rights", slug: "civil_rights", total: 52, enacted: 22, inProgress: 11, blocked: 2 },
-  { name: "Government", slug: "government_structure", total: 61, enacted: 28, inProgress: 14, blocked: 1 },
-];
 
 export function DynamicCategoryBreakdown() {
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [globalStats, setGlobalStats] = useState<{ proposed: number; enacted: number; inProgress: number; blocked: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCategoryStats() {
@@ -75,25 +76,37 @@ export function DynamicCategoryBreakdown() {
         if (response.ok) {
           const stats: ObjectiveStats = await response.json();
 
+          // Store global status breakdown
+          setGlobalStats({
+            proposed: stats.by_status.proposed || 0,
+            enacted: stats.by_status.enacted || 0,
+            inProgress: stats.by_status.in_progress || 0,
+            blocked: stats.by_status.blocked || 0,
+          });
+
           // Convert by_category to array format
+          // Note: We only have totals per category, not status breakdown per category
           const categoryList: CategoryData[] = Object.entries(stats.by_category).map(([slug, total]) => ({
-            name: categoryNames[slug] || slug.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
+            name: categoryDisplayNames[slug] || slug.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
             slug,
             total: total as number,
-            // For now, estimate status breakdown - this should come from a more detailed API
-            enacted: Math.round((total as number) * 0.4),
-            inProgress: Math.round((total as number) * 0.25),
-            blocked: Math.round((total as number) * 0.05),
+            // We don't have per-category status breakdown from API, so set to 0
+            proposed: total as number, // All are proposed currently
+            enacted: 0,
+            inProgress: 0,
+            blocked: 0,
           }));
 
           // Sort by total descending
           categoryList.sort((a, b) => b.total - a.total);
-          setCategories(categoryList.slice(0, 8)); // Top 8 categories
+          setCategories(categoryList.slice(0, 8));
         } else {
-          setCategories(fallbackCategories);
+          setError("Failed to load data");
+          setCategories([]);
         }
       } catch {
-        setCategories(fallbackCategories);
+        setError("Failed to load data");
+        setCategories([]);
       }
       setLoading(false);
     }
@@ -105,10 +118,10 @@ export function DynamicCategoryBreakdown() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Implementation by Category</CardTitle>
+          <CardTitle>Policy Categories</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(4)].map((_, i) => (
             <div key={i} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -120,9 +133,23 @@ export function DynamicCategoryBreakdown() {
                 </div>
                 <Skeleton className="h-4 w-12" />
               </div>
-              <Skeleton className="h-2 w-full rounded-full" />
             </div>
           ))}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || categories.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Policy Categories</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground text-center py-8">
+            {error || "No category data available."}
+          </p>
         </CardContent>
       </Card>
     );
@@ -131,11 +158,19 @@ export function DynamicCategoryBreakdown() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Implementation by Category</CardTitle>
+        <CardTitle>Policy Categories</CardTitle>
+        {globalStats && (
+          <p className="text-sm text-muted-foreground">
+            Status breakdown: {globalStats.proposed} proposed
+            {globalStats.enacted > 0 && `, ${globalStats.enacted} enacted`}
+            {globalStats.inProgress > 0 && `, ${globalStats.inProgress} in progress`}
+            {globalStats.blocked > 0 && `, ${globalStats.blocked} blocked`}
+          </p>
+        )}
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {categories.map((category) => {
-          const progress = category.total > 0
+          const implementedPercent = category.total > 0
             ? Math.round((category.enacted / category.total) * 100)
             : 0;
 
@@ -145,9 +180,9 @@ export function DynamicCategoryBreakdown() {
               href={`/tracker?category=${category.slug}`}
               className="block group"
             >
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-muted group-hover:bg-muted/80 transition-colors">
+                  <div className="p-2 rounded-lg bg-muted group-hover:bg-background transition-colors">
                     {categoryIcons[category.slug] || <FolderIcon />}
                   </div>
                   <div>
@@ -155,7 +190,7 @@ export function DynamicCategoryBreakdown() {
                       {category.name}
                     </h4>
                     <p className="text-xs text-muted-foreground">
-                      {category.total} objectives
+                      {category.total} {category.total === 1 ? "policy" : "policies"}
                     </p>
                   </div>
                 </div>
@@ -163,55 +198,17 @@ export function DynamicCategoryBreakdown() {
                   <span
                     className={cn(
                       "text-sm font-semibold",
-                      progress > 50
+                      implementedPercent > 50
                         ? "text-red-600"
-                        : progress > 25
+                        : implementedPercent > 0
                         ? "text-orange-600"
                         : "text-muted-foreground"
                     )}
                   >
-                    {formatPercentage(progress)}
+                    {formatPercentage(implementedPercent)}
                   </span>
                   <p className="text-xs text-muted-foreground">implemented</p>
                 </div>
-              </div>
-
-              {/* Progress bar with segments */}
-              <div className="h-2 bg-muted rounded-full overflow-hidden flex">
-                {category.enacted > 0 && (
-                  <div
-                    className="h-full bg-red-500"
-                    style={{ width: `${(category.enacted / category.total) * 100}%` }}
-                  />
-                )}
-                {category.inProgress > 0 && (
-                  <div
-                    className="h-full bg-orange-500"
-                    style={{ width: `${(category.inProgress / category.total) * 100}%` }}
-                  />
-                )}
-                {category.blocked > 0 && (
-                  <div
-                    className="h-full bg-green-500"
-                    style={{ width: `${(category.blocked / category.total) * 100}%` }}
-                  />
-                )}
-              </div>
-
-              {/* Legend */}
-              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                <span className="flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-red-500 mr-1" />
-                  {category.enacted} enacted
-                </span>
-                <span className="flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-orange-500 mr-1" />
-                  {category.inProgress} in progress
-                </span>
-                <span className="flex items-center">
-                  <span className="w-2 h-2 rounded-full bg-green-500 mr-1" />
-                  {category.blocked} blocked
-                </span>
               </div>
             </Link>
           );

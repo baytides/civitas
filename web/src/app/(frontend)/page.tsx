@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { ThreatMeter } from "@/components/dashboard/ThreatMeter";
+import { DynamicThreatMeter } from "@/components/dashboard/ThreatMeter";
 import { DynamicCategoryBreakdown } from "@/components/dashboard/DynamicCategoryBreakdown";
 import { DashboardDataLoader, RecentExecutiveOrders } from "@/components/dashboard/DashboardData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function HomePage() {
-  // Overall progress - will be dynamically calculated when objectives are loaded
-  const overallProgress = 40; // Approximate baseline
-
   return (
     <div className="container py-8 space-y-8">
         {/* Hero Section */}
@@ -41,10 +38,7 @@ export default function HomePage() {
               <CardTitle className="text-center">Implementation Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <ThreatMeter
-                level={overallProgress > 10 ? "high" : overallProgress > 5 ? "elevated" : "moderate"}
-                progress={overallProgress}
-              />
+              <DynamicThreatMeter />
             </CardContent>
           </Card>
 

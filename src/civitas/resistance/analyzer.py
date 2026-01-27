@@ -295,6 +295,7 @@ Focus on realistic, actionable legal strategies."""
                     {"role": "user", "content": user_prompt},
                 ],
                 format="json",
+                options={"temperature": 0.2, "num_predict": 800},
             )
 
             content = response["message"]["content"]
@@ -303,7 +304,17 @@ Focus on realistic, actionable legal strategies."""
             try:
                 analysis = json.loads(content)
             except json.JSONDecodeError:
-                analysis = {"raw_response": content, "parse_error": True}
+                extracted = content
+                start = content.find("{")
+                end = content.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    extracted = content[start : end + 1]
+                    try:
+                        analysis = json.loads(extracted)
+                    except json.JSONDecodeError:
+                        analysis = {"raw_response": content, "parse_error": True}
+                else:
+                    analysis = {"raw_response": content, "parse_error": True}
 
             # Add metadata
             analysis["policy_id"] = policy.id

@@ -21,6 +21,30 @@ interface APIExecutiveOrder {
   abstract: string | null;
 }
 
+interface APICourtCase {
+  id: number;
+  case_name: string;
+  citation: string | null;
+  court: string | null;
+  decision_date: string | null;
+  status: string | null;
+}
+
+interface APILegislation {
+  id: number;
+  citation: string;
+  title: string | null;
+  jurisdiction: string;
+  session: string;
+  chamber: string;
+  number: number;
+  status: string | null;
+  is_enacted: boolean;
+  introduced_date: string | null;
+  last_action_date: string | null;
+  enacted_date: string | null;
+}
+
 interface TimelineEvent {
   id: string;
   date: string;
@@ -46,16 +70,6 @@ const eventTypeConfig = {
     label: "Court Case",
     color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200",
   },
-  state_action: {
-    icon: <MapIcon className="h-4 w-4" />,
-    label: "State Action",
-    color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200",
-  },
-  appointment: {
-    icon: <UserIcon className="h-4 w-4" />,
-    label: "Appointment",
-    color: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200",
-  },
 };
 
 export default function TimelinePage() {
@@ -66,11 +80,38 @@ export default function TimelinePage() {
   useEffect(() => {
     async function fetchTimeline() {
       try {
-        // Fetch executive orders as the primary timeline source
-        const eoResponse = await fetch(`${API_BASE}/executive-orders?limit=50`);
-        if (eoResponse.ok) {
-          const eoData = await eoResponse.json();
-          const eoEvents: TimelineEvent[] = eoData.items.map((eo: APIExecutiveOrder) => ({
+        async function fetchAllPages<T>(
+          path: string,
+          perPage = 100
+        ): Promise<T[]> {
+          const items: T[] = [];
+          let page = 1;
+          let totalPages = 1;
+
+          while (page <= totalPages) {
+            const response = await fetch(`${API_BASE}/${path}?page=${page}&per_page=${perPage}`);
+            if (!response.ok) break;
+            const data = await response.json();
+            items.push(...(data.items ?? []));
+            totalPages = data.total_pages ?? 1;
+            page += 1;
+          }
+
+          return items;
+        }
+
+        const [executiveOrders, courtCases, legislation] = await Promise.all([
+          fetchAllPages<APIExecutiveOrder>("executive-orders", 100),
+          fetchAllPages<APICourtCase>("cases", 100),
+          fetchAllPages<APILegislation>(
+            "legislation?since=2017-01-01&matched_only=true",
+            100
+          ),
+        ]);
+
+        const eoEvents: TimelineEvent[] = executiveOrders
+          .filter((eo) => eo.publication_date)
+          .map((eo) => ({
             id: `eo-${eo.id}`,
             date: eo.publication_date,
             eventType: "executive_order",
@@ -78,8 +119,38 @@ export default function TimelinePage() {
             description: eo.abstract || `Executive order published on ${eo.publication_date}`,
             sourceUrl: `/executive-orders/${eo.id}`,
           }));
-          setEvents(eoEvents);
-        }
+
+        const caseEvents: TimelineEvent[] = courtCases
+          .filter((caseItem) => caseItem.decision_date)
+          .map((caseItem) => ({
+            id: `case-${caseItem.id}`,
+            date: caseItem.decision_date || "",
+            eventType: "court_case",
+            title: caseItem.case_name || caseItem.citation || "Court case",
+            description: caseItem.citation
+              ? `${caseItem.citation}${caseItem.court ? ` · ${caseItem.court}` : ""}`
+              : caseItem.court || "Court case decision",
+            sourceUrl: `/cases/${caseItem.id}`,
+          }));
+
+        const lawEvents: TimelineEvent[] = legislation
+          .filter((bill) => bill.last_action_date || bill.introduced_date || bill.enacted_date)
+          .map((bill) => {
+            const date =
+              bill.last_action_date || bill.enacted_date || bill.introduced_date || "";
+            const title = bill.title || bill.citation;
+            const statusLabel = bill.is_enacted ? "Enacted" : (bill.status || "Introduced");
+            return {
+              id: `leg-${bill.id}`,
+              date,
+              eventType: "legislation",
+              title,
+              description: `${bill.citation} · ${statusLabel} · ${bill.jurisdiction.toUpperCase()}`,
+              sourceUrl: `/legislation/${bill.id}`,
+            };
+          });
+
+        setEvents([...eoEvents, ...caseEvents, ...lawEvents]);
       } catch (error) {
         console.error("Error fetching timeline:", error);
       }
@@ -128,7 +199,7 @@ export default function TimelinePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Timeline</h1>
         <p className="text-muted-foreground">
-          Track the chronological progression of executive actions and policy changes
+          Track the chronological progression of executive actions and court decisions
         </p>
       </div>
 
@@ -285,22 +356,6 @@ function ScaleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-    </svg>
-  );
-}
-
-function MapIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-    </svg>
-  );
-}
-
-function UserIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
   );
 }

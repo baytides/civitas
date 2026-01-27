@@ -143,10 +143,10 @@ export default function ExecutiveOrderDetailPage() {
             )}
           </div>
 
-          {/* Matched P2025 Objectives */}
+          {/* Matched Project 2025 Objectives */}
           <Card>
             <CardHeader>
-              <CardTitle>Related P2025 Objectives</CardTitle>
+              <CardTitle>Related Project 2025 Objectives</CardTitle>
             </CardHeader>
             <CardContent>
               {eo.matched_objectives.length > 0 ? (
@@ -189,7 +189,7 @@ export default function ExecutiveOrderDetailPage() {
                 </div>
               ) : (
                 <p className="text-muted-foreground">
-                  No matched P2025 objectives
+                  No matched Project 2025 objectives
                 </p>
               )}
             </CardContent>

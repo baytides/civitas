@@ -35,7 +35,7 @@ export function DashboardDataLoader() {
           // API unavailable
         }
 
-        // Fetch P2025 objectives/policies count from /objectives/stats
+        // Fetch Project 2025 objectives/policies count from /objectives/stats
         let policiesCount = 0;
         try {
           const policiesResponse = await fetch(`${API_BASE}/objectives/stats`, {

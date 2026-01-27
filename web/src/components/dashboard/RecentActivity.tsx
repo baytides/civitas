@@ -38,7 +38,7 @@ const typeConfig = {
   },
   objective: {
     icon: <TargetIcon />,
-    label: "P2025 Objective",
+    label: "Project 2025 Objective",
     color: "text-red-600 bg-red-100 dark:bg-red-900/30",
   },
 };

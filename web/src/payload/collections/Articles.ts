@@ -77,7 +77,7 @@ export const Articles: CollectionConfig = {
       name: "relatedObjectiveIds",
       type: "json",
       admin: {
-        description: "Array of P2025 objective IDs this article relates to",
+        description: "Array of Project 2025 objective IDs this article relates to",
       },
     },
     {

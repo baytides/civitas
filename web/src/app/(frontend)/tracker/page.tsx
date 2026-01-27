@@ -444,10 +444,10 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
               </div>
 
               <h3 className="text-lg font-semibold mb-2 break-words">
-                {objective.agency}: {snakeToTitle(objective.action_type)}
+                {objective.proposal_summary || objective.proposal_text}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-normal break-words">
-                {objective.proposal_summary || objective.proposal_text}
+                {objective.agency} · {snakeToTitle(objective.action_type)}
               </p>
 
               <p className="text-xs text-muted-foreground mt-2">
@@ -458,9 +458,11 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
             {/* Right: Progress & Timeline */}
             <div className="w-full md:w-48 shrink-0 space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Status</span>
+                <span className="text-muted-foreground">Timeline</span>
                 <span className="font-semibold text-xs">
-                  {snakeToTitle(objective.implementation_timeline)}
+                  {objective.implementation_timeline
+                    ? snakeToTitle(objective.implementation_timeline)
+                    : "Not specified"}
                 </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">

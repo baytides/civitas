@@ -17,6 +17,7 @@ from civitas.api.schemas import (
     ObjectiveMetadata,
     ObjectiveStats,
 )
+from civitas.api.utils import build_objective_title, objective_to_base
 from civitas.db.models import Project2025Policy
 
 router = APIRouter()
@@ -67,7 +68,7 @@ async def list_objectives(
         per_page=per_page,
         total=total,
         total_pages=(total + per_page - 1) // per_page,
-        items=[ObjectiveBase.model_validate(item) for item in items],
+        items=[objective_to_base(item) for item in items],
     )
 
 
@@ -257,6 +258,7 @@ async def get_objective(
         implementation_timeline=obj.implementation_timeline,
         status=obj.status,
         confidence=obj.confidence,
+        title=build_objective_title(obj),
         keywords=keywords,
         constitutional_concerns=constitutional_concerns,
         matching_eo_ids=matching_eo_ids,

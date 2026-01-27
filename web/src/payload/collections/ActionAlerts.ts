@@ -59,7 +59,7 @@ export const ActionAlerts: CollectionConfig = {
       name: "relatedObjectiveIds",
       type: "json",
       admin: {
-        description: "Array of P2025 objective IDs this alert relates to",
+        description: "Array of Project 2025 objective IDs this alert relates to",
       },
     },
     {

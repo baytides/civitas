@@ -6,7 +6,7 @@ const footerLinks = {
     { name: "GitHub", href: "https://github.com/baytides/civitas", external: true },
   ],
   track: [
-    { name: "P2025 Tracker", href: "/tracker" },
+    { name: "Project 2025 Tracker", href: "/tracker" },
     { name: "State Map", href: "/states" },
     { name: "Timeline", href: "/timeline" },
   ],

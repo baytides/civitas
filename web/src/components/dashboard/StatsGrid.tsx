@@ -77,7 +77,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="P2025 Policies"
+        title="Project 2025 Policies"
         value={stats.totalPolicies}
         description="Tracked from document"
         icon={<DocumentIcon />}

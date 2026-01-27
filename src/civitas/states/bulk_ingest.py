@@ -185,7 +185,6 @@ class OpenStatesBulkIngester:
             id TEXT,
             identifier TEXT,
             title TEXT,
-            jurisdiction_id TEXT,
             classification TEXT,
             subject TEXT,
             from_organization_id TEXT,
@@ -214,6 +213,17 @@ class OpenStatesBulkIngester:
             current_jurisdiction_id TEXT,
             "current_role" TEXT,
             email TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS opencivicdata_legislativesession (
+            id TEXT,
+            identifier TEXT,
+            name TEXT,
+            classification TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            jurisdiction_id TEXT,
+            active TEXT
         );
         """
         subprocess.run(
@@ -281,6 +291,7 @@ class OpenStatesBulkIngester:
                         "--no-privileges",
                         "--table=opencivicdata_bill",
                         "--table=opencivicdata_person",
+                        "--table=opencivicdata_legislativesession",
                         str(self.dump_path),
                     ],
                     capture_output=True,
@@ -347,7 +358,7 @@ class OpenStatesBulkIngester:
         if state:
             jurisdiction = self.STATE_JURISDICTIONS.get(state.lower())
             if jurisdiction:
-                where_clauses.append(f"jurisdiction_id = '{jurisdiction}'")
+                where_clauses.append(f"ls.jurisdiction_id = '{jurisdiction}'")
 
         if session:
             where_clauses.append(f"legislative_session_id LIKE '%{session}%'")
@@ -357,19 +368,21 @@ class OpenStatesBulkIngester:
 
         sql = f"""
             SELECT
-                id,
-                identifier,
-                title,
-                jurisdiction_id,
-                legislative_session_id,
-                from_organization_id,
-                classification,
-                subject,
-                created_at,
-                updated_at
-            FROM opencivicdata_bill
+                b.id,
+                b.identifier,
+                b.title,
+                ls.jurisdiction_id,
+                b.legislative_session_id,
+                b.from_organization_id,
+                b.classification,
+                b.subject,
+                b.created_at,
+                b.updated_at
+            FROM opencivicdata_bill b
+            LEFT JOIN opencivicdata_legislativesession ls
+                ON ls.id = b.legislative_session_id
             WHERE {where_sql}
-            ORDER BY updated_at DESC
+            ORDER BY b.updated_at DESC
             {limit_sql}
         """
 
@@ -435,13 +448,7 @@ class OpenStatesBulkIngester:
         if state:
             jurisdiction = self.STATE_JURISDICTIONS.get(state.lower())
             if jurisdiction:
-                # Match jurisdiction pattern
-                where_clauses.append(
-                    f"id LIKE 'ocd-person%' AND "
-                    f"EXISTS (SELECT 1 FROM opencivicdata_membership m "
-                    f"WHERE m.person_id = opencivicdata_person.id "
-                    f"AND m.organization_id LIKE '%{state.lower()}%')"
-                )
+                where_clauses.append(f"current_jurisdiction_id = '{jurisdiction}'")
 
         where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
         limit_sql = f"LIMIT {limit}" if limit else ""
@@ -452,7 +459,9 @@ class OpenStatesBulkIngester:
                 name,
                 image,
                 email,
-                created_at
+                created_at,
+                primary_party,
+                current_jurisdiction_id
             FROM opencivicdata_person
             WHERE {where_sql}
             ORDER BY name
@@ -480,21 +489,17 @@ class OpenStatesBulkIngester:
                 continue
 
             parts = line.split("|||")
-            if len(parts) < 5:
+            if len(parts) < 7:
                 continue
 
             try:
-                # Get jurisdiction from person ID
-                person_id = parts[0]
-                # Extract state from memberships (would need additional query)
-                jurisdiction_id = ""
-
                 yield BulkStateLegislator(
-                    id=person_id,
+                    id=parts[0],
                     name=parts[1],
-                    jurisdiction_id=jurisdiction_id,
+                    jurisdiction_id=parts[6],
                     image=parts[2] or None,
                     email=parts[3] or None,
+                    party=parts[5] or None,
                     created_at=self._parse_datetime(parts[4]),
                 )
             except (ValueError, IndexError) as e:
@@ -513,10 +518,13 @@ class OpenStatesBulkIngester:
         # Count bills by jurisdiction
         sql = """
             SELECT
-                jurisdiction_id,
+                ls.jurisdiction_id,
                 COUNT(*) as count
-            FROM opencivicdata_bill
-            GROUP BY jurisdiction_id
+            FROM opencivicdata_bill b
+            LEFT JOIN opencivicdata_legislativesession ls
+                ON ls.id = b.legislative_session_id
+            WHERE ls.jurisdiction_id IS NOT NULL
+            GROUP BY ls.jurisdiction_id
             ORDER BY count DESC
         """
 

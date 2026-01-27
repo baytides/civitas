@@ -14,6 +14,7 @@ Get a token at: https://www.courtlistener.com/sign-in/
 """
 
 import os
+import time
 from collections.abc import Generator
 from datetime import date, timedelta
 
@@ -72,8 +73,26 @@ class CourtListenerClient:
         self._client = httpx.Client(
             base_url=self.BASE_URL,
             headers=headers,
-            timeout=30.0,
+            timeout=60.0,
         )
+
+    def _get(self, url: str, params: dict | None = None) -> httpx.Response:
+        """GET with retry/backoff for timeouts and transient errors."""
+        for attempt in range(1, 4):
+            try:
+                response = self._client.get(url, params=params)
+                response.raise_for_status()
+                return response
+            except (httpx.ReadTimeout, httpx.ConnectTimeout) as exc:
+                if attempt == 3:
+                    raise
+                time.sleep(1.5 * attempt)
+            except httpx.HTTPStatusError as exc:
+                status = exc.response.status_code
+                if status in {429, 500, 502, 503, 504} and attempt < 3:
+                    time.sleep(1.5 * attempt)
+                    continue
+                raise
 
     def search_opinions(
         self,
@@ -107,8 +126,7 @@ class CourtListenerClient:
         if filed_before:
             params["filed_before"] = filed_before.isoformat()
 
-        response = self._client.get("/search/", params=params)
-        response.raise_for_status()
+        response = self._get("/search/", params=params)
 
         return [self._parse_opinion(item) for item in response.json().get("results", [])]
 
@@ -116,7 +134,8 @@ class CourtListenerClient:
         self,
         court: str | None = None,
         days: int = 30,
-        limit: int = 50,
+        limit: int | None = 50,
+        page_size: int = 100,
     ) -> Generator[CourtListenerOpinion, None, None]:
         """Get recent opinions from federal courts.
 
@@ -129,32 +148,66 @@ class CourtListenerClient:
             CourtListenerOpinion objects
         """
         filed_after = date.today() - timedelta(days=days)
+        yield from self.get_opinions(
+            court=court,
+            filed_after=filed_after,
+            filed_before=None,
+            limit=limit,
+            page_size=page_size,
+        )
 
+    def get_opinions(
+        self,
+        court: str | None = None,
+        filed_after: date | None = None,
+        filed_before: date | None = None,
+        limit: int | None = 50,
+        page_size: int = 100,
+    ) -> Generator[CourtListenerOpinion, None, None]:
+        """Get opinions within a date range."""
         params = {
-            "filed_after": filed_after.isoformat(),
-            "page_size": min(limit, 100),
+            "page_size": min(page_size, 100),
             "order_by": "-date_filed",
         }
 
         if court:
             params["court"] = court
+        if filed_after:
+            params["filed_after"] = filed_after.isoformat()
+        if filed_before:
+            params["filed_before"] = filed_before.isoformat()
 
-        response = self._client.get("/opinions/", params=params)
-        response.raise_for_status()
+        remaining = limit if limit is not None else None
+        url = "/opinions/"
+        while True:
+            response = self._get(url, params=params if url.startswith("/") else None)
+            payload = response.json()
 
-        for item in response.json().get("results", []):
-            opinion = self._parse_opinion(item)
+            for item in payload.get("results", []):
+                opinion = self._parse_opinion(item)
 
-            # Store in Azure if configured
-            if self.azure and opinion.plain_text:
-                self.azure.upload_json(
-                    opinion.model_dump(),
-                    "opinion",
-                    "courtlistener",
-                    str(opinion.id),
-                )
+                # Store in Azure if configured
+                if self.azure and opinion.plain_text:
+                    self.azure.upload_json(
+                        opinion.model_dump(),
+                        "opinion",
+                        "courtlistener",
+                        str(opinion.id),
+                    )
 
-            yield opinion
+                yield opinion
+
+                if remaining is not None:
+                    remaining -= 1
+                    if remaining <= 0:
+                        return
+
+            next_url = payload.get("next")
+            if not next_url:
+                break
+
+            url = next_url
+            params = None
 
     def get_circuit_opinions(
         self,
@@ -196,8 +249,7 @@ class CourtListenerClient:
             CourtListenerOpinion or None if not found
         """
         try:
-            response = self._client.get(f"/opinions/{opinion_id}/")
-            response.raise_for_status()
+            response = self._get(f"/opinions/{opinion_id}/")
             return self._parse_opinion(response.json())
         except httpx.HTTPStatusError:
             return None
@@ -212,8 +264,7 @@ class CourtListenerClient:
             CourtListenerCase or None if not found
         """
         try:
-            response = self._client.get(f"/clusters/{case_id}/")
-            response.raise_for_status()
+            response = self._get(f"/clusters/{case_id}/")
             return self._parse_case(response.json())
         except httpx.HTTPStatusError:
             return None

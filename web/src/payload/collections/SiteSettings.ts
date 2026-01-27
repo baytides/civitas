@@ -57,7 +57,7 @@ export const SiteSettings: GlobalConfig = {
       name: "featuredObjectiveIds",
       type: "json",
       admin: {
-        description: "Array of P2025 objective IDs to feature on homepage",
+        description: "Array of Project 2025 objective IDs to feature on homepage",
       },
     },
     {

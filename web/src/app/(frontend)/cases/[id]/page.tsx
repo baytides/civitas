@@ -151,11 +151,11 @@ export default function CaseDetailPage() {
             )}
           </div>
 
-          {/* Related P2025 Objectives */}
+          {/* Related Project 2025 Objectives */}
           {courtCase.linked_objectives.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Related P2025 Objectives</CardTitle>
+                <CardTitle>Related Project 2025 Objectives</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

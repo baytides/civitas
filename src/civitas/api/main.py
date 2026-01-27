@@ -67,6 +67,7 @@ def create_app(
     from civitas.api.routers import (
         cases,
         executive_orders,
+        legislation,
         objectives,
         resistance,
         search,
@@ -75,6 +76,7 @@ def create_app(
 
     app.include_router(objectives.router, prefix="/api/v1", tags=["objectives"])
     app.include_router(executive_orders.router, prefix="/api/v1", tags=["executive-orders"])
+    app.include_router(legislation.router, prefix="/api/v1", tags=["legislation"])
     app.include_router(cases.router, prefix="/api/v1", tags=["cases"])
     app.include_router(states.router, prefix="/api/v1", tags=["states"])
     app.include_router(resistance.router, prefix="/api/v1", tags=["resistance"])

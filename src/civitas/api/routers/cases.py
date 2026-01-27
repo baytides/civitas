@@ -5,12 +5,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
-from civitas.api.schemas import (
-    CourtCaseBase,
-    CourtCaseDetail,
-    CourtCaseList,
-    ObjectiveBase,
-)
+from civitas.api.schemas import CourtCaseBase, CourtCaseDetail, CourtCaseList
+from civitas.api.utils import objective_to_base
 from civitas.db.models import (
     CourtCase,
     LegalChallenge,
@@ -124,5 +120,5 @@ async def get_case(
         majority_author=case.majority_author,
         dissent_author=case.dissent_author,
         source_url=case.source_url,
-        linked_objectives=[ObjectiveBase.model_validate(obj) for obj in linked_objectives],
+        linked_objectives=[objective_to_base(obj) for obj in linked_objectives],
     )

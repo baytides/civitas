@@ -43,6 +43,7 @@ class ObjectiveBase(BaseModel):
     implementation_timeline: str
     status: str
     confidence: float
+    title: str
 
 
 class ObjectiveDetail(ObjectiveBase):
@@ -82,6 +83,37 @@ class ObjectiveMetadata(BaseModel):
     statuses: list[str]
     priorities: list[str]
     timelines: list[str]
+
+
+# =============================================================================
+# Legislation
+# =============================================================================
+
+
+class LegislationBase(BaseModel):
+    """Base schema for legislation."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    citation: str
+    title: str | None = None
+    jurisdiction: str
+    session: str
+    chamber: str
+    number: int
+    status: str | None = None
+    is_enacted: bool
+    introduced_date: date | None = None
+    last_action_date: date | None = None
+    enacted_date: date | None = None
+    source_url: str | None = None
+
+
+class LegislationList(PaginatedResponse):
+    """Paginated list of legislation."""
+
+    items: list[LegislationBase]
 
 
 # =============================================================================

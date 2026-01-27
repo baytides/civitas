@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from datetime import date
 from pathlib import Path
 
 import typer
@@ -156,6 +157,14 @@ def ingest_scotus(
 @ingest_app.command("courts")
 def ingest_courts(
     days: int = typer.Option(90, "--days", help="Days of opinions to fetch"),
+    limit: int = typer.Option(2000, "--limit", help="Maximum opinions to ingest"),
+    page_size: int = typer.Option(100, "--page-size", help="Page size per request (max 100)"),
+    from_date: str | None = typer.Option(
+        None, "--from-date", help="Start date (YYYY-MM-DD) for opinions"
+    ),
+    to_date: str | None = typer.Option(
+        None, "--to-date", help="End date (YYYY-MM-DD) for opinions"
+    ),
     azure: bool = typer.Option(False, "--azure", help="Store documents in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -177,7 +186,19 @@ def ingest_courts(
     counts = {"cases": 0}
 
     with CourtListenerClient(api_token=api_token, azure_client=azure_client) as client:
-        for opinion in client.get_recent_opinions(days=days, limit=200):
+        if from_date or to_date:
+            start = date.fromisoformat(from_date) if from_date else None
+            end = date.fromisoformat(to_date) if to_date else None
+            opinions = client.get_opinions(
+                filed_after=start,
+                filed_before=end,
+                limit=limit,
+                page_size=page_size,
+            )
+        else:
+            opinions = client.get_recent_opinions(days=days, limit=limit, page_size=page_size)
+
+        for opinion in opinions:
             with Session(engine) as session:
                 # Check if already exists
                 existing = (
@@ -379,6 +400,46 @@ def ingest_project2025(
                     updated += 1
             session.commit()
         console.print(f"  Updated to in_progress: {updated}")
+
+
+@ingest_app.command("project2025-matches")
+def update_project2025_matches(
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Refresh matched legislation/executive orders for all P2025 objectives."""
+    import json
+
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Project2025Policy, get_engine
+    from civitas.project2025 import Project2025Tracker
+
+    engine = get_engine(db_path)
+    updated = 0
+    matches = 0
+
+    with Session(engine) as session:
+        tracker = Project2025Tracker(session)
+        policy_ids = [row[0] for row in session.query(Project2025Policy.id).all()]
+        for policy_id in policy_ids:
+            result = tracker.update_policy_matches(policy_id)
+            if "error" in result:
+                continue
+            policy = session.get(Project2025Policy, policy_id)
+            if not policy:
+                continue
+            leg_ids = json.loads(policy.matching_legislation_ids or "[]")
+            eo_ids = json.loads(policy.matching_eo_ids or "[]")
+            if leg_ids or eo_ids:
+                matches += 1
+            if (leg_ids or eo_ids) and policy.status != "in_progress":
+                policy.status = "in_progress"
+                updated += 1
+        session.commit()
+
+    console.print("[bold green]Project 2025 match refresh complete![/bold green]")
+    console.print(f"  Policies with matches: {matches}")
+    console.print(f"  Updated to in_progress: {updated}")
 
 
 @ingest_app.command("uscode")
@@ -869,8 +930,6 @@ def ingest_state_legislators(
                         district=legislator.district,
                         party=party,
                         state=state.upper(),
-                        email=legislator.email,
-                        photo_url=legislator.image,
                     )
                     db_session.add(db_legislator)
                     db_session.commit()
@@ -894,7 +953,17 @@ def ingest_openstates_bulk(
     state: str | None = typer.Option(
         None, "-s", "--state", help="Filter by state code (e.g., 'ca', 'ny')"
     ),
-    limit: int = typer.Option(10000, "-n", "--limit", help="Max bills per state"),
+    limit: int | None = typer.Option(None, "-n", "--limit", help="Max bills per state"),
+    include_bills: bool = typer.Option(
+        True,
+        "--include-bills/--no-include-bills",
+        help="Include bills from bulk data",
+    ),
+    include_legislators: bool = typer.Option(
+        True,
+        "--include-legislators/--no-include-legislators",
+        help="Include state legislators from bulk data",
+    ),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Ingest state bills from OpenStates PostgreSQL bulk dump.
@@ -910,7 +979,7 @@ def ingest_openstates_bulk(
     """
     from sqlalchemy.orm import Session
 
-    from civitas.db.models import Legislation, get_engine
+    from civitas.db.models import Legislation, Legislator, get_engine
     from civitas.states import OpenStatesBulkIngester
 
     dump_file = Path(dump_path)
@@ -945,69 +1014,167 @@ def ingest_openstates_bulk(
                     console.print(f"Bills for {state.upper()}: {state_count:,}")
                 console.print()
 
-            # Ingest bills
-            for bill in ingester.get_bills(state=state, limit=limit):
-                try:
-                    with Session(engine) as db_session:
-                        # Check if already exists
-                        existing = (
-                            db_session.query(Legislation)
-                            .filter(Legislation.source_id == bill.id)
-                            .first()
-                        )
+            # Ingest bills (state-by-state to keep query sizes manageable)
+            if state:
+                states_to_ingest = [state.lower()]
+            else:
+                states_to_ingest = sorted(ingester.STATE_JURISDICTIONS.keys())
 
-                        if existing:
-                            counts["skipped"] += 1
-                            continue
+            def flush_batch(db_session: Session, batch: list) -> None:
+                if not batch:
+                    return
 
-                        # Extract state code from jurisdiction
-                        state_code = (
-                            bill.jurisdiction_id.split("/state:")[1].split("/")[0]
-                            if "/state:" in bill.jurisdiction_id
-                            else "us"
-                        )
+                bill_ids = [b.id for b in batch]
+                existing_ids = {
+                    row[0]
+                    for row in db_session.query(Legislation.source_id)
+                    .filter(Legislation.source_id.in_(bill_ids))
+                    .all()
+                }
 
-                        # Determine chamber from organization
-                        chamber = "assembly"  # Default
-                        if bill.from_organization_id:
-                            if "senate" in bill.from_organization_id.lower():
-                                chamber = "senate"
+                to_insert = []
+                for bill in batch:
+                    if bill.id in existing_ids:
+                        counts["skipped"] += 1
+                        continue
 
-                        # Parse bill number
-                        number = 0
-                        for part in bill.identifier.split():
-                            if part.isdigit():
-                                number = int(part)
-                                break
+                    # Extract state code from jurisdiction
+                    state_code = (
+                        bill.jurisdiction_id.split("/state:")[1].split("/")[0]
+                        if bill.jurisdiction_id and "/state:" in bill.jurisdiction_id
+                        else "us"
+                    )
 
-                        # Determine bill type
-                        bill_type = "bill"
-                        for cls in bill.classification:
-                            if "resolution" in cls.lower():
-                                bill_type = "resolution"
-                                break
+                    # Determine chamber from organization
+                    chamber = "assembly"  # Default
+                    if bill.from_organization_id and "senate" in bill.from_organization_id.lower():
+                        chamber = "senate"
 
-                        legislation = Legislation(
+                    # Parse bill number
+                    number = 0
+                    for part in bill.identifier.split():
+                        if part.isdigit():
+                            number = int(part)
+                            break
+
+                    # Determine bill type
+                    bill_type = "bill"
+                    for cls in bill.classification:
+                        if "resolution" in cls.lower():
+                            bill_type = "resolution"
+                            break
+
+                    to_insert.append(
+                        Legislation(
                             jurisdiction=state_code.lower(),
                             source_id=bill.id,
                             legislation_type=bill_type,
                             chamber=chamber,
                             number=number,
                             session=bill.session,
+                            citation=bill.identifier or bill.id,
                             title=bill.title[:1000] if bill.title else None,
                             is_enacted=False,
                         )
-                        db_session.add(legislation)
-                        db_session.commit()
-                        counts["bills"] += 1
+                    )
 
-                        if counts["bills"] % 1000 == 0:
-                            console.print(f"  Processed {counts['bills']:,} bills...")
+                if not to_insert:
+                    return
 
+                try:
+                    db_session.add_all(to_insert)
+                    db_session.commit()
+                    counts["bills"] += len(to_insert)
+                    if counts["bills"] % 1000 == 0:
+                        console.print(f"  Processed {counts['bills']:,} bills...")
                 except Exception as e:
-                    counts["errors"] += 1
+                    db_session.rollback()
+                    counts["errors"] += len(to_insert)
                     if counts["errors"] <= 5:
                         console.print(f"[yellow]Error: {e}[/yellow]")
+                finally:
+                    db_session.expunge_all()
+
+            batch_size = 1000
+            if include_bills:
+                for state_code in states_to_ingest:
+                    with Session(engine) as db_session:
+                        batch: list = []
+                        for bill in ingester.get_bills(state=state_code, limit=limit):
+                            batch.append(bill)
+                            if len(batch) >= batch_size:
+                                flush_batch(db_session, batch)
+                                batch = []
+                        flush_batch(db_session, batch)
+
+            if include_legislators:
+                console.print("\n[dim]Ingesting legislators...[/dim]")
+
+                def flush_legislator_batch(db_session: Session, batch: list) -> None:
+                    if not batch:
+                        return
+
+                    person_ids = [p.id for p in batch]
+                    existing_ids = {
+                        row[0]
+                        for row in db_session.query(Legislator.source_id)
+                        .filter(Legislator.source_id.in_(person_ids))
+                        .all()
+                    }
+
+                    to_insert = []
+                    for person in batch:
+                        if person.id in existing_ids:
+                            counts["skipped"] += 1
+                            continue
+
+                        state_code = (
+                            person.jurisdiction_id.split("/state:")[1].split("/")[0]
+                            if person.jurisdiction_id and "/state:" in person.jurisdiction_id
+                            else None
+                        )
+                        party = person.party or ""
+                        party_code = (
+                            "D"
+                            if "democrat" in party.lower()
+                            else ("R" if "republican" in party.lower() else "I")
+                        )
+
+                        to_insert.append(
+                            Legislator(
+                                jurisdiction=(state_code or "us").lower(),
+                                source_id=person.id,
+                                full_name=person.name,
+                                chamber=None,
+                                district=None,
+                                party=party_code,
+                                state=state_code.upper() if state_code else None,
+                            )
+                        )
+
+                    if not to_insert:
+                        return
+
+                    try:
+                        db_session.add_all(to_insert)
+                        db_session.commit()
+                    except Exception as e:
+                        db_session.rollback()
+                        counts["errors"] += len(to_insert)
+                        if counts["errors"] <= 5:
+                            console.print(f"[yellow]Error: {e}[/yellow]")
+                    finally:
+                        db_session.expunge_all()
+
+                for state_code in states_to_ingest:
+                    with Session(engine) as db_session:
+                        batch = []
+                        for person in ingester.get_legislators(state=state_code, limit=None):
+                            batch.append(person)
+                            if len(batch) >= batch_size:
+                                flush_legislator_batch(db_session, batch)
+                                batch = []
+                        flush_legislator_batch(db_session, batch)
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")

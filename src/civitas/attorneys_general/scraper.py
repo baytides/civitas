@@ -12,8 +12,8 @@ This scraper collects:
 
 import json
 import re
-from dataclasses import dataclass, field
 from collections.abc import Generator
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import urljoin

@@ -6,11 +6,14 @@
   "assets": {
     "directory": ".open-next/assets"
   },
+  "routes": [
+    { "pattern": "projectcivitas.com/*", "zone_name": "projectcivitas.com" },
+    { "pattern": "www.projectcivitas.com/*", "zone_name": "projectcivitas.com" }
+  ],
   "kv_namespaces": [
     {
       "binding": "NEXT_CACHE_KV",
-      // Create a KV namespace and paste the ID here.
-      "id": "REPLACE_WITH_KV_ID"
+      "id": "d3c8fe26b8e646b090c3d8310a4a79c7"
     }
   ]
 }

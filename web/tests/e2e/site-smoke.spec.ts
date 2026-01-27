@@ -35,7 +35,7 @@ test("states detail page loads", async ({ page }) => {
   await page.goto("/states/ak", { waitUntil: "networkidle" });
   await expect(page.getByText("This page could not be found.")).toHaveCount(0);
 
-  const alaskaHeading = page.getByRole("heading", { name: /Alaska/i });
+  const alaskaHeading = page.getByRole("heading", { name: "Alaska", exact: true });
   const fetchError = page.getByText(/Failed to connect to server|Failed to load state data/i);
   await expect(alaskaHeading.or(fetchError)).toBeVisible();
 

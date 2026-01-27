@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -167,13 +166,11 @@ function ResistanceContent() {
   const [blockedPolicies, setBlockedPolicies] = useState<BlockedPolicy[]>([]);
   const [highPriorityObjectives, setHighPriorityObjectives] = useState<APIObjective[]>([]);
   const [meta, setMeta] = useState<ResistanceMeta | null>(null);
-  const [loading, setLoading] = useState(true);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
     async function fetchInitialData() {
-      setLoading(true);
       try {
         // Fetch progress summary
         const progressRes = await fetch(`${API_BASE}/resistance/progress`);
@@ -201,7 +198,6 @@ function ResistanceContent() {
       } catch (err) {
         console.error("Failed to fetch resistance data:", err);
       }
-      setLoading(false);
     }
 
     fetchInitialData();

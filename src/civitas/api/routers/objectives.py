@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-
 from time import time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request

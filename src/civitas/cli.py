@@ -552,9 +552,7 @@ def ingest_constitutions(
 def ingest_scrape_state(
     state: str = typer.Argument(..., help="Two-letter state code (e.g., 'ca')"),
     session: str | None = typer.Option(None, "-s", "--session", help="Session identifier"),
-    chamber: str | None = typer.Option(
-        None, "-c", "--chamber", help="Chamber (upper/lower)"
-    ),
+    chamber: str | None = typer.Option(None, "-c", "--chamber", help="Chamber (upper/lower)"),
     limit: int = typer.Option(500, "-n", "--limit", help="Max bills to scrape"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -576,6 +574,7 @@ def ingest_scrape_state(
     scrapers = {}
     try:
         from civitas.states.scrapers import CaliforniaScraper
+
         scrapers["ca"] = CaliforniaScraper
     except ImportError:
         pass
@@ -863,9 +862,7 @@ def ingest_state_legislators(
 
 @ingest_app.command("openstates-bulk")
 def ingest_openstates_bulk(
-    dump_path: str = typer.Argument(
-        ..., help="Path to OpenStates PostgreSQL dump file"
-    ),
+    dump_path: str = typer.Argument(..., help="Path to OpenStates PostgreSQL dump file"),
     state: str | None = typer.Option(
         None, "-s", "--state", help="Filter by state code (e.g., 'ca', 'ny')"
     ),
@@ -936,8 +933,11 @@ def ingest_openstates_bulk(
                             continue
 
                         # Extract state code from jurisdiction
-                        state_code = bill.jurisdiction_id.split("/state:")[1].split("/")[0] \
-                            if "/state:" in bill.jurisdiction_id else "us"
+                        state_code = (
+                            bill.jurisdiction_id.split("/state:")[1].split("/")[0]
+                            if "/state:" in bill.jurisdiction_id
+                            else "us"
+                        )
 
                         # Determine chamber from organization
                         chamber = "assembly"  # Default

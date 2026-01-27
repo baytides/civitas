@@ -12,6 +12,12 @@ interface ThreatMeterProps {
   label?: string;
 }
 
+interface ObjectiveStatsResponse {
+  total?: number;
+  by_status?: Record<string, number>;
+  completion_percentage?: number;
+}
+
 const levelConfig = {
   critical: {
     color: "bg-red-500",
@@ -150,10 +156,25 @@ export function DynamicThreatMeter() {
   useEffect(() => {
     async function fetchProgress() {
       try {
-        const response = await fetch(`${API_BASE}/objectives/stats`);
+        const response = await fetch(`${API_BASE}/objectives/stats`, {
+          cache: "no-store",
+        });
         if (response.ok) {
-          const data = await response.json();
-          setProgress(Math.round(data.completion_percentage || 0));
+          const data: ObjectiveStatsResponse = await response.json();
+          if (typeof data.completion_percentage === "number") {
+            setProgress(Math.round(data.completion_percentage));
+          } else {
+            const total = data.total || 0;
+            const byStatus = data.by_status || {};
+            const completed = byStatus.completed || 0;
+            const enacted = byStatus.enacted || 0;
+            const inProgress = byStatus.in_progress || 0;
+            const derived =
+              total > 0
+                ? ((completed + enacted + inProgress * 0.5) / total) * 100
+                : 0;
+            setProgress(Math.round(derived));
+          }
         } else {
           setProgress(0);
         }

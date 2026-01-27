@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from time import time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -75,6 +76,29 @@ async def get_objective_stats(
     db: Session = Depends(get_db),
 ) -> ObjectiveStats:
     """Get aggregated statistics for objectives."""
+
+    def normalize_status(value: str | None) -> str:
+        if not value:
+            return "unknown"
+        normalized = re.sub(r"[\s\-]+", "_", value.strip().lower())
+        status_map = {
+            "inprogress": "in_progress",
+            "in_progress": "in_progress",
+            "inprogressing": "in_progress",
+            "in_progressing": "in_progress",
+            "completed": "completed",
+            "complete": "completed",
+            "enacted": "completed",
+            "implemented": "completed",
+            "blocked": "blocked",
+            "reversed": "reversed",
+            "proposed": "proposed",
+            "draft": "proposed",
+            "planned": "proposed",
+            "pending": "proposed",
+        }
+        return status_map.get(normalized, normalized)
+
     total = db.query(Project2025Policy).count()
 
     # By status
@@ -83,7 +107,15 @@ async def get_objective_stats(
         .group_by(Project2025Policy.status)
         .all()
     )
-    by_status = {status: count for status, count in status_counts}
+    by_status: dict[str, int] = {}
+    for status, count in status_counts:
+        normalized = normalize_status(status)
+        by_status[normalized] = by_status.get(normalized, 0) + count
+
+    if "completed" in by_status and "enacted" not in by_status:
+        by_status["enacted"] = by_status["completed"]
+    if "enacted" in by_status and "completed" not in by_status:
+        by_status["completed"] = by_status["enacted"]
 
     # By category
     category_counts = (
@@ -111,8 +143,11 @@ async def get_objective_stats(
 
     # Calculate completion percentage
     completed = by_status.get("completed", 0)
+    enacted = by_status.get("enacted", 0)
     in_progress = by_status.get("in_progress", 0)
-    completion_percentage = ((completed + in_progress * 0.5) / total * 100) if total > 0 else 0
+    completion_percentage = (
+        ((completed + enacted + in_progress * 0.5) / total * 100) if total > 0 else 0
+    )
 
     return ObjectiveStats(
         total=total,
@@ -135,22 +170,13 @@ async def get_objective_metadata(
         return _METADATA_CACHE[1]
 
     categories = (
-        db.query(Project2025Policy.category)
-        .distinct()
-        .order_by(Project2025Policy.category)
-        .all()
+        db.query(Project2025Policy.category).distinct().order_by(Project2025Policy.category).all()
     )
     statuses = (
-        db.query(Project2025Policy.status)
-        .distinct()
-        .order_by(Project2025Policy.status)
-        .all()
+        db.query(Project2025Policy.status).distinct().order_by(Project2025Policy.status).all()
     )
     priorities = (
-        db.query(Project2025Policy.priority)
-        .distinct()
-        .order_by(Project2025Policy.priority)
-        .all()
+        db.query(Project2025Policy.priority).distinct().order_by(Project2025Policy.priority).all()
     )
     timelines = (
         db.query(Project2025Policy.implementation_timeline)

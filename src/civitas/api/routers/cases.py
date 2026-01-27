@@ -106,9 +106,7 @@ async def get_case(
         policy_ids.update({row[0] for row in linked_policy_rows if row[0]})
 
     linked_objectives = (
-        db.query(Project2025Policy)
-        .filter(Project2025Policy.id.in_(policy_ids))
-        .all()
+        db.query(Project2025Policy).filter(Project2025Policy.id.in_(policy_ids)).all()
         if policy_ids
         else []
     )

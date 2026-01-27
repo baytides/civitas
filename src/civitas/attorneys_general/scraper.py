@@ -69,16 +69,12 @@ class AGLitigationScraper:
     # Known database URLs from the site (corrected paths)
     DATABASES = {
         "federal_lawsuits": (
-            "/multistate-lawsuits-vs-the-federal-government/"
-            "list-of-lawsuits-1980-present/"
+            "/multistate-lawsuits-vs-the-federal-government/list-of-lawsuits-1980-present/"
         ),
         "scotus_amicus": "/amicus-briefs-u-s-supreme-court/multistate-amicus-briefs/",
-        "lower_court_amicus": (
-            "/amicus-briefs-lower-courts-2/amicus-briefs-lower-courts/"
-        ),
+        "lower_court_amicus": ("/amicus-briefs-lower-courts-2/amicus-briefs-lower-courts/"),
         "settlements": (
-            "/settlements-and-enforcement-actions/"
-            "searchable-list-of-settlements-1980-present/"
+            "/settlements-and-enforcement-actions/searchable-list-of-settlements-1980-present/"
         ),
         "letters": (
             "/letters-and-formal-comments/"
@@ -89,23 +85,62 @@ class AGLitigationScraper:
 
     # State name to code mapping
     STATE_CODES = {
-        "Alabama": "AL", "Alaska": "AK", "Arizona": "AZ", "Arkansas": "AR",
-        "California": "CA", "Colorado": "CO", "Connecticut": "CT",
-        "Delaware": "DE", "Florida": "FL", "Georgia": "GA", "Hawaii": "HI",
-        "Idaho": "ID", "Illinois": "IL", "Indiana": "IN", "Iowa": "IA",
-        "Kansas": "KS", "Kentucky": "KY", "Louisiana": "LA", "Maine": "ME",
-        "Maryland": "MD", "Massachusetts": "MA", "Michigan": "MI",
-        "Minnesota": "MN", "Mississippi": "MS", "Missouri": "MO",
-        "Montana": "MT", "Nebraska": "NE", "Nevada": "NV",
-        "New Hampshire": "NH", "New Jersey": "NJ", "New Mexico": "NM",
-        "New York": "NY", "North Carolina": "NC", "North Dakota": "ND",
-        "Ohio": "OH", "Oklahoma": "OK", "Oregon": "OR", "Pennsylvania": "PA",
-        "Rhode Island": "RI", "South Carolina": "SC", "South Dakota": "SD",
-        "Tennessee": "TN", "Texas": "TX", "Utah": "UT", "Vermont": "VT",
-        "Virginia": "VA", "Washington": "WA", "West Virginia": "WV",
-        "Wisconsin": "WI", "Wyoming": "WY", "District of Columbia": "DC",
-        "Puerto Rico": "PR", "Guam": "GU", "Virgin Islands": "VI",
-        "American Samoa": "AS", "Northern Mariana Islands": "MP",
+        "Alabama": "AL",
+        "Alaska": "AK",
+        "Arizona": "AZ",
+        "Arkansas": "AR",
+        "California": "CA",
+        "Colorado": "CO",
+        "Connecticut": "CT",
+        "Delaware": "DE",
+        "Florida": "FL",
+        "Georgia": "GA",
+        "Hawaii": "HI",
+        "Idaho": "ID",
+        "Illinois": "IL",
+        "Indiana": "IN",
+        "Iowa": "IA",
+        "Kansas": "KS",
+        "Kentucky": "KY",
+        "Louisiana": "LA",
+        "Maine": "ME",
+        "Maryland": "MD",
+        "Massachusetts": "MA",
+        "Michigan": "MI",
+        "Minnesota": "MN",
+        "Mississippi": "MS",
+        "Missouri": "MO",
+        "Montana": "MT",
+        "Nebraska": "NE",
+        "Nevada": "NV",
+        "New Hampshire": "NH",
+        "New Jersey": "NJ",
+        "New Mexico": "NM",
+        "New York": "NY",
+        "North Carolina": "NC",
+        "North Dakota": "ND",
+        "Ohio": "OH",
+        "Oklahoma": "OK",
+        "Oregon": "OR",
+        "Pennsylvania": "PA",
+        "Rhode Island": "RI",
+        "South Carolina": "SC",
+        "South Dakota": "SD",
+        "Tennessee": "TN",
+        "Texas": "TX",
+        "Utah": "UT",
+        "Vermont": "VT",
+        "Virginia": "VA",
+        "Washington": "WA",
+        "West Virginia": "WV",
+        "Wisconsin": "WI",
+        "Wyoming": "WY",
+        "District of Columbia": "DC",
+        "Puerto Rico": "PR",
+        "Guam": "GU",
+        "Virgin Islands": "VI",
+        "American Samoa": "AS",
+        "Northern Mariana Islands": "MP",
     }
 
     def __init__(self, timeout: float = 30.0):
@@ -121,9 +156,7 @@ class AGLitigationScraper:
         self._client = httpx.Client(
             timeout=self.timeout,
             follow_redirects=True,
-            headers={
-                "User-Agent": "Civitas/1.0 (civic research; contact@projectcivitas.com)"
-            },
+            headers={"User-Agent": "Civitas/1.0 (civic research; contact@projectcivitas.com)"},
         )
         return self
 
@@ -162,8 +195,8 @@ class AGLitigationScraper:
         formats = [
             "%B %d, %Y",  # January 15, 2025
             "%b %d, %Y",  # Jan 15, 2025
-            "%m/%d/%Y",   # 01/15/2025
-            "%Y-%m-%d",   # 2025-01-15
+            "%m/%d/%Y",  # 01/15/2025
+            "%Y-%m-%d",  # 2025-01-15
         ]
 
         for fmt in formats:
@@ -206,9 +239,7 @@ class AGLitigationScraper:
                             filing_date=self._parse_date(
                                 cells[2].get_text() if len(cells) > 2 else ""
                             ),
-                            source_url=urljoin(
-                                self.BASE_URL, self.DATABASES["federal_lawsuits"]
-                            ),
+                            source_url=urljoin(self.BASE_URL, self.DATABASES["federal_lawsuits"]),
                         )
         else:
             for i, entry in enumerate(entries):
@@ -224,9 +255,7 @@ class AGLitigationScraper:
                     title=title,
                     states_involved=states,
                     description=entry.get_text(strip=True)[:500],
-                    source_url=urljoin(
-                        self.BASE_URL, self.DATABASES["federal_lawsuits"]
-                    ),
+                    source_url=urljoin(self.BASE_URL, self.DATABASES["federal_lawsuits"]),
                 )
 
     def get_scotus_amicus(self) -> Generator[AGAmicusBrief, None, None]:
@@ -250,12 +279,8 @@ class AGLitigationScraper:
                         states_involved=self._parse_states(
                             cells[1].get_text() if len(cells) > 1 else ""
                         ),
-                        filing_date=self._parse_date(
-                            cells[2].get_text() if len(cells) > 2 else ""
-                        ),
-                        source_url=urljoin(
-                            self.BASE_URL, self.DATABASES["scotus_amicus"]
-                        ),
+                        filing_date=self._parse_date(cells[2].get_text() if len(cells) > 2 else ""),
+                        source_url=urljoin(self.BASE_URL, self.DATABASES["scotus_amicus"]),
                     )
 
     def get_current_ags(self) -> dict[str, dict]:
@@ -313,9 +338,7 @@ class AGLitigationScraper:
                             "title": lawsuit.title,
                             "states": lawsuit.states_involved,
                             "filing_date": (
-                                lawsuit.filing_date.isoformat()
-                                if lawsuit.filing_date
-                                else None
+                                lawsuit.filing_date.isoformat() if lawsuit.filing_date else None
                             ),
                             "description": lawsuit.description,
                         }

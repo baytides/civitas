@@ -72,7 +72,9 @@ export function DynamicCategoryBreakdown() {
   useEffect(() => {
     async function fetchCategoryStats() {
       try {
-        const response = await fetch(`${API_BASE}/objectives/stats`);
+        const response = await fetch(`${API_BASE}/objectives/stats`, {
+          cache: "no-store",
+        });
         if (response.ok) {
           const stats: ObjectiveStats = await response.json();
 

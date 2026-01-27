@@ -1,5 +1,19 @@
 import type { Metadata } from "next";
+import Script from "next/script";
+import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
+
+const headingFont = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+const bodyFont = Source_Sans_3({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Civitas - Protecting American Democracy",
@@ -37,7 +51,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans">{children}</body>
+      <body
+        className={`${bodyFont.variable} ${headingFont.variable} min-h-screen font-sans`}
+      >
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+(() => {
+  const key = "civitas-theme";
+  const stored = localStorage.getItem(key);
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const isDark = stored ? stored === "dark" : prefersDark;
+  document.documentElement.classList.toggle("dark", isDark);
+})();
+            `,
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

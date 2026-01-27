@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const navigation = [
   { name: "Dashboard", href: "/" },
@@ -100,6 +101,8 @@ export function Header() {
               <span className="text-xs">⌘</span>K
             </kbd>
           </Button>
+
+          <ThemeToggle />
 
           {/* Threat Level Indicator */}
           <div className="hidden sm:flex items-center space-x-2">

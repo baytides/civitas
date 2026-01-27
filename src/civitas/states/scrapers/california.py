@@ -43,14 +43,14 @@ class CaliforniaScraper(StateScraper):
 
     # Bill type prefixes
     BILL_TYPES = {
-        "AB": ("bill", "lower"),      # Assembly Bill
-        "SB": ("bill", "upper"),      # Senate Bill
+        "AB": ("bill", "lower"),  # Assembly Bill
+        "SB": ("bill", "upper"),  # Senate Bill
         "ACR": ("resolution", "lower"),  # Assembly Concurrent Resolution
         "SCR": ("resolution", "upper"),  # Senate Concurrent Resolution
         "AJR": ("resolution", "lower"),  # Assembly Joint Resolution
         "SJR": ("resolution", "upper"),  # Senate Joint Resolution
-        "AR": ("resolution", "lower"),   # Assembly Resolution
-        "SR": ("resolution", "upper"),   # Senate Resolution
+        "AR": ("resolution", "lower"),  # Assembly Resolution
+        "SR": ("resolution", "upper"),  # Senate Resolution
         "ACA": ("constitutional_amendment", "lower"),
         "SCA": ("constitutional_amendment", "upper"),
     }

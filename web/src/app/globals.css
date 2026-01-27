@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
   --card: 0 0% 100%;
@@ -35,6 +36,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
   --card: 222.2 84% 4.9%;
@@ -62,6 +64,25 @@
 
 body {
   @apply bg-background text-foreground;
+  background-image:
+    radial-gradient(circle at top, hsl(210 40% 96%) 0%, transparent 55%),
+    radial-gradient(circle at 20% 20%, hsl(220 100% 97%) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(circle at top, hsl(222 40% 18%) 0%, transparent 55%),
+    radial-gradient(circle at 20% 20%, hsl(220 35% 14%) 0%, transparent 40%);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), var(--font-sans), sans-serif;
 }
 
 /* Threat level indicators */

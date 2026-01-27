@@ -24,7 +24,9 @@ export function DashboardDataLoader() {
         // Fetch executive orders count
         let eoCount = 0;
         try {
-          const eoResponse = await fetch(`${API_BASE}/executive-orders?per_page=1`);
+          const eoResponse = await fetch(`${API_BASE}/executive-orders?per_page=1`, {
+            cache: "no-store",
+          });
           if (eoResponse.ok) {
             const eoData = await eoResponse.json();
             eoCount = eoData.total || 0;
@@ -36,7 +38,9 @@ export function DashboardDataLoader() {
         // Fetch P2025 objectives/policies count from /objectives/stats
         let policiesCount = 0;
         try {
-          const policiesResponse = await fetch(`${API_BASE}/objectives/stats`);
+          const policiesResponse = await fetch(`${API_BASE}/objectives/stats`, {
+            cache: "no-store",
+          });
           if (policiesResponse.ok) {
             const policiesData = await policiesResponse.json();
             policiesCount = policiesData.total || 0;
@@ -48,7 +52,9 @@ export function DashboardDataLoader() {
         // Fetch states count
         let statesCount = 0;
         try {
-          const statesResponse = await fetch(`${API_BASE}/states`);
+          const statesResponse = await fetch(`${API_BASE}/states`, {
+            cache: "no-store",
+          });
           if (statesResponse.ok) {
             const statesData = await statesResponse.json();
             statesCount = statesData.items?.length || 0;
@@ -60,7 +66,9 @@ export function DashboardDataLoader() {
         // Fetch court cases count from /cases
         let courtCasesCount = 0;
         try {
-          const casesResponse = await fetch(`${API_BASE}/cases?per_page=1`);
+          const casesResponse = await fetch(`${API_BASE}/cases?per_page=1`, {
+            cache: "no-store",
+          });
           if (casesResponse.ok) {
             const casesData = await casesResponse.json();
             courtCasesCount = casesData.total || 0;
@@ -126,7 +134,9 @@ export function RecentExecutiveOrders({ limit = 5 }: { limit?: number }) {
   useEffect(() => {
     async function fetchOrders() {
       try {
-        const response = await fetch(`${API_BASE}/executive-orders?per_page=${limit}`);
+        const response = await fetch(`${API_BASE}/executive-orders?per_page=${limit}`, {
+          cache: "no-store",
+        });
         const data = await response.json();
         setOrders(data.items || []);
       } catch {

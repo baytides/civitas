@@ -188,7 +188,8 @@ class OpenStatesBulkIngester:
             result = subprocess.run(
                 [
                     "pg_restore",
-                    "-d", self.temp_db_name,
+                    "-d",
+                    self.temp_db_name,
                     "--no-owner",
                     "--no-privileges",
                     str(self.dump_path),
@@ -212,11 +213,14 @@ class OpenStatesBulkIngester:
         result = subprocess.run(
             [
                 "psql",
-                "-d", self.temp_db_name,
+                "-d",
+                self.temp_db_name,
                 "-t",  # Tuples only
                 "-A",  # Unaligned output
-                "-F", "\t",  # Tab separator
-                "-c", sql,
+                "-F",
+                "\t",  # Tab separator
+                "-c",
+                sql,
             ],
             capture_output=True,
             text=True,
@@ -283,10 +287,14 @@ class OpenStatesBulkIngester:
         result = subprocess.run(
             [
                 "psql",
-                "-d", self.temp_db_name,
-                "-t", "-A",
-                "-F", "|||",  # Use unlikely separator
-                "-c", sql,
+                "-d",
+                self.temp_db_name,
+                "-t",
+                "-A",
+                "-F",
+                "|||",  # Use unlikely separator
+                "-c",
+                sql,
             ],
             capture_output=True,
             text=True,
@@ -365,10 +373,14 @@ class OpenStatesBulkIngester:
         result = subprocess.run(
             [
                 "psql",
-                "-d", self.temp_db_name,
-                "-t", "-A",
-                "-F", "|||",
-                "-c", sql,
+                "-d",
+                self.temp_db_name,
+                "-t",
+                "-A",
+                "-F",
+                "|||",
+                "-c",
+                sql,
             ],
             capture_output=True,
             text=True,
@@ -422,10 +434,14 @@ class OpenStatesBulkIngester:
         result = subprocess.run(
             [
                 "psql",
-                "-d", self.temp_db_name,
-                "-t", "-A",
-                "-F", "|",
-                "-c", sql,
+                "-d",
+                self.temp_db_name,
+                "-t",
+                "-A",
+                "-F",
+                "|",
+                "-c",
+                sql,
             ],
             capture_output=True,
             text=True,
@@ -450,9 +466,12 @@ class OpenStatesBulkIngester:
         result = subprocess.run(
             [
                 "psql",
-                "-d", self.temp_db_name,
-                "-t", "-A",
-                "-c", "SELECT COUNT(*) FROM opencivicdata_person",
+                "-d",
+                self.temp_db_name,
+                "-t",
+                "-A",
+                "-c",
+                "SELECT COUNT(*) FROM opencivicdata_person",
             ],
             capture_output=True,
             text=True,

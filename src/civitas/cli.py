@@ -842,6 +842,51 @@ def ingest_us_constitution(
             console.print("  [cyan]Stored in Azure[/cyan]")
 
 
+@ingest_app.command("attorneys-general")
+def ingest_attorneys_general(
+    azure: bool = typer.Option(False, "--azure", help="Store in Azure Blob Storage"),
+    output_dir: str = typer.Option(
+        "data/attorneys_general", "--output", help="Output directory for scraped data"
+    ),
+):
+    """Scrape state attorneys general litigation data.
+
+    Data sourced from attorneysgeneral.org (Dr. Paul Nolette, Marquette University).
+    Includes multi-state federal lawsuits, SCOTUS amicus briefs, and AG information.
+    """
+    from pathlib import Path
+
+    from civitas.attorneys_general import AGLitigationScraper
+    from civitas.storage import AzureStorageClient
+
+    azure_client = AzureStorageClient() if azure else None
+    output_path = Path(output_dir)
+
+    console.print("[bold blue]Scraping State AG litigation data...[/bold blue]")
+    console.print("Source: attorneysgeneral.org")
+
+    with AGLitigationScraper() as scraper:
+        counts = scraper.save_all(output_path)
+
+        console.print("\n[bold green]AG data scraping complete![/bold green]")
+        console.print(f"  Federal Lawsuits: {counts.get('federal_lawsuits', 0)}")
+        console.print(f"  SCOTUS Amicus Briefs: {counts.get('scotus_amicus', 0)}")
+        console.print(f"  Attorneys General: {counts.get('attorneys_general', 0)}")
+        console.print(f"  Output: {output_path.absolute()}")
+
+        # Upload to Azure if configured
+        if azure_client:
+            for json_file in output_path.glob("*.json"):
+                with open(json_file, "rb") as f:
+                    azure_client.upload_document(
+                        f.read(),
+                        "attorneys_general",
+                        json_file.stem,
+                        "json",
+                    )
+            console.print("  [cyan]Uploaded to Azure Blob Storage[/cyan]")
+
+
 # =============================================================================
 # Court Case Commands
 # =============================================================================

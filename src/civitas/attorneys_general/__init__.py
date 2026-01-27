@@ -1,0 +1,12 @@
+"""State Attorneys General litigation tracking.
+
+Data Sources:
+- https://attorneysgeneral.org/ - Multi-state lawsuits database
+- Individual state AG websites
+
+Credits: Dr. Paul Nolette, Marquette University
+"""
+
+from .scraper import AGLitigationScraper, AGLawsuit, AGAmicusBrief
+
+__all__ = ["AGLitigationScraper", "AGLawsuit", "AGAmicusBrief"]

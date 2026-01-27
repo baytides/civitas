@@ -13,7 +13,7 @@ from civitas.api.schemas import (
     StateLegislatorBase,
     StateList,
 )
-from civitas.db.models import Legislation, Legislator
+from civitas.db.models import Legislation, Legislator, StateResistanceAction
 from civitas.states import OpenStatesClient
 
 router = APIRouter()
@@ -49,6 +49,14 @@ async def list_states(
     )
     legislator_count_map = {j: c for j, c in legislator_counts}
 
+    # Get resistance action counts by state
+    resistance_counts = (
+        db.query(StateResistanceAction.state_code, func.count(StateResistanceAction.id))
+        .group_by(StateResistanceAction.state_code)
+        .all()
+    )
+    resistance_count_map = {code: count for code, count in resistance_counts}
+
     # Build state list
     items = []
     for code, name in STATE_NAMES.items():
@@ -58,7 +66,7 @@ async def list_states(
                 name=name,
                 bill_count=bill_count_map.get(code, 0),
                 legislator_count=legislator_count_map.get(code, 0),
-                resistance_action_count=0,  # TODO: Add resistance actions
+                resistance_action_count=resistance_count_map.get(code, 0),
             )
         )
 
@@ -82,6 +90,9 @@ async def get_state(
     # Get counts
     bill_count = db.query(Legislation).filter(Legislation.jurisdiction == code).count()
     legislator_count = db.query(Legislator).filter(Legislator.jurisdiction == code).count()
+    resistance_action_count = (
+        db.query(StateResistanceAction).filter(StateResistanceAction.state_code == code).count()
+    )
 
     # Get recent bills
     recent_bills = (
@@ -106,7 +117,7 @@ async def get_state(
         name=STATE_NAMES[code],
         bill_count=bill_count,
         legislator_count=legislator_count,
-        resistance_action_count=0,
+        resistance_action_count=resistance_action_count,
         recent_bills=[
             StateBillBase(
                 id=b.id,

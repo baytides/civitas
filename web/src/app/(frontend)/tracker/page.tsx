@@ -35,34 +35,12 @@ interface ObjectivesResponse {
   items: APIObjective[];
 }
 
-const categories = [
-  { slug: "all", name: "All Categories" },
-  { slug: "immigration", name: "Immigration" },
-  { slug: "environment", name: "Environment" },
-  { slug: "healthcare", name: "Healthcare" },
-  { slug: "education", name: "Education" },
-  { slug: "civil_rights", name: "Civil Rights" },
-  { slug: "government_structure", name: "Government" },
-  { slug: "labor", name: "Labor" },
-  { slug: "economy", name: "Economy" },
-  { slug: "defense", name: "Defense" },
-  { slug: "justice", name: "Justice" },
-];
-
-const statuses = [
-  { slug: "all", name: "All Statuses" },
-  { slug: "proposed", name: "Proposed" },
-  { slug: "in_progress", name: "In Progress" },
-  { slug: "enacted", name: "Enacted" },
-  { slug: "blocked", name: "Blocked" },
-];
-
-const priorities = [
-  { slug: "all", name: "All Priorities" },
-  { slug: "high", name: "High Priority" },
-  { slug: "medium", name: "Medium Priority" },
-  { slug: "low", name: "Low Priority" },
-];
+interface ObjectiveMetadata {
+  categories: string[];
+  statuses: string[];
+  priorities: string[];
+  timelines: string[];
+}
 
 function TrackerContent() {
   const searchParams = useSearchParams();
@@ -74,11 +52,27 @@ function TrackerContent() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [metadata, setMetadata] = useState<ObjectiveMetadata | null>(null);
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedPriority, setSelectedPriority] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    async function fetchMetadata() {
+      try {
+        const response = await fetch(`${API_BASE}/objectives/metadata`);
+        if (!response.ok) return;
+        const data: ObjectiveMetadata = await response.json();
+        setMetadata(data);
+      } catch (err) {
+        console.error("Failed to fetch objective metadata:", err);
+      }
+    }
+
+    fetchMetadata();
+  }, []);
 
   useEffect(() => {
     async function fetchObjectives() {
@@ -134,6 +128,28 @@ function TrackerContent() {
     }
     return true;
   });
+
+  const categories = [
+    { slug: "all", name: "All Categories" },
+    ...(metadata?.categories ?? []).map((slug) => ({
+      slug,
+      name: snakeToTitle(slug),
+    })),
+  ];
+  const statuses = [
+    { slug: "all", name: "All Statuses" },
+    ...(metadata?.statuses ?? []).map((slug) => ({
+      slug,
+      name: snakeToTitle(slug),
+    })),
+  ];
+  const priorities = [
+    { slug: "all", name: "All Priorities" },
+    ...(metadata?.priorities ?? []).map((slug) => ({
+      slug,
+      name: snakeToTitle(slug),
+    })),
+  ];
 
   return (
     <div className="container py-8">

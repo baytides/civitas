@@ -14,6 +14,11 @@ import { SiteSettings } from "./collections/SiteSettings";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
+const payloadSecret = process.env.PAYLOAD_SECRET;
+
+if (!payloadSecret) {
+  throw new Error("PAYLOAD_SECRET is required");
+}
 
 export default buildConfig({
   admin: {
@@ -25,7 +30,7 @@ export default buildConfig({
   collections: [Articles, ActionAlerts, Pages, Media, Users],
   globals: [SiteSettings],
   editor: lexicalEditor({}),
-  secret: process.env.PAYLOAD_SECRET || "CHANGE-ME-IN-PRODUCTION",
+  secret: payloadSecret,
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },

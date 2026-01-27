@@ -9,8 +9,9 @@ from civitas.api.schemas import (
     CourtCaseBase,
     CourtCaseDetail,
     CourtCaseList,
+    ObjectiveBase,
 )
-from civitas.db.models import CourtCase
+from civitas.db.models import CourtCase, LegalChallenge, Project2025Policy
 
 router = APIRouter()
 
@@ -72,6 +73,13 @@ async def get_case(
     if not case:
         raise HTTPException(status_code=404, detail="Court case not found")
 
+    linked_objectives = (
+        db.query(Project2025Policy)
+        .join(LegalChallenge, LegalChallenge.p2025_policy_id == Project2025Policy.id)
+        .filter(LegalChallenge.court_case_id == case_id)
+        .all()
+    )
+
     return CourtCaseDetail(
         id=case.id,
         citation=case.citation,
@@ -85,5 +93,5 @@ async def get_case(
         majority_author=case.majority_author,
         dissent_author=case.dissent_author,
         source_url=case.source_url,
-        linked_objectives=[],  # TODO: Link via case challenges
+        linked_objectives=[ObjectiveBase.model_validate(obj) for obj in linked_objectives],
     )

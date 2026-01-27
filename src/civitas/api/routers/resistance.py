@@ -9,10 +9,12 @@ from civitas.api.schemas import (
     BlockedPolicy,
     ProgressSummary,
     ResistanceAnalysis,
+    ResistanceMeta,
     ResistanceRecommendation,
 )
 from civitas.db.models import Project2025Policy
 from civitas.resistance import ImplementationTracker, ResistanceAnalyzer, ResistanceRecommender
+from civitas.resistance.content import RESISTANCE_ORG_SECTIONS, RESISTANCE_TIERS
 
 router = APIRouter()
 
@@ -36,6 +38,15 @@ async def get_progress(
         completion_percentage=summary.get("completion_percentage", 0.0),
         recent_activity=summary.get("recent_activity", []),
         blocked_count=summary.get("by_status", {}).get("blocked", 0),
+    )
+
+
+@router.get("/resistance/meta", response_model=ResistanceMeta)
+async def get_resistance_meta() -> ResistanceMeta:
+    """Get metadata for resistance UI rendering."""
+    return ResistanceMeta(
+        tiers=RESISTANCE_TIERS,
+        organization_sections=RESISTANCE_ORG_SECTIONS,
     )
 
 

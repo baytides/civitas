@@ -12,6 +12,7 @@ from civitas.api.schemas import (
     ObjectiveBase,
     ObjectiveDetail,
     ObjectiveList,
+    ObjectiveMetadata,
     ObjectiveStats,
 )
 from civitas.db.models import Project2025Policy
@@ -117,6 +118,44 @@ async def get_objective_stats(
         by_priority=by_priority,
         by_timeline=by_timeline,
         completion_percentage=round(completion_percentage, 1),
+    )
+
+
+@router.get("/objectives/metadata", response_model=ObjectiveMetadata)
+async def get_objective_metadata(
+    db: Session = Depends(get_db),
+) -> ObjectiveMetadata:
+    """Get distinct metadata values for objective filters."""
+    categories = (
+        db.query(Project2025Policy.category)
+        .distinct()
+        .order_by(Project2025Policy.category)
+        .all()
+    )
+    statuses = (
+        db.query(Project2025Policy.status)
+        .distinct()
+        .order_by(Project2025Policy.status)
+        .all()
+    )
+    priorities = (
+        db.query(Project2025Policy.priority)
+        .distinct()
+        .order_by(Project2025Policy.priority)
+        .all()
+    )
+    timelines = (
+        db.query(Project2025Policy.implementation_timeline)
+        .distinct()
+        .order_by(Project2025Policy.implementation_timeline)
+        .all()
+    )
+
+    return ObjectiveMetadata(
+        categories=[c[0] for c in categories if c[0]],
+        statuses=[s[0] for s in statuses if s[0]],
+        priorities=[p[0] for p in priorities if p[0]],
+        timelines=[t[0] for t in timelines if t[0]],
     )
 
 

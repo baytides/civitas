@@ -74,6 +74,15 @@ class ObjectiveStats(BaseModel):
     completion_percentage: float
 
 
+class ObjectiveMetadata(BaseModel):
+    """Distinct metadata values for objectives."""
+
+    categories: list[str]
+    statuses: list[str]
+    priorities: list[str]
+    timelines: list[str]
+
+
 # =============================================================================
 # Executive Orders
 # =============================================================================
@@ -245,6 +254,48 @@ class BlockedPolicy(BaseModel):
     blocked_by: str  # court, state, congress
     case_or_action: str
     blocked_date: date | None = None
+
+
+class ResistanceTierAction(BaseModel):
+    """General action used in tier overviews."""
+
+    title: str
+    description: str
+    urgency: str
+    resources: list[str]
+
+
+class ResistanceTier(BaseModel):
+    """Tier metadata used by the resistance UI."""
+
+    tier: int
+    id: str
+    title: str
+    subtitle: str
+    color: str
+    description: str
+    general_actions: list[ResistanceTierAction]
+
+
+class ResistanceOrganization(BaseModel):
+    """Organization entry for resistance resources."""
+
+    name: str
+    url: str
+
+
+class ResistanceOrganizationSection(BaseModel):
+    """Section of resistance organizations."""
+
+    title: str
+    items: list[ResistanceOrganization]
+
+
+class ResistanceMeta(BaseModel):
+    """Metadata for resistance pages."""
+
+    tiers: list[ResistanceTier]
+    organization_sections: list[ResistanceOrganizationSection]
 
 
 # =============================================================================

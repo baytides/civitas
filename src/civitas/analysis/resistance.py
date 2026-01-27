@@ -486,7 +486,7 @@ Respond with JSON:
       "right": "Clear statement of the right",
       "explanation": "What this means in plain language",
       "in_practice": "How to exercise this right",
-      "examples": ["example 1", "example 2"],
+      "examples": [],
       "if_violated": "What to do if this right is violated",
       "important_note": "Any caveats or nuances"
     }}

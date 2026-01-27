@@ -80,87 +80,37 @@ interface BlockedPolicy {
   blocked_date: string | null;
 }
 
-// =============================================================================
-// Static Tier Data (fallback when no objectives selected)
-// =============================================================================
+interface ResistanceTierAction {
+  title: string;
+  description: string;
+  urgency: string;
+  resources: string[];
+}
 
-const defaultTiers = [
-  {
-    tier: 1,
-    id: "tier_1_immediate",
-    title: "Courts & States",
-    subtitle: "Immediate Actions (Now)",
-    color: "green",
-    description:
-      "Challenge unconstitutional actions through litigation and strengthen state-level protections. These are the most effective immediate tools available.",
-    generalActions: [
-      {
-        title: "Support Constitutional Litigation",
-        description: "Donate to and spread awareness about lawsuits challenging executive overreach",
-        urgency: "critical",
-        resources: ["ACLU", "Brennan Center", "Democracy Forward"],
-      },
-      {
-        title: "Contact State Legislators",
-        description: "Push for state laws that protect rights and resist federal overreach",
-        urgency: "high",
-        resources: ["Find your state rep", "Model legislation"],
-      },
-      {
-        title: "Support State Attorney Generals",
-        description: "State AGs are filing suits against unconstitutional federal actions",
-        urgency: "high",
-        resources: ["State lawsuits tracker"],
-      },
-    ],
-  },
-  {
-    tier: 2,
-    id: "tier_2_congressional",
-    title: "Congress 2026",
-    subtitle: "Midterm Strategy",
-    color: "yellow",
-    description:
-      "Work toward flipping Congress in the 2026 midterm elections to provide legislative checks on executive power.",
-    generalActions: [
-      {
-        title: "Register New Voters",
-        description: "Every new registered voter increases our chances in 2026",
-        urgency: "high",
-        resources: ["Vote.org", "Rock the Vote"],
-      },
-      {
-        title: "Support Candidates",
-        description: "Identify and support candidates committed to democratic values",
-        urgency: "medium",
-        resources: ["ActBlue", "Run for Something"],
-      },
-    ],
-  },
-  {
-    tier: 3,
-    id: "tier_3_presidential",
-    title: "Presidency 2028",
-    subtitle: "Long-term Vision",
-    color: "blue",
-    description:
-      "Build toward restoring democratic leadership in the executive branch in 2028, while preparing institutional reforms.",
-    generalActions: [
-      {
-        title: "Develop New Leaders",
-        description: "Support programs that train the next generation of democratic leaders",
-        urgency: "medium",
-        resources: ["Arena", "New Politics"],
-      },
-      {
-        title: "Reform Advocacy",
-        description: "Push for systemic reforms to prevent future democratic backsliding",
-        urgency: "low",
-        resources: ["Democracy reform organizations"],
-      },
-    ],
-  },
-];
+interface ResistanceTier {
+  tier: number;
+  id: string;
+  title: string;
+  subtitle: string;
+  color: string;
+  description: string;
+  general_actions: ResistanceTierAction[];
+}
+
+interface ResistanceOrganization {
+  name: string;
+  url: string;
+}
+
+interface ResistanceOrganizationSection {
+  title: string;
+  items: ResistanceOrganization[];
+}
+
+interface ResistanceMeta {
+  tiers: ResistanceTier[];
+  organization_sections: ResistanceOrganizationSection[];
+}
 
 const urgencyColors = {
   critical: "bg-red-500 text-white",
@@ -207,6 +157,7 @@ function ResistanceContent() {
   const [progress, setProgress] = useState<ProgressSummary | null>(null);
   const [blockedPolicies, setBlockedPolicies] = useState<BlockedPolicy[]>([]);
   const [highPriorityObjectives, setHighPriorityObjectives] = useState<APIObjective[]>([]);
+  const [meta, setMeta] = useState<ResistanceMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
@@ -232,6 +183,11 @@ function ResistanceContent() {
         if (objRes.ok) {
           const data = await objRes.json();
           setHighPriorityObjectives(data.items || []);
+        }
+
+        const metaRes = await fetch(`${API_BASE}/resistance/meta`);
+        if (metaRes.ok) {
+          setMeta(await metaRes.json());
         }
       } catch (err) {
         console.error("Failed to fetch resistance data:", err);
@@ -301,6 +257,10 @@ function ResistanceContent() {
     acc[rec.tier].push(rec);
     return acc;
   }, {} as Record<string, ResistanceRecommendation[]>);
+  const tiers = meta?.tiers ?? [];
+  const organizationSections = meta?.organization_sections ?? [];
+  const hasTierData = tiers.length > 0;
+  const hasOrgData = organizationSections.length > 0;
 
   return (
     <div className="container py-8">
@@ -596,46 +556,52 @@ function ResistanceContent() {
       {/* Strategy Overview */}
       <Card className="mb-8">
         <CardContent className="pt-6">
-          <div className="grid md:grid-cols-3 gap-6">
-            {defaultTiers.map((tier) => {
-              const colors = tierColors[tier.color as keyof typeof tierColors];
-              const tierRecs = recommendationsByTier[tier.id] || [];
-              const hasPersonalized = tierRecs.length > 0;
+          {hasTierData ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              {tiers.map((tier) => {
+                const colors = tierColors[tier.color as keyof typeof tierColors];
+                const tierRecs = recommendationsByTier[tier.id] || [];
+                const hasPersonalized = tierRecs.length > 0;
 
-              return (
-                <button
-                  key={tier.tier}
-                  className={cn(
-                    "w-full p-4 rounded-lg border-l-4 text-left transition-colors relative",
-                    colors.border,
-                    expandedTier === tier.tier ? colors.light : "hover:bg-muted/50"
-                  )}
-                  onClick={() => setExpandedTier(expandedTier === tier.tier ? 0 : tier.tier)}
-                  type="button"
-                  aria-pressed={expandedTier === tier.tier}
-                >
-                  {hasPersonalized && (
-                    <Badge className="absolute top-2 right-2 bg-primary text-xs">
-                      {tierRecs.length} personalized
-                    </Badge>
-                  )}
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={cn(
-                      "inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold",
-                      colors.bg
-                    )}>
-                      {tier.tier}
-                    </span>
-                    <div>
-                      <h3 className="font-semibold">{tier.title}</h3>
-                      <p className="text-xs text-muted-foreground">{tier.subtitle}</p>
+                return (
+                  <button
+                    key={tier.tier}
+                    className={cn(
+                      "w-full p-4 rounded-lg border-l-4 text-left transition-colors relative",
+                      colors.border,
+                      expandedTier === tier.tier ? colors.light : "hover:bg-muted/50"
+                    )}
+                    onClick={() => setExpandedTier(expandedTier === tier.tier ? 0 : tier.tier)}
+                    type="button"
+                    aria-pressed={expandedTier === tier.tier}
+                  >
+                    {hasPersonalized && (
+                      <Badge className="absolute top-2 right-2 bg-primary text-xs">
+                        {tierRecs.length} personalized
+                      </Badge>
+                    )}
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className={cn(
+                        "inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-bold",
+                        colors.bg
+                      )}>
+                        {tier.tier}
+                      </span>
+                      <div>
+                        <h3 className="font-semibold">{tier.title}</h3>
+                        <p className="text-xs text-muted-foreground">{tier.subtitle}</p>
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{tier.description}</p>
-                </button>
-              );
-            })}
-          </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{tier.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Resistance tiers are unavailable right now.
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -658,12 +624,12 @@ function ResistanceContent() {
 
       {/* Tier Details */}
       <div className="space-y-8">
-        {defaultTiers.map((tier) => {
+        {hasTierData ? tiers.map((tier) => {
           const colors = tierColors[tier.color as keyof typeof tierColors];
           const tierRecs = recommendationsByTier[tier.id] || [];
           const filteredGeneralActions = selectedUrgency === "all"
-            ? tier.generalActions
-            : tier.generalActions.filter((a) => a.urgency === selectedUrgency);
+            ? tier.general_actions
+            : tier.general_actions.filter((a) => a.urgency === selectedUrgency);
 
           // Filter personalized recommendations by urgency
           const filteredRecs = selectedUrgency === "all"
@@ -720,55 +686,51 @@ function ResistanceContent() {
               </CardContent>
             </Card>
           );
-        })}
+        }) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-sm text-muted-foreground">
+                No resistance tier content is available right now.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Resources Section */}
       <section className="mt-12">
         <h2 className="text-2xl font-bold mb-6">Key Organizations</h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Legal Defense</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li><a href="https://www.aclu.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">ACLU</a></li>
-                <li><a href="https://www.brennancenter.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Brennan Center for Justice</a></li>
-                <li><a href="https://democracyforward.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Democracy Forward</a></li>
-                <li><a href="https://www.naacpldf.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">NAACP Legal Defense Fund</a></li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Voter Engagement</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li><a href="https://www.vote.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Vote.org</a></li>
-                <li><a href="https://www.rockthevote.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Rock the Vote</a></li>
-                <li><a href="https://www.lwv.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">League of Women Voters</a></li>
-                <li><a href="https://whenweallvote.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">When We All Vote</a></li>
-              </ul>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Organizing</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 text-sm">
-                <li><a href="https://indivisible.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Indivisible</a></li>
-                <li><a href="https://swingleft.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Swing Left</a></li>
-                <li><a href="https://runforsomething.net" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Run for Something</a></li>
-                <li><a href="https://sisterdistrict.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Sister District</a></li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+        {hasOrgData ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {organizationSections.map((section) => (
+              <Card key={section.title}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{section.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2 text-sm">
+                    {section.items.map((item) => (
+                      <li key={item.url}>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {item.name}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Organization resources are unavailable right now.
+          </p>
+        )}
       </section>
     </div>
   );

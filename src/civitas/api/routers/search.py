@@ -29,6 +29,7 @@ async def search(
 ) -> SearchResponse:
     """Full-text search across all data types."""
     search_term = f"%{q}%"
+    q_lower = q.lower()
     type_list = types.split(",") if types != "all" else ["objective", "eo", "case", "bill"]
 
     results: list[SearchResult] = []
@@ -51,13 +52,20 @@ async def search(
         for obj in objectives:
             snippet = obj.proposal_summary or obj.proposal_text[:200]
             summary_text = obj.proposal_summary or "P2025 Objective"
+            score = 0.0
+            if obj.proposal_summary and q_lower in obj.proposal_summary.lower():
+                score += 2.0
+            if obj.proposal_text and q_lower in obj.proposal_text.lower():
+                score += 1.5
+            if obj.agency and q_lower in obj.agency.lower():
+                score += 0.5
             results.append(
                 SearchResult(
                     type="objective",
                     id=obj.id,
                     title=f"[{obj.agency}] {summary_text[:50]}...",
                     snippet=snippet,
-                    score=1.0,  # TODO: Implement proper scoring
+                    score=score,
                 )
             )
 
@@ -76,13 +84,18 @@ async def search(
         )
 
         for eo in eos:
+            score = 0.0
+            if eo.title and q_lower in eo.title.lower():
+                score += 2.0
+            if eo.abstract and q_lower in eo.abstract.lower():
+                score += 1.0
             results.append(
                 SearchResult(
                     type="eo",
                     id=eo.id,
                     title=eo.title,
                     snippet=eo.abstract[:200] if eo.abstract else "",
-                    score=1.0,
+                    score=score,
                 )
             )
 
@@ -102,13 +115,20 @@ async def search(
         )
 
         for case in cases:
+            score = 0.0
+            if case.case_name and q_lower in case.case_name.lower():
+                score += 2.0
+            if case.holding and q_lower in case.holding.lower():
+                score += 1.0
+            if case.citation and q_lower in case.citation.lower():
+                score += 0.5
             results.append(
                 SearchResult(
                     type="case",
                     id=case.id,
                     title=case.case_name,
                     snippet=case.holding[:200] if case.holding else case.citation,
-                    score=1.0,
+                    score=score,
                 )
             )
 
@@ -127,17 +147,22 @@ async def search(
         )
 
         for bill in bills:
+            score = 0.0
+            if bill.title and q_lower in bill.title.lower():
+                score += 2.0
+            if bill.summary and q_lower in bill.summary.lower():
+                score += 1.0
             results.append(
                 SearchResult(
                     type="bill",
                     id=bill.id,
                     title=bill.title or f"Bill {bill.number}",
                     snippet=bill.summary[:200] if bill.summary else "",
-                    score=1.0,
+                    score=score,
                 )
             )
 
-    # Sort by score (TODO: implement real scoring)
+    # Sort by score (higher first)
     results.sort(key=lambda x: x.score, reverse=True)
 
     return SearchResponse(

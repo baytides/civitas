@@ -104,7 +104,7 @@ export function Footer() {
               Privacy
             </Link>
             <Link
-              href="https://github.com/civitas"
+              href="https://github.com/baytides/civitas"
               className="text-xs text-muted-foreground hover:text-foreground"
               target="_blank"
               rel="noopener noreferrer"

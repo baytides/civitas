@@ -7,6 +7,6 @@ Data Sources:
 Credits: Dr. Paul Nolette, Marquette University
 """
 
-from .scraper import AGLitigationScraper, AGLawsuit, AGAmicusBrief
+from .scraper import AGAmicusBrief, AGLawsuit, AGLitigationScraper
 
 __all__ = ["AGLitigationScraper", "AGLawsuit", "AGAmicusBrief"]

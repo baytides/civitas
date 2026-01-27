@@ -18,8 +18,8 @@ def _setup_db(db_url: str) -> None:
     engine = create_engine(db_url)
     Base.metadata.create_all(engine)
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session_factory = sessionmaker(bind=engine)
+    session = session_factory()
     try:
         policy = Project2025Policy(
             section="Test Section",

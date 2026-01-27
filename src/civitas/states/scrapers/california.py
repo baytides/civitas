@@ -160,7 +160,9 @@ class CaliforniaScraper(StateScraper):
 
         except Exception as e:
             console.print(f"[yellow]Error reading California data: {e}[/yellow]")
-            console.print("[dim]Tip: Use 'civitas ingest california <year>' for full ingestion[/dim]")
+            console.print(
+                "[dim]Tip: Use 'civitas ingest california <year>' for full ingestion[/dim]"
+            )
 
     def get_bill(self, session: str, identifier: str) -> ScrapedBill | None:
         """Get a specific bill by identifier.

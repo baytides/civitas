@@ -13,9 +13,9 @@ This scraper collects:
 import json
 import re
 from dataclasses import dataclass, field
+from collections.abc import Generator
 from datetime import date, datetime
 from pathlib import Path
-from typing import Generator
 from urllib.parse import urljoin
 
 import httpx
@@ -68,11 +68,22 @@ class AGLitigationScraper:
 
     # Known database URLs from the site (corrected paths)
     DATABASES = {
-        "federal_lawsuits": "/multistate-lawsuits-vs-the-federal-government/list-of-lawsuits-1980-present/",
+        "federal_lawsuits": (
+            "/multistate-lawsuits-vs-the-federal-government/"
+            "list-of-lawsuits-1980-present/"
+        ),
         "scotus_amicus": "/amicus-briefs-u-s-supreme-court/multistate-amicus-briefs/",
-        "lower_court_amicus": "/amicus-briefs-lower-courts-2/amicus-briefs-lower-courts/",
-        "settlements": "/settlements-and-enforcement-actions/searchable-list-of-settlements-1980-present/",
-        "letters": "/letters-and-formal-comments/searchable-list-of-multistate-letters-and-formal-comments-2017-present/",
+        "lower_court_amicus": (
+            "/amicus-briefs-lower-courts-2/amicus-briefs-lower-courts/"
+        ),
+        "settlements": (
+            "/settlements-and-enforcement-actions/"
+            "searchable-list-of-settlements-1980-present/"
+        ),
+        "letters": (
+            "/letters-and-formal-comments/"
+            "searchable-list-of-multistate-letters-and-formal-comments-2017-present/"
+        ),
         "ag_info": "/ag-office-information/information-on-current-ags/",
     }
 
@@ -173,7 +184,10 @@ class AGLitigationScraper:
 
         # The site uses various table/list formats
         # Try to find lawsuit entries
-        entries = soup.find_all("article") or soup.find_all("div", class_=re.compile(r"lawsuit|case|entry"))
+        entries = soup.find_all("article") or soup.find_all(
+            "div",
+            class_=re.compile(r"lawsuit|case|entry"),
+        )
 
         if not entries:
             # Fall back to table rows
@@ -295,13 +309,17 @@ class AGLitigationScraper:
                 json.dump(
                     [
                         {
-                            "id": l.id,
-                            "title": l.title,
-                            "states": l.states_involved,
-                            "filing_date": l.filing_date.isoformat() if l.filing_date else None,
-                            "description": l.description,
+                            "id": lawsuit.id,
+                            "title": lawsuit.title,
+                            "states": lawsuit.states_involved,
+                            "filing_date": (
+                                lawsuit.filing_date.isoformat()
+                                if lawsuit.filing_date
+                                else None
+                            ),
+                            "description": lawsuit.description,
                         }
-                        for l in lawsuits
+                        for lawsuit in lawsuits
                     ],
                     f,
                     indent=2,

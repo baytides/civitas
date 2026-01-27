@@ -22,13 +22,17 @@ RESISTANCE_TIERS = [
             },
             {
                 "title": "Contact State Legislators",
-                "description": "Push for state laws that protect rights and resist federal overreach",
+                "description": (
+                    "Push for state laws that protect rights and resist federal overreach"
+                ),
                 "urgency": "high",
                 "resources": ["Find your state rep", "Model legislation"],
             },
             {
                 "title": "Support State Attorney Generals",
-                "description": "State AGs are filing suits against unconstitutional federal actions",
+                "description": (
+                    "State AGs are filing suits against unconstitutional federal actions"
+                ),
                 "urgency": "high",
                 "resources": ["State lawsuits tracker"],
             },
@@ -72,7 +76,9 @@ RESISTANCE_TIERS = [
         "general_actions": [
             {
                 "title": "Develop New Leaders",
-                "description": "Support programs that train the next generation of democratic leaders",
+                "description": (
+                    "Support programs that train the next generation of democratic leaders"
+                ),
                 "urgency": "medium",
                 "resources": ["Arena", "New Politics"],
             },

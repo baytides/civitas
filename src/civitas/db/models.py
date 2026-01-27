@@ -788,7 +788,11 @@ def get_database_url(db_url: str | None = None) -> str:
     import os
 
     if db_url:
-        return db_url
+        # If it's already a URL (contains ://), return as-is
+        if "://" in db_url:
+            return db_url
+        # Otherwise, treat it as a SQLite file path
+        return f"sqlite:///{db_url}"
 
     env_url = os.getenv("DATABASE_URL")
     if env_url:

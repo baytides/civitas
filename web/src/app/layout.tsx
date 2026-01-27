@@ -5,9 +5,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Civitas - Tracking Project 2025 Implementation",
+  title: "Civitas - Protecting American Democracy",
   description:
-    "Monitor legislative and executive actions implementing Project 2025. Track threats to democracy and find ways to resist.",
+    "Fighting Project 2025 implementation to protect American democracy. Monitor threats, understand impacts, and take action.",
   keywords: [
     "Project 2025",
     "democracy",
@@ -18,18 +18,18 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Project Civitas" }],
   openGraph: {
-    title: "Civitas - Tracking Project 2025 Implementation",
+    title: "Civitas - Protecting American Democracy",
     description:
-      "Monitor legislative and executive actions implementing Project 2025.",
+      "Fighting Project 2025 implementation to protect American democracy.",
     url: "https://projectcivitas.com",
     siteName: "Civitas",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Civitas - Tracking Project 2025 Implementation",
+    title: "Civitas - Protecting American Democracy",
     description:
-      "Monitor legislative and executive actions implementing Project 2025.",
+      "Fighting Project 2025 implementation to protect American democracy.",
   },
 };
 

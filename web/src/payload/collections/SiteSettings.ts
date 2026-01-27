@@ -19,7 +19,7 @@ export const SiteSettings: GlobalConfig = {
     {
       name: "tagline",
       type: "text",
-      defaultValue: "Tracking Project 2025 Implementation",
+      defaultValue: "Protecting American Democracy",
     },
     {
       name: "threatLevel",

@@ -93,11 +93,11 @@ export default function HomePage() {
         {/* Hero Section */}
         <section className="text-center py-8">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Tracking Project 2025 Implementation
+            Protecting American Democracy
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Monitor legislative and executive actions in real-time.
-            Understand the threats. Take action to protect democracy.
+            Fighting Project 2025 implementation through transparency,
+            accountability, and collective action.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/tracker">

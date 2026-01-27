@@ -1,6 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface ThreatMeterProps {
   level: "critical" | "high" | "elevated" | "moderate";

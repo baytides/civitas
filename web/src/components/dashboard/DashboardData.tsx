@@ -7,11 +7,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface DashboardStats {
-  totalObjectives: number;
-  enacted: number;
-  inProgress: number;
-  blocked: number;
+  totalPolicies: number;
   executiveOrders: number;
+  states: number;
   courtCases: number;
 }
 
@@ -24,40 +22,68 @@ export function DashboardDataLoader() {
     async function fetchStats() {
       try {
         // Fetch executive orders count
-        const eoResponse = await fetch(`${API_BASE}/executive-orders?per_page=1`);
-        const eoData = await eoResponse.json();
-
-        // Fetch objectives stats if available
-        let objectivesStats = { total: 0, by_status: {} as Record<string, number> };
+        let eoCount = 0;
         try {
-          const objResponse = await fetch(`${API_BASE}/objectives/stats`);
-          if (objResponse.ok) {
-            objectivesStats = await objResponse.json();
+          const eoResponse = await fetch(`${API_BASE}/executive-orders?per_page=1`);
+          if (eoResponse.ok) {
+            const eoData = await eoResponse.json();
+            eoCount = eoData.total || 0;
           }
         } catch {
-          // Objectives endpoint may not have data yet
+          // API unavailable
+        }
+
+        // Fetch P2025 objectives/policies count from /objectives/stats
+        let policiesCount = 0;
+        try {
+          const policiesResponse = await fetch(`${API_BASE}/objectives/stats`);
+          if (policiesResponse.ok) {
+            const policiesData = await policiesResponse.json();
+            policiesCount = policiesData.total || 0;
+          }
+        } catch {
+          // API unavailable
+        }
+
+        // Fetch states count
+        let statesCount = 0;
+        try {
+          const statesResponse = await fetch(`${API_BASE}/states`);
+          if (statesResponse.ok) {
+            const statesData = await statesResponse.json();
+            statesCount = statesData.items?.length || 0;
+          }
+        } catch {
+          // API unavailable
+        }
+
+        // Fetch court cases count from /cases
+        let courtCasesCount = 0;
+        try {
+          const casesResponse = await fetch(`${API_BASE}/cases?per_page=1`);
+          if (casesResponse.ok) {
+            const casesData = await casesResponse.json();
+            courtCasesCount = casesData.total || 0;
+          }
+        } catch {
+          // API unavailable
         }
 
         setStats({
-          totalObjectives: objectivesStats.total || 320, // Fallback to known P2025 count
-          enacted: objectivesStats.by_status?.enacted || 129,
-          inProgress: objectivesStats.by_status?.in_progress || 68,
-          blocked: objectivesStats.by_status?.blocked || 12,
-          executiveOrders: eoData.total || 0,
-          courtCases: 23, // Will be populated when court data is ingested
+          totalPolicies: policiesCount,
+          executiveOrders: eoCount,
+          states: statesCount,
+          courtCases: courtCasesCount,
         });
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError("Failed to load dashboard data");
         setLoading(false);
-        // Use fallback data
         setStats({
-          totalObjectives: 320,
-          enacted: 129,
-          inProgress: 68,
-          blocked: 12,
-          executiveOrders: 257,
-          courtCases: 23,
+          totalPolicies: 0,
+          executiveOrders: 0,
+          states: 0,
+          courtCases: 0,
         });
       }
     }
@@ -67,8 +93,8 @@ export function DashboardDataLoader() {
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
           <Skeleton key={i} className="h-24 w-full" />
         ))}
       </div>

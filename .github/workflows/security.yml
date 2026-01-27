@@ -8,14 +8,15 @@ on:
     branches:
       - main
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
 jobs:
   osv_scan:
     name: OSV Scanner
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run OSV Scanner
-        uses: google/osv-scanner-action@v1
-        with:
-          scan-args: -r .
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.0
+    with:
+      scan-args: |-
+        -r .

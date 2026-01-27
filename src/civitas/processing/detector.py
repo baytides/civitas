@@ -6,7 +6,6 @@ import mimetypes
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 
 class DocumentType(Enum):
@@ -46,7 +45,7 @@ class DocumentInfo:
     mime_type: str
     size_bytes: int
     needs_ocr: bool
-    encoding: Optional[str] = None
+    encoding: str | None = None
 
 
 class DocumentDetector:
@@ -112,7 +111,12 @@ class DocumentDetector:
 
         # Detect encoding for text files
         encoding = None
-        if doc_type in (DocumentType.HTML, DocumentType.XML, DocumentType.TXT, DocumentType.MARKDOWN):
+        if doc_type in (
+            DocumentType.HTML,
+            DocumentType.XML,
+            DocumentType.TXT,
+            DocumentType.MARKDOWN,
+        ):
             encoding = self._detect_encoding(path)
 
         return DocumentInfo(

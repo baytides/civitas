@@ -9,7 +9,6 @@ Generates actionable recommendations based on:
 import json
 import os
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -72,8 +71,8 @@ class ResistanceRecommender:
     def __init__(
         self,
         session: Session,
-        ollama_host: Optional[str] = None,
-        ollama_model: Optional[str] = None,
+        ollama_host: str | None = None,
+        ollama_model: str | None = None,
     ):
         self.session = session
         self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
@@ -90,7 +89,7 @@ class ResistanceRecommender:
     def generate_recommendations(
         self,
         policy_id: int,
-        include_tiers: Optional[list[str]] = None,
+        include_tiers: list[str] | None = None,
     ) -> dict:
         """Generate tiered resistance recommendations for a policy.
 
@@ -102,8 +101,7 @@ class ResistanceRecommender:
             Dict with recommendations organized by tier
         """
         from civitas.db.models import (
-            Project2025Policy, ResistanceRecommendation,
-            LegalChallenge, StateResistanceAction
+            Project2025Policy,
         )
 
         # Get the policy
@@ -227,7 +225,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
         self.session.add(db_rec)
         self.session.commit()
 
-    def get_urgent_actions(self, category: Optional[str] = None) -> list[dict]:
+    def get_urgent_actions(self, category: str | None = None) -> list[dict]:
         """Get urgent Tier 1 actions across all policies.
 
         Args:
@@ -236,7 +234,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
         Returns:
             List of urgent recommendations sorted by priority
         """
-        from civitas.db.models import ResistanceRecommendation, Project2025Policy
+        from civitas.db.models import Project2025Policy, ResistanceRecommendation
 
         query = self.session.query(ResistanceRecommendation).filter(
             ResistanceRecommendation.tier == "tier_1_immediate",
@@ -295,7 +293,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
 
     def generate_all_recommendations(
         self,
-        category: Optional[str] = None,
+        category: str | None = None,
         limit: int = 100,
     ) -> dict:
         """Generate recommendations for multiple policies.

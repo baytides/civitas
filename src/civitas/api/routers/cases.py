@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
@@ -26,9 +24,9 @@ def get_db(request: Request) -> Session:
 async def list_cases(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    court_level: Optional[str] = Query(None, description="scotus, circuit, or district"),
-    court: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
+    court_level: str | None = Query(None, description="scotus, circuit, or district"),
+    court: str | None = Query(None),
+    status: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> CourtCaseList:
     """List court cases with filtering and pagination."""

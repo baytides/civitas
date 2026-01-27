@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -116,7 +114,11 @@ async def get_state(
         recent_bills=[
             StateBillBase(
                 id=b.id,
-                identifier=f"{b.chamber.upper()[0]}B {b.number}" if b.number else b.source_id or str(b.id),
+                identifier=(
+                    f"{b.chamber.upper()[0]}B {b.number}"
+                    if b.number
+                    else b.source_id or str(b.id)
+                ),
                 title=b.title,
                 chamber=b.chamber,
                 session=b.session or "",
@@ -127,14 +129,14 @@ async def get_state(
         ],
         legislators=[
             StateLegislatorBase(
-                id=l.id,
-                full_name=l.full_name,
-                chamber=l.chamber,
-                district=l.district,
-                party=l.party or "Unknown",
-                state=l.state or code.upper(),
+                id=legislator.id,
+                full_name=legislator.full_name,
+                chamber=legislator.chamber,
+                district=legislator.district,
+                party=legislator.party or "Unknown",
+                state=legislator.state or code.upper(),
             )
-            for l in legislators
+            for legislator in legislators
         ],
     )
 
@@ -144,8 +146,8 @@ async def get_state_bills(
     state_code: str,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    session: Optional[str] = Query(None),
-    chamber: Optional[str] = Query(None),
+    session: str | None = Query(None),
+    chamber: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> dict:
     """Get bills for a specific state."""
@@ -179,7 +181,11 @@ async def get_state_bills(
         "items": [
             StateBillBase(
                 id=b.id,
-                identifier=f"{b.chamber.upper()[0]}B {b.number}" if b.number else b.source_id or str(b.id),
+                identifier=(
+                    f"{b.chamber.upper()[0]}B {b.number}"
+                    if b.number
+                    else b.source_id or str(b.id)
+                ),
                 title=b.title,
                 chamber=b.chamber,
                 session=b.session or "",
@@ -194,8 +200,8 @@ async def get_state_bills(
 @router.get("/states/{state_code}/legislators")
 async def get_state_legislators(
     state_code: str,
-    chamber: Optional[str] = Query(None),
-    party: Optional[str] = Query(None),
+    chamber: str | None = Query(None),
+    party: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> dict:
     """Get legislators for a specific state."""
@@ -217,13 +223,13 @@ async def get_state_legislators(
         "total": len(legislators),
         "items": [
             StateLegislatorBase(
-                id=l.id,
-                full_name=l.full_name,
-                chamber=l.chamber,
-                district=l.district,
-                party=l.party or "Unknown",
-                state=l.state or code.upper(),
+                id=legislator.id,
+                full_name=legislator.full_name,
+                chamber=legislator.chamber,
+                district=legislator.district,
+                party=legislator.party or "Unknown",
+                state=legislator.state or code.upper(),
             ).model_dump()
-            for l in legislators
+            for legislator in legislators
         ],
     }

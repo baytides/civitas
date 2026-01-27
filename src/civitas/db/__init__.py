@@ -1,21 +1,21 @@
 """Database models, storage, and ingestion."""
 
+from civitas.db.ingest import DataIngester
 from civitas.db.models import (
     Base,
+    CourtCase,
+    LawCode,
+    LawSection,
     Legislation,
-    LegislationVersion,
     LegislationAction,
+    LegislationVersion,
     Legislator,
     Sponsorship,
     Vote,
     VoteRecord,
-    LawCode,
-    LawSection,
-    CourtCase,
     create_database,
     get_engine,
 )
-from civitas.db.ingest import DataIngester
 
 __all__ = [
     "Base",

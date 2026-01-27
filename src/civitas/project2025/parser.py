@@ -10,9 +10,9 @@ Source: https://s3.documentcloud.org/documents/24088042/project-2025s-mandate-fo
 import json
 import os
 import re
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Generator, Optional
 
 # Default Ollama configuration (Carl AI VM on Azure)
 DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
@@ -25,7 +25,7 @@ class PolicyProposal:
 
     # Location in document
     section: str
-    chapter: Optional[str] = None
+    chapter: str | None = None
     page_number: int = 0
 
     # Target agency
@@ -33,7 +33,7 @@ class PolicyProposal:
 
     # Content
     proposal_text: str = ""
-    proposal_summary: Optional[str] = None
+    proposal_summary: str | None = None
 
     # Keywords for matching against legislation
     keywords: list[str] = field(default_factory=list)
@@ -148,8 +148,7 @@ class Project2025Parser:
                 section = self._identify_section(page_num)
 
                 # Extract actionable proposals from page
-                for proposal in self._extract_from_page(text, section, page_num):
-                    yield proposal
+                yield from self._extract_from_page(text, section, page_num)
 
     def _identify_section(self, page_num: int) -> str:
         """Identify which section a page belongs to."""
@@ -309,16 +308,47 @@ class EnhancedProject2025Parser(Project2025Parser):
 
     # Policy categories for classification
     CATEGORIES = {
-        "immigration": ["immigration", "border", "visa", "asylum", "deportation", "ice", "cbp", "dhs"],
-        "environment": ["climate", "epa", "environment", "emission", "pollution", "energy", "drilling"],
-        "healthcare": ["health", "hhs", "medicare", "medicaid", "abortion", "reproductive", "fda"],
+        "immigration": [
+            "immigration",
+            "border",
+            "visa",
+            "asylum",
+            "deportation",
+            "ice",
+            "cbp",
+            "dhs",
+        ],
+        "environment": [
+            "climate",
+            "epa",
+            "environment",
+            "emission",
+            "pollution",
+            "energy",
+            "drilling",
+        ],
+        "healthcare": [
+            "health",
+            "hhs",
+            "medicare",
+            "medicaid",
+            "abortion",
+            "reproductive",
+            "fda",
+        ],
         "education": ["education", "school", "student", "teacher", "title ix", "dei"],
         "civil_rights": ["civil rights", "discrimination", "voting", "lgbtq", "gender", "race"],
         "labor": ["labor", "worker", "union", "wage", "osha", "nlrb"],
         "economy": ["tax", "budget", "spending", "debt", "deficit", "tariff", "trade"],
         "defense": ["military", "defense", "pentagon", "nato", "veteran"],
         "justice": ["justice", "doj", "fbi", "crime", "prosecution", "pardon"],
-        "government_structure": ["civil service", "schedule f", "personnel", "bureaucracy", "regulation"],
+        "government_structure": [
+            "civil service",
+            "schedule f",
+            "personnel",
+            "bureaucracy",
+            "regulation",
+        ],
     }
 
     # Timeline indicators
@@ -332,8 +362,8 @@ class EnhancedProject2025Parser(Project2025Parser):
     def __init__(
         self,
         pdf_path: Path | str,
-        ollama_host: Optional[str] = None,
-        ollama_model: Optional[str] = None,
+        ollama_host: str | None = None,
+        ollama_model: str | None = None,
     ):
         """Initialize enhanced parser.
 
@@ -380,8 +410,7 @@ class EnhancedProject2025Parser(Project2025Parser):
                 batch.append(proposal)
                 if len(batch) >= batch_size:
                     # AI-enhance the batch
-                    for enhanced in self._ai_enhance_batch(batch):
-                        yield enhanced
+                    yield from self._ai_enhance_batch(batch)
                     batch = []
             else:
                 yield proposal
@@ -389,11 +418,9 @@ class EnhancedProject2025Parser(Project2025Parser):
         # Process remaining batch
         if batch:
             if use_ai:
-                for enhanced in self._ai_enhance_batch(batch):
-                    yield enhanced
+                yield from self._ai_enhance_batch(batch)
             else:
-                for p in batch:
-                    yield p
+                yield from batch
 
     def _detect_category(self, text: str) -> str:
         """Detect policy category from text."""
@@ -498,7 +525,9 @@ Provide structured analysis for each."""
                 idx = analysis.get("index", 0)
                 if 0 <= idx < len(proposals):
                     proposals[idx].proposal_summary = analysis.get("summary")
-                    proposals[idx].constitutional_concerns = analysis.get("constitutional_concerns", [])
+                    proposals[idx].constitutional_concerns = analysis.get(
+                        "constitutional_concerns", []
+                    )
                     proposals[idx].confidence = analysis.get("confidence", 0.5)
 
         except Exception:
@@ -556,7 +585,9 @@ Provide structured analysis for each."""
             by_agency[p.agency] = by_agency.get(p.agency, 0) + 1
             by_action[p.action_type] = by_action.get(p.action_type, 0) + 1
             by_category[p.category] = by_category.get(p.category, 0) + 1
-            by_timeline[p.implementation_timeline] = by_timeline.get(p.implementation_timeline, 0) + 1
+            by_timeline[p.implementation_timeline] = (
+                by_timeline.get(p.implementation_timeline, 0) + 1
+            )
             by_priority[p.priority] = by_priority.get(p.priority, 0) + 1
             constitutional_concerns.extend(p.constitutional_concerns)
 
@@ -572,7 +603,9 @@ Provide structured analysis for each."""
             "by_category": dict(sorted(by_category.items(), key=lambda x: -x[1])),
             "by_timeline": dict(sorted(by_timeline.items(), key=lambda x: -x[1])),
             "by_priority": dict(sorted(by_priority.items(), key=lambda x: -x[1])),
-            "constitutional_concerns": dict(sorted(concern_counts.items(), key=lambda x: -x[1])[:20]),
+            "constitutional_concerns": dict(
+                sorted(concern_counts.items(), key=lambda x: -x[1])[:20]
+            ),
             "high_priority_day_one": [
                 {
                     "agency": p.agency,
@@ -584,7 +617,7 @@ Provide structured analysis for each."""
             ][:20],
         }
 
-    def get_actionable_items(self, category: Optional[str] = None) -> list[PolicyProposal]:
+    def get_actionable_items(self, category: str | None = None) -> list[PolicyProposal]:
         """Get high-confidence actionable proposals.
 
         Args:

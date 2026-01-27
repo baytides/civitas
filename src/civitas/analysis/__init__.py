@@ -7,38 +7,35 @@ This module provides:
 - resistance: Detailed resistance strategy generation
 """
 
-from .categories import (
-    CATEGORIES,
-    LawCategory,
-    get_category_by_slug,
-    get_p2025_categories,
-    get_all_keywords,
-)
-
 from .actions import (
     CATEGORY_ACTIONS,
     DEFAULT_ACTIONS,
     ActionType,
     ActionUrgency,
     ResistanceAction,
-    get_actions_for_category,
     get_actions_by_type,
-    get_urgent_actions,
+    get_actions_for_category,
     get_actions_for_jurisdiction,
+    get_urgent_actions,
 )
-
 from .analyzer import (
-    LegislationAnalyzer,
     AnalysisResult,
+    LegislationAnalyzer,
     check_ollama_connection,
     list_ollama_models,
 )
-
+from .categories import (
+    CATEGORIES,
+    LawCategory,
+    get_all_keywords,
+    get_category_by_slug,
+    get_p2025_categories,
+)
 from .resistance import (
-    ResistanceGenerator,
-    ResistanceContent,
     LegalStrategy,
     OrganizingGuide,
+    ResistanceContent,
+    ResistanceGenerator,
     StrategyType,
 )
 

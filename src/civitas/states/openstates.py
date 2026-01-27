@@ -11,10 +11,10 @@ Provides access to:
 - Voting records
 """
 
+import os
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Generator, Optional
-import os
 
 import httpx
 
@@ -29,9 +29,9 @@ class StateLegislator:
     chamber: str  # "upper" or "lower"
     party: str
     district: str
-    image: Optional[str] = None
-    email: Optional[str] = None
-    current_role: Optional[dict] = None
+    image: str | None = None
+    email: str | None = None
+    current_role: dict | None = None
     offices: list[dict] = field(default_factory=list)
 
 
@@ -53,11 +53,11 @@ class StateBill:
     votes: list[dict] = field(default_factory=list)
     versions: list[dict] = field(default_factory=list)  # Bill text versions
     sources: list[dict] = field(default_factory=list)
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-    first_action_date: Optional[date] = None
-    latest_action_date: Optional[date] = None
-    latest_action_description: Optional[str] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    first_action_date: date | None = None
+    latest_action_date: date | None = None
+    latest_action_description: str | None = None
 
 
 @dataclass
@@ -67,8 +67,8 @@ class StateSession:
     identifier: str
     name: str
     classification: str  # "primary" or "special"
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: date | None = None
+    end_date: date | None = None
 
 
 class OpenStatesClient:
@@ -108,7 +108,7 @@ class OpenStatesClient:
         "pr": "Puerto Rico",
     }
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         """Initialize Open States client.
 
         Args:
@@ -170,11 +170,11 @@ class OpenStatesClient:
     def get_bills(
         self,
         state: str,
-        session: Optional[str] = None,
-        chamber: Optional[str] = None,
-        classification: Optional[str] = None,
-        subject: Optional[str] = None,
-        updated_since: Optional[date] = None,
+        session: str | None = None,
+        chamber: str | None = None,
+        classification: str | None = None,
+        subject: str | None = None,
+        updated_since: date | None = None,
         limit: int = 100,
     ) -> Generator[StateBill, None, None]:
         """Get bills for a state.
@@ -234,8 +234,8 @@ class OpenStatesClient:
     def search_bills(
         self,
         query: str,
-        states: Optional[list[str]] = None,
-        session: Optional[str] = None,
+        states: list[str] | None = None,
+        session: str | None = None,
         limit: int = 50,
     ) -> Generator[StateBill, None, None]:
         """Search bills across states.
@@ -287,7 +287,7 @@ class OpenStatesClient:
 
             page += 1
 
-    def get_bill(self, state: str, session: str, identifier: str) -> Optional[StateBill]:
+    def get_bill(self, state: str, session: str, identifier: str) -> StateBill | None:
         """Get a specific bill by identifier.
 
         Args:
@@ -313,8 +313,8 @@ class OpenStatesClient:
     def get_legislators(
         self,
         state: str,
-        chamber: Optional[str] = None,
-        party: Optional[str] = None,
+        chamber: str | None = None,
+        party: str | None = None,
         current: bool = True,
         limit: int = 200,
     ) -> Generator[StateLegislator, None, None]:
@@ -363,7 +363,7 @@ class OpenStatesClient:
 
             page += 1
 
-    def get_legislator(self, legislator_id: str) -> Optional[StateLegislator]:
+    def get_legislator(self, legislator_id: str) -> StateLegislator | None:
         """Get a specific legislator by ID."""
         response = self._client.get(f"/people/{legislator_id}")
 
@@ -401,7 +401,9 @@ class OpenStatesClient:
             created_at=self._parse_datetime(data.get("created_at")),
             updated_at=self._parse_datetime(data.get("updated_at")),
             first_action_date=self._parse_date(data.get("first_action_date")),
-            latest_action_date=self._parse_date(latest_action.get("date") if latest_action else None),
+            latest_action_date=self._parse_date(
+                latest_action.get("date") if latest_action else None
+            ),
             latest_action_description=latest_action.get("description") if latest_action else None,
         )
 
@@ -425,7 +427,7 @@ class OpenStatesClient:
             offices=data.get("offices", []),
         )
 
-    def _parse_date(self, date_str: Optional[str]) -> Optional[date]:
+    def _parse_date(self, date_str: str | None) -> date | None:
         """Parse date string to date object."""
         if not date_str:
             return None
@@ -434,7 +436,7 @@ class OpenStatesClient:
         except (ValueError, TypeError):
             return None
 
-    def _parse_datetime(self, dt_str: Optional[str]) -> Optional[datetime]:
+    def _parse_datetime(self, dt_str: str | None) -> datetime | None:
         """Parse datetime string."""
         if not dt_str:
             return None

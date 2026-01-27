@@ -8,10 +8,10 @@ It is divided into 54 titles organized by subject matter.
 """
 
 import re
+from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Generator, Optional
 from xml.etree import ElementTree
 
 import httpx
@@ -26,8 +26,8 @@ class USCodeSection:
     heading: str
     text: str
     citations: list[str] = field(default_factory=list)
-    source_notes: Optional[str] = None
-    effective_date: Optional[date] = None
+    source_notes: str | None = None
+    effective_date: date | None = None
 
 
 @dataclass
@@ -37,7 +37,7 @@ class USCodeTitle:
     number: int
     name: str
     is_positive_law: bool  # Positive law titles are the authoritative text
-    last_updated: Optional[date] = None
+    last_updated: date | None = None
     sections: list[USCodeSection] = field(default_factory=list)
 
 
@@ -190,7 +190,7 @@ class USCodeClient:
             lines = [line.strip() for line in text.split("\n") if line.strip()]
             return "\n".join(lines)
 
-        except Exception as e:
+        except Exception:
             # Fallback: return basic constitution text
             return self._get_constitution_fallback()
 
@@ -332,7 +332,7 @@ States of America.
     def search(
         self,
         query: str,
-        titles: Optional[list[int]] = None,
+        titles: list[int] | None = None,
         limit: int = 50,
     ) -> list[USCodeSection]:
         """Search US Code sections by keyword.
@@ -365,7 +365,7 @@ States of America.
 
         return results
 
-    def get_section(self, title: int, section: str) -> Optional[USCodeSection]:
+    def get_section(self, title: int, section: str) -> USCodeSection | None:
         """Get a specific section of the US Code.
 
         Args:

@@ -2,37 +2,27 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from civitas.california.client import CaliforniaLegislatureClient
 from civitas.california.models import Bill as CABill
-from civitas.california.models import BillVersion as CABillVersion
 from civitas.california.models import BillHistory as CABillHistory
 from civitas.california.models import BillSummaryVote as CABillSummaryVote
-from civitas.california.models import BillDetailVote as CABillDetailVote
-from civitas.california.models import Legislator as CALegislator
+from civitas.california.models import BillVersion as CABillVersion
 from civitas.california.models import LawCode as CALawCode
-from civitas.california.models import LawSection as CALawSection
-
+from civitas.california.models import Legislator as CALegislator
 from civitas.congress.client import CongressClient
-from civitas.congress.models import BillSummary as FedBillSummary
-
 from civitas.db.models import (
     Base,
+    LawCode,
     Legislation,
-    LegislationVersion,
     LegislationAction,
     Legislator,
     Vote,
-    VoteRecord,
-    LawCode,
-    LawSection,
 )
 
 
@@ -61,9 +51,9 @@ class DataIngester:
     def ingest_california_session(
         self,
         session_year: int,
-        data_dir: Optional[Path] = None,
+        data_dir: Path | None = None,
         batch_size: int = 1000,
-        progress_callback: Optional[callable] = None,
+        progress_callback: callable | None = None,
     ) -> dict[str, int]:
         """Ingest California Legislature data for a session.
 
@@ -177,8 +167,8 @@ class DataIngester:
         self,
         session: Session,
         bill: CABill,
-        version: Optional[CABillVersion] = None,
-    ) -> Optional[Legislation]:
+        version: CABillVersion | None = None,
+    ) -> Legislation | None:
         """Ingest a California bill."""
         # Check if already exists
         existing = session.query(Legislation).filter_by(
@@ -248,9 +238,14 @@ class DataIngester:
         if not action.action_date:
             return
 
+        action_date = (
+            action.action_date.date()
+            if isinstance(action.action_date, datetime)
+            else action.action_date
+        )
         db_action = LegislationAction(
             legislation_id=legislation_id,
-            action_date=action.action_date.date() if isinstance(action.action_date, datetime) else action.action_date,
+            action_date=action_date,
             action_text=action.action or "",
             action_code=action.action_code,
             committee=action.primary_location,
@@ -264,10 +259,16 @@ class DataIngester:
         legislation_id: int,
     ) -> None:
         """Ingest a California vote."""
+        vote_date = (
+            vote.vote_date_time.date()
+            if isinstance(vote.vote_date_time, datetime)
+            else vote.vote_date_time
+        )
+        chamber = "house" if vote.location_code.startswith("A") else "senate"
         db_vote = Vote(
             legislation_id=legislation_id,
-            vote_date=vote.vote_date_time.date() if isinstance(vote.vote_date_time, datetime) else vote.vote_date_time,
-            chamber="house" if vote.location_code.startswith("A") else "senate",
+            vote_date=vote_date,
+            chamber=chamber,
             ayes=vote.ayes,
             nays=vote.noes,
             abstain=vote.abstain,
@@ -280,7 +281,7 @@ class DataIngester:
         self,
         session: Session,
         leg: CALegislator,
-    ) -> Optional[Legislator]:
+    ) -> Legislator | None:
         """Ingest a California legislator."""
         # Check if exists
         existing = session.query(Legislator).filter_by(
@@ -291,13 +292,20 @@ class DataIngester:
         if existing:
             return existing
 
+        chamber = (
+            "house"
+            if leg.house_type == "A"
+            else "senate"
+            if leg.house_type == "S"
+            else None
+        )
         db_leg = Legislator(
             jurisdiction="california",
             source_id=leg.district,
             full_name=leg.full_name,
             first_name=leg.first_name,
             last_name=leg.last_name,
-            chamber="house" if leg.house_type == "A" else "senate" if leg.house_type == "S" else None,
+            chamber=chamber,
             state="California",
             district=leg.district,
             party=leg.party,
@@ -335,7 +343,7 @@ class DataIngester:
         congress: int,
         laws_only: bool = True,
         batch_size: int = 100,
-        progress_callback: Optional[callable] = None,
+        progress_callback: callable | None = None,
     ) -> dict[str, int]:
         """Ingest federal legislation from Congress.gov.
 
@@ -400,7 +408,7 @@ class DataIngester:
         session: Session,
         bill_data: dict,
         congress: int,
-    ) -> Optional[Legislation]:
+    ) -> Legislation | None:
         """Ingest a federal bill."""
         source_id = f"{congress}_{bill_data['type']}_{bill_data['number']}"
 
@@ -488,11 +496,18 @@ class DataIngester:
         """Get database statistics."""
         session = self.get_session()
         try:
+            federal_legislation = session.query(Legislation).filter_by(
+                jurisdiction="federal"
+            ).count()
+            california_legislation = session.query(Legislation).filter_by(
+                jurisdiction="california"
+            ).count()
+            enacted_laws = session.query(Legislation).filter_by(is_enacted=True).count()
             return {
                 "total_legislation": session.query(Legislation).count(),
-                "federal_legislation": session.query(Legislation).filter_by(jurisdiction="federal").count(),
-                "california_legislation": session.query(Legislation).filter_by(jurisdiction="california").count(),
-                "enacted_laws": session.query(Legislation).filter_by(is_enacted=True).count(),
+                "federal_legislation": federal_legislation,
+                "california_legislation": california_legislation,
+                "enacted_laws": enacted_laws,
                 "legislators": session.query(Legislator).count(),
                 "votes": session.query(Vote).count(),
                 "actions": session.query(LegislationAction).count(),

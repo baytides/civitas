@@ -14,8 +14,8 @@ Get a token at: https://www.courtlistener.com/sign-in/
 """
 
 import os
+from collections.abc import Generator
 from datetime import date, timedelta
-from typing import Generator, Optional
 
 import httpx
 
@@ -52,7 +52,7 @@ class CourtListenerClient:
 
     def __init__(
         self,
-        api_token: Optional[str] = None,
+        api_token: str | None = None,
         azure_client=None,
     ):
         """Initialize Court Listener client.
@@ -78,9 +78,9 @@ class CourtListenerClient:
     def search_opinions(
         self,
         query: str,
-        court: Optional[str] = None,
-        filed_after: Optional[date] = None,
-        filed_before: Optional[date] = None,
+        court: str | None = None,
+        filed_after: date | None = None,
+        filed_before: date | None = None,
         limit: int = 20,
     ) -> list[CourtListenerOpinion]:
         """Search for opinions.
@@ -117,7 +117,7 @@ class CourtListenerClient:
 
     def get_recent_opinions(
         self,
-        court: Optional[str] = None,
+        court: str | None = None,
         days: int = 30,
         limit: int = 50,
     ) -> Generator[CourtListenerOpinion, None, None]:
@@ -189,7 +189,7 @@ class CourtListenerClient:
                 print(f"Error fetching from {court}: {e}")
                 continue
 
-    def get_opinion(self, opinion_id: int) -> Optional[CourtListenerOpinion]:
+    def get_opinion(self, opinion_id: int) -> CourtListenerOpinion | None:
         """Get a specific opinion by ID.
 
         Args:
@@ -205,7 +205,7 @@ class CourtListenerClient:
         except httpx.HTTPStatusError:
             return None
 
-    def get_case(self, case_id: int) -> Optional[CourtListenerCase]:
+    def get_case(self, case_id: int) -> CourtListenerCase | None:
         """Get a specific case by ID.
 
         Args:

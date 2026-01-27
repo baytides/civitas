@@ -1,7 +1,6 @@
 """Pydantic models for Supreme Court data."""
 
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -16,22 +15,22 @@ class SCOTUSOpinion(BaseModel):
     term: str
 
     # Vote
-    vote_majority: Optional[int] = None
-    vote_dissent: Optional[int] = None
+    vote_majority: int | None = None
+    vote_dissent: int | None = None
 
     # Authors
-    majority_author: Optional[str] = None
+    majority_author: str | None = None
 
     # Content
-    holding: Optional[str] = None
-    syllabus: Optional[str] = None
-    majority_opinion: Optional[str] = None
-    dissent_opinion: Optional[str] = None
-    concurrence_opinion: Optional[str] = None
+    holding: str | None = None
+    syllabus: str | None = None
+    majority_opinion: str | None = None
+    dissent_opinion: str | None = None
+    concurrence_opinion: str | None = None
 
     # URLs
-    pdf_url: Optional[str] = None
-    azure_url: Optional[str] = None  # Stored copy in Azure
+    pdf_url: str | None = None
+    azure_url: str | None = None  # Stored copy in Azure
 
 
 class SCOTUSListingItem(BaseModel):

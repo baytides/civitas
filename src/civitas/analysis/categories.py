@@ -5,7 +5,6 @@ Each category includes subcategories and keywords for AI classification.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -18,8 +17,11 @@ class LawCategory:
     subcategories: list[str] = field(default_factory=list)
     keywords: list[str] = field(default_factory=list)
     p2025_related: bool = False  # Whether this category has P2025 objectives
-    threat_keywords: list[str] = field(default_factory=list)  # Keywords indicating anti-democratic action
-    resistance_keywords: list[str] = field(default_factory=list)  # Keywords indicating protective legislation
+    # Keywords indicating anti-democratic action
+    threat_keywords: list[str] = field(default_factory=list)
+    resistance_keywords: list[str] = field(
+        default_factory=list
+    )  # Keywords indicating protective legislation
 
 
 # Comprehensive categories covering all major policy areas
@@ -28,7 +30,9 @@ CATEGORIES: list[LawCategory] = [
     LawCategory(
         slug="civil_rights",
         name="Civil Rights & Liberties",
-        description="Voting rights, discrimination, free speech, privacy, and constitutional protections",
+        description=(
+            "Voting rights, discrimination, free speech, privacy, and constitutional protections"
+        ),
         subcategories=[
             "voting_rights",
             "discrimination",
@@ -673,7 +677,7 @@ CATEGORIES: list[LawCategory] = [
 ]
 
 
-def get_category_by_slug(slug: str) -> Optional[LawCategory]:
+def get_category_by_slug(slug: str) -> LawCategory | None:
     """Get a category by its slug."""
     for cat in CATEGORIES:
         if cat.slug == slug:

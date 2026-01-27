@@ -10,8 +10,8 @@ The Federal Register is the official daily publication for:
 - Notices of Federal Agencies
 """
 
+from collections.abc import Generator
 from datetime import date, timedelta
-from typing import Generator, Optional
 
 import httpx
 
@@ -52,8 +52,8 @@ class FederalRegisterClient:
 
     def get_executive_orders(
         self,
-        president: Optional[str] = None,
-        year: Optional[int] = None,
+        president: str | None = None,
+        year: int | None = None,
         limit: int = 100,
     ) -> Generator[ExecutiveOrderModel, None, None]:
         """Fetch executive orders.
@@ -117,8 +117,8 @@ class FederalRegisterClient:
 
     def get_recent_documents(
         self,
-        document_type: Optional[str] = None,
-        agency: Optional[str] = None,
+        document_type: str | None = None,
+        agency: str | None = None,
         days: int = 30,
         limit: int = 100,
     ) -> Generator[FederalRegisterDocument, None, None]:
@@ -190,14 +190,13 @@ class FederalRegisterClient:
             types.append("PRORULE")
 
         for doc_type in types:
-            for doc in self.get_recent_documents(
+            yield from self.get_recent_documents(
                 document_type=doc_type,
                 agency=agency,
                 days=days,
-            ):
-                yield doc
+            )
 
-    def get_document(self, document_number: str) -> Optional[FederalRegisterDocument]:
+    def get_document(self, document_number: str) -> FederalRegisterDocument | None:
         """Get a specific document by number.
 
         Args:
@@ -227,7 +226,7 @@ class FederalRegisterClient:
     def search(
         self,
         query: str,
-        document_type: Optional[str] = None,
+        document_type: str | None = None,
         limit: int = 50,
     ) -> list[FederalRegisterDocument]:
         """Search Federal Register documents.

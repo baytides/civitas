@@ -5,7 +5,6 @@ https://github.com/freelawproject/courtlistener
 """
 
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -14,23 +13,23 @@ class CourtListenerOpinion(BaseModel):
     """An opinion from Court Listener."""
 
     id: int
-    case_id: Optional[int] = None
+    case_id: int | None = None
     case_name: str
     court: str
-    court_name: Optional[str] = None
+    court_name: str | None = None
     date_created: date
 
     # Content
-    plain_text: Optional[str] = None
-    html: Optional[str] = None
+    plain_text: str | None = None
+    html: str | None = None
 
     # Metadata
     opinion_type: str = "unknown"
-    author: Optional[str] = None
-    citation: Optional[str] = None
+    author: str | None = None
+    citation: str | None = None
 
     # URL
-    absolute_url: Optional[str] = None
+    absolute_url: str | None = None
 
 
 class CourtListenerCase(BaseModel):
@@ -40,15 +39,15 @@ class CourtListenerCase(BaseModel):
     case_name: str
     docket_number: str
     court: str
-    court_name: Optional[str] = None
+    court_name: str | None = None
 
     # Dates
-    date_filed: Optional[date] = None
-    date_terminated: Optional[date] = None
+    date_filed: date | None = None
+    date_terminated: date | None = None
 
     # Status
-    status: Optional[str] = None
-    nature_of_suit: Optional[str] = None
+    status: str | None = None
+    nature_of_suit: str | None = None
 
     # URL
-    absolute_url: Optional[str] = None
+    absolute_url: str | None = None

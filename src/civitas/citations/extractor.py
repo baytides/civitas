@@ -12,7 +12,7 @@ Supports extracting:
 """
 
 from dataclasses import dataclass
-from typing import Optional
+from importlib.util import find_spec
 
 
 @dataclass
@@ -23,17 +23,17 @@ class ExtractedCitation:
     citation_type: str  # "full", "short", "supra", "id", "statute"
 
     # Case citation fields
-    reporter: Optional[str] = None
-    volume: Optional[int] = None
-    page: Optional[int] = None
-    year: Optional[int] = None
-    court: Optional[str] = None
+    reporter: str | None = None
+    volume: int | None = None
+    page: int | None = None
+    year: int | None = None
+    court: str | None = None
 
     # Position in source text
-    span: Optional[tuple[int, int]] = None
+    span: tuple[int, int] | None = None
 
     # Normalized citation string
-    normalized: Optional[str] = None
+    normalized: str | None = None
 
 
 class CitationExtractor:
@@ -60,11 +60,7 @@ class CitationExtractor:
     def _check_eyecite(self):
         """Check if eyecite is available."""
         if self._eyecite_available is None:
-            try:
-                import eyecite
-                self._eyecite_available = True
-            except ImportError:
-                self._eyecite_available = False
+            self._eyecite_available = find_spec("eyecite") is not None
         return self._eyecite_available
 
     def extract_citations(self, text: str) -> list[ExtractedCitation]:
@@ -84,9 +80,9 @@ class CitationExtractor:
         from eyecite import get_citations
         from eyecite.models import (
             FullCaseCitation,
+            IdCitation,
             ShortCaseCitation,
             SupraCitation,
-            IdCitation,
         )
 
         citations = get_citations(text)
@@ -193,7 +189,7 @@ class CitationExtractor:
         if not self._check_eyecite():
             raise ImportError("eyecite not installed")
 
-        from eyecite import get_citations, annotate_citations
+        from eyecite import annotate_citations, get_citations
 
         citations = get_citations(text)
         annotations = [[c.span(), f"<{tag}>", f"</{tag}>"] for c in citations]
@@ -203,7 +199,7 @@ class CitationExtractor:
         self,
         citations: list[ExtractedCitation],
         court_cases: list,
-    ) -> list[tuple[ExtractedCitation, Optional[object]]]:
+    ) -> list[tuple[ExtractedCitation, object | None]]:
         """Attempt to resolve citations to database records.
 
         Args:
@@ -231,7 +227,7 @@ class CitationExtractor:
 
         return results
 
-    def _safe_int(self, value) -> Optional[int]:
+    def _safe_int(self, value) -> int | None:
         """Safely convert a value to int."""
         if value is None:
             return None

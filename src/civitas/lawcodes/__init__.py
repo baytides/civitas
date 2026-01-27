@@ -5,7 +5,7 @@ Provides access to:
 - State constitutions from various official state sources (Public Domain)
 """
 
-from .uscode import USCodeClient
 from .constitutions import ConstitutionClient, StateConstitution
+from .uscode import USCodeClient
 
 __all__ = ["USCodeClient", "ConstitutionClient", "StateConstitution"]

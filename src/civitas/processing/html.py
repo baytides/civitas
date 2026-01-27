@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass
@@ -13,9 +12,9 @@ class HTMLProcessingResult:
     """Result of HTML processing."""
 
     original_path: Path
-    markdown_path: Optional[Path] = None
+    markdown_path: Path | None = None
     text_content: str = ""
-    title: Optional[str] = None
+    title: str | None = None
     word_count: int = 0
 
 
@@ -26,7 +25,7 @@ class HTMLProcessor:
     falls back to BeautifulSoup for general HTML.
     """
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         """Initialize HTML processor.
 
         Args:
@@ -98,7 +97,7 @@ class HTMLProcessor:
         except Exception:
             return ""
 
-    def _extract_with_beautifulsoup(self, html_content: str) -> tuple[str, Optional[str]]:
+    def _extract_with_beautifulsoup(self, html_content: str) -> tuple[str, str | None]:
         """Extract content using BeautifulSoup."""
         try:
             from bs4 import BeautifulSoup
@@ -135,7 +134,7 @@ class HTMLProcessor:
         except Exception:
             return "", None
 
-    def _extract_title(self, html_content: str) -> Optional[str]:
+    def _extract_title(self, html_content: str) -> str | None:
         """Extract title from HTML."""
         try:
             from bs4 import BeautifulSoup

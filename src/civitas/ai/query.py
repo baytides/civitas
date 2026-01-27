@@ -10,19 +10,17 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from civitas.db.models import (
-    Base,
+    LawCode,
     Legislation,
     LegislationAction,
     Legislator,
     Vote,
-    LawCode,
-    LawSection,
 )
 
 # Default Ollama configuration (Carl AI VM on Azure)
@@ -80,10 +78,10 @@ class CivitasAI:
     def __init__(
         self,
         db_path: str = "civitas.db",
-        ai_provider: Optional[str] = None,
-        api_key: Optional[str] = None,
-        ollama_host: Optional[str] = None,
-        ollama_model: Optional[str] = None,
+        ai_provider: str | None = None,
+        api_key: str | None = None,
+        ollama_host: str | None = None,
+        ollama_model: str | None = None,
     ):
         """Initialize the AI query interface.
 
@@ -119,8 +117,8 @@ class CivitasAI:
     def search(
         self,
         query: str,
-        jurisdiction: Optional[str] = None,
-        session_year: Optional[str] = None,
+        jurisdiction: str | None = None,
+        session_year: str | None = None,
         enacted_only: bool = False,
         limit: int = 20,
     ) -> list[dict]:
@@ -153,7 +151,7 @@ class CivitasAI:
             if session_year:
                 q = q.filter(Legislation.session == session_year)
             if enacted_only:
-                q = q.filter(Legislation.is_enacted == True)
+                q = q.filter(Legislation.is_enacted.is_(True))
 
             q = q.order_by(Legislation.last_action_date.desc().nullslast())
             q = q.limit(limit)
@@ -175,7 +173,7 @@ class CivitasAI:
         finally:
             db_session.close()
 
-    def get_legislation(self, legislation_id: int) -> Optional[dict]:
+    def get_legislation(self, legislation_id: int) -> dict | None:
         """Get detailed information about a specific piece of legislation.
 
         Args:
@@ -238,7 +236,7 @@ class CivitasAI:
 
     def get_recent_laws(
         self,
-        jurisdiction: Optional[str] = None,
+        jurisdiction: str | None = None,
         limit: int = 10,
     ) -> list[dict]:
         """Get recently enacted laws.
@@ -252,7 +250,7 @@ class CivitasAI:
         """
         db_session = self.get_session()
         try:
-            q = db_session.query(Legislation).filter(Legislation.is_enacted == True)
+            q = db_session.query(Legislation).filter(Legislation.is_enacted.is_(True))
 
             if jurisdiction:
                 q = q.filter(Legislation.jurisdiction == jurisdiction)
@@ -276,10 +274,10 @@ class CivitasAI:
 
     def get_legislator(
         self,
-        name: Optional[str] = None,
-        jurisdiction: Optional[str] = None,
-        chamber: Optional[str] = None,
-        party: Optional[str] = None,
+        name: str | None = None,
+        jurisdiction: str | None = None,
+        chamber: str | None = None,
+        party: str | None = None,
         limit: int = 20,
     ) -> list[dict]:
         """Search for legislators.

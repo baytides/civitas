@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
 from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.table import Table
 
 app = typer.Typer(
     name="civitas",
@@ -32,7 +31,7 @@ app.add_typer(ingest_app, name="ingest")
 def ingest_california(
     session_year: int = typer.Argument(..., help="Session year (e.g., 2023)"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    data_dir: Optional[str] = typer.Option(None, "--data-dir", help="Data directory"),
+    data_dir: str | None = typer.Option(None, "--data-dir", help="Data directory"),
 ):
     """Ingest California Legislature data for a session."""
     from civitas.db import DataIngester
@@ -85,15 +84,16 @@ def ingest_federal(
 
 @ingest_app.command("scotus")
 def ingest_scotus(
-    term: Optional[str] = typer.Option(None, "--term", help="Specific term (e.g., '24' for 2024)"),
+    term: str | None = typer.Option(None, "--term", help="Specific term (e.g., '24' for 2024)"),
     azure: bool = typer.Option(False, "--azure", help="Store documents in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Ingest Supreme Court slip opinions."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import CourtCase, get_engine
     from civitas.scotus import SCOTUSClient
     from civitas.storage import AzureStorageClient
-    from civitas.db.models import CourtCase, get_engine
-    from sqlalchemy.orm import Session
 
     azure_client = AzureStorageClient() if azure else None
 
@@ -152,10 +152,11 @@ def ingest_courts(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Ingest federal court opinions from Court Listener."""
-    from civitas.courts import CourtListenerClient
-    from civitas.storage import AzureStorageClient
-    from civitas.db.models import CourtCase, get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.courts import CourtListenerClient
+    from civitas.db.models import CourtCase, get_engine
+    from civitas.storage import AzureStorageClient
 
     azure_client = AzureStorageClient() if azure else None
     api_token = os.getenv("COURT_LISTENER_TOKEN")
@@ -196,16 +197,17 @@ def ingest_courts(
 
 @ingest_app.command("executive-orders")
 def ingest_executive_orders(
-    president: Optional[str] = typer.Option(None, "--president", help="Filter by president"),
-    year: Optional[int] = typer.Option(None, "--year", help="Filter by year"),
+    president: str | None = typer.Option(None, "--president", help="Filter by president"),
+    year: int | None = typer.Option(None, "--year", help="Filter by year"),
     azure: bool = typer.Option(False, "--azure", help="Store documents in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Ingest executive orders from Federal Register."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import ExecutiveOrder, get_engine
     from civitas.executive import FederalRegisterClient
     from civitas.storage import AzureStorageClient
-    from civitas.db.models import ExecutiveOrder, get_engine
-    from sqlalchemy.orm import Session
 
     azure_client = AzureStorageClient() if azure else None
 
@@ -260,10 +262,12 @@ def ingest_project2025(
     - Identify constitutional concerns
     - Generate proposal summaries
     """
-    from civitas.project2025 import Project2025Parser, EnhancedProject2025Parser
-    from civitas.db.models import Project2025Policy, get_engine
-    from sqlalchemy.orm import Session
     import json
+
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Project2025Policy, get_engine
+    from civitas.project2025 import EnhancedProject2025Parser, Project2025Parser
 
     pdf_file = Path(pdf_path)
     if not pdf_file.exists():
@@ -327,7 +331,7 @@ def ingest_project2025(
 
 @ingest_app.command("uscode")
 def ingest_uscode(
-    titles: Optional[str] = typer.Option(None, "--titles", help="Comma-separated title numbers (e.g., '18,26,42')"),
+    titles: str | None = typer.Option(None, "--titles", help="Comma-separated title numbers (e.g., '18,26,42')"),
     azure: bool = typer.Option(False, "--azure", help="Store in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -336,10 +340,11 @@ def ingest_uscode(
     Downloads XML versions of US Code titles and stores them locally
     and optionally in Azure Blob Storage.
     """
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import LawCode, LawSection, get_engine
     from civitas.lawcodes import USCodeClient
     from civitas.storage import AzureStorageClient
-    from civitas.db.models import LawCode, LawSection, get_engine
-    from sqlalchemy.orm import Session
 
     azure_client = AzureStorageClient() if azure else None
 
@@ -354,7 +359,7 @@ def ingest_uscode(
             title_nums = [int(t.strip()) for t in titles.split(",")]
         else:
             title_nums = list(client.TITLES.keys())[:10]  # Default to first 10 titles
-            console.print(f"  [yellow]Defaulting to first 10 titles. Use --titles to specify.[/yellow]")
+            console.print("  [yellow]Defaulting to first 10 titles. Use --titles to specify.[/yellow]")
 
         for title_num in title_nums:
             console.print(f"  [cyan]Title {title_num}: {client.TITLES.get(title_num, 'Unknown')}...[/cyan]")
@@ -413,7 +418,7 @@ def ingest_uscode(
 
 @ingest_app.command("constitutions")
 def ingest_constitutions(
-    states: Optional[str] = typer.Option(None, "--states", help="Comma-separated state codes (e.g., 'CA,NY,TX')"),
+    states: str | None = typer.Option(None, "--states", help="Comma-separated state codes (e.g., 'CA,NY,TX')"),
     azure: bool = typer.Option(False, "--azure", help="Store in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -422,10 +427,11 @@ def ingest_constitutions(
     Scrapes official state sources for constitution text.
     All state constitutions are public domain.
     """
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import LawCode, LawSection, get_engine
     from civitas.lawcodes import ConstitutionClient
     from civitas.storage import AzureStorageClient
-    from civitas.db.models import LawCode, LawSection, get_engine
-    from sqlalchemy.orm import Session
 
     azure_client = AzureStorageClient() if azure else None
 
@@ -501,7 +507,7 @@ def ingest_constitutions(
 @ingest_app.command("state-bills")
 def ingest_state_bills(
     state: str = typer.Argument(..., help="Two-letter state code (e.g., 'ca', 'ny')"),
-    session: Optional[str] = typer.Option(None, "--session", help="Session identifier"),
+    session: str | None = typer.Option(None, "--session", help="Session identifier"),
     limit: int = typer.Option(500, "-n", "--limit", help="Max bills to fetch"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -510,9 +516,10 @@ def ingest_state_bills(
     Requires OPENSTATES_API_KEY environment variable.
     Get a key at: https://openstates.org/accounts/login/
     """
-    from civitas.states import OpenStatesClient
-    from civitas.db.models import Legislation, get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import Legislation, get_engine
+    from civitas.states import OpenStatesClient
 
     api_key = os.getenv("OPENSTATES_API_KEY")
     if not api_key:
@@ -608,9 +615,10 @@ def ingest_state_legislators(
 
     Requires OPENSTATES_API_KEY environment variable.
     """
-    from civitas.states import OpenStatesClient
-    from civitas.db.models import Legislator, get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import Legislator, get_engine
+    from civitas.states import OpenStatesClient
 
     api_key = os.getenv("OPENSTATES_API_KEY")
     if not api_key:
@@ -674,7 +682,7 @@ def ingest_state_legislators(
 
 @ingest_app.command("all-states")
 def ingest_all_states(
-    states: Optional[str] = typer.Option(None, "--states", help="Comma-separated state codes (default: key states)"),
+    states: str | None = typer.Option(None, "--states", help="Comma-separated state codes (default: key states)"),
     bills_limit: int = typer.Option(200, "--bills", help="Bills per state"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -720,10 +728,11 @@ def ingest_us_constitution(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Download and ingest the US Constitution."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import LawCode, LawSection, get_engine
     from civitas.lawcodes import USCodeClient
     from civitas.storage import AzureStorageClient
-    from civitas.db.models import LawCode, LawSection, get_engine
-    from sqlalchemy.orm import Session
 
     azure_client = AzureStorageClient() if azure else None
 
@@ -781,15 +790,16 @@ def ingest_us_constitution(
 
 @app.command("cases")
 def search_cases(
-    query: Optional[str] = typer.Argument(None, help="Search query"),
-    court: Optional[str] = typer.Option(None, "-c", "--court", help="Filter by court"),
-    level: Optional[str] = typer.Option(None, "-l", "--level", help="Filter by court level (scotus, circuit, district)"),
+    query: str | None = typer.Argument(None, help="Search query"),
+    court: str | None = typer.Option(None, "-c", "--court", help="Filter by court"),
+    level: str | None = typer.Option(None, "-l", "--level", help="Filter by court level (scotus, circuit, district)"),
     limit: int = typer.Option(10, "-n", "--limit", help="Max results"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Search court cases."""
-    from civitas.db.models import CourtCase, get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import CourtCase, get_engine
 
     engine = get_engine(db_path)
 
@@ -840,14 +850,15 @@ def search_cases(
 
 @app.command("p2025-report")
 def project2025_report(
-    agency: Optional[str] = typer.Option(None, "-a", "--agency", help="Filter by agency"),
-    action: Optional[str] = typer.Option(None, "--action", help="Filter by action type"),
+    agency: str | None = typer.Option(None, "-a", "--agency", help="Filter by agency"),
+    action: str | None = typer.Option(None, "--action", help="Filter by action type"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Generate Project 2025 tracking report."""
-    from civitas.project2025 import Project2025Tracker
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.project2025 import Project2025Tracker
 
     engine = get_engine(db_path)
 
@@ -900,13 +911,14 @@ app.add_typer(resistance_app, name="resist")
 
 @resistance_app.command("progress")
 def resistance_progress(
-    agency: Optional[str] = typer.Option(None, "-a", "--agency", help="Filter by agency"),
+    agency: str | None = typer.Option(None, "-a", "--agency", help="Filter by agency"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Show P2025 implementation progress (similar to project2025.observer)."""
-    from civitas.resistance import ImplementationTracker
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ImplementationTracker
 
     engine = get_engine(db_path)
 
@@ -969,9 +981,10 @@ def resistance_analyze(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Analyze a P2025 policy for legal vulnerabilities using AI."""
-    from civitas.resistance import ResistanceAnalyzer
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ResistanceAnalyzer
 
     engine = get_engine(db_path)
 
@@ -1023,13 +1036,14 @@ def resistance_analyze(
 @resistance_app.command("recommend")
 def resistance_recommend(
     policy_id: int = typer.Argument(..., help="P2025 policy ID"),
-    tier: Optional[str] = typer.Option(None, "-t", "--tier", help="Tier (tier_1_immediate, tier_2_congressional, tier_3_presidential)"),
+    tier: str | None = typer.Option(None, "-t", "--tier", help="Tier (tier_1_immediate, tier_2_congressional, tier_3_presidential)"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Generate tiered resistance recommendations for a P2025 policy."""
-    from civitas.resistance import ResistanceRecommender
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ResistanceRecommender
 
     engine = get_engine(db_path)
 
@@ -1095,9 +1109,10 @@ def resistance_scan_eos(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Scan recent executive orders for P2025 policy matches."""
-    from civitas.resistance import ImplementationTracker
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ImplementationTracker
 
     engine = get_engine(db_path)
 
@@ -1128,9 +1143,10 @@ def resistance_blocked(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Show P2025 policies that have been blocked by courts or states."""
-    from civitas.resistance import ImplementationTracker
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ImplementationTracker
 
     engine = get_engine(db_path)
 
@@ -1155,13 +1171,14 @@ def resistance_blocked(
 
 @resistance_app.command("urgent")
 def resistance_urgent(
-    category: Optional[str] = typer.Option(None, "-c", "--category", help="Filter by category"),
+    category: str | None = typer.Option(None, "-c", "--category", help="Filter by category"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Show urgent Tier 1 actions that can be taken now."""
-    from civitas.resistance import ResistanceRecommender
-    from civitas.db.models import get_engine
     from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ResistanceRecommender
 
     engine = get_engine(db_path)
 
@@ -1186,14 +1203,16 @@ def resistance_urgent(
 
 @resistance_app.command("report")
 def resistance_full_report(
-    output: Optional[str] = typer.Option(None, "-o", "--output", help="Output file (JSON)"),
+    output: str | None = typer.Option(None, "-o", "--output", help="Output file (JSON)"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Generate comprehensive resistance report."""
-    from civitas.resistance import ImplementationTracker
-    from civitas.db.models import get_engine
-    from sqlalchemy.orm import Session
     import json
+
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ImplementationTracker
 
     engine = get_engine(db_path)
 
@@ -1296,7 +1315,7 @@ def show_credits():
 @app.command("search")
 def search(
     query: str = typer.Argument(..., help="Search query"),
-    jurisdiction: Optional[str] = typer.Option(None, "-j", "--jurisdiction", help="Filter by jurisdiction"),
+    jurisdiction: str | None = typer.Option(None, "-j", "--jurisdiction", help="Filter by jurisdiction"),
     enacted: bool = typer.Option(False, "--enacted", help="Only show enacted laws"),
     limit: int = typer.Option(20, "-n", "--limit", help="Max results"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
@@ -1403,7 +1422,7 @@ def show_legislation(
 
 @app.command("recent")
 def recent_laws(
-    jurisdiction: Optional[str] = typer.Option(None, "-j", "--jurisdiction", help="Filter by jurisdiction"),
+    jurisdiction: str | None = typer.Option(None, "-j", "--jurisdiction", help="Filter by jurisdiction"),
     limit: int = typer.Option(10, "-n", "--limit", help="Max results"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -1477,7 +1496,7 @@ def show_stats(
 def ask_question(
     question: str = typer.Argument(..., help="Natural language question"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    ai_provider: Optional[str] = typer.Option(None, "--ai", help="AI provider (ollama/anthropic/openai)"),
+    ai_provider: str | None = typer.Option(None, "--ai", help="AI provider (ollama/anthropic/openai)"),
 ):
     """Ask a natural language question about legislation.
 
@@ -1497,7 +1516,7 @@ def ask_question(
 @app.command("chat")
 def interactive_chat(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    ai_provider: Optional[str] = typer.Option(None, "--ai", help="AI provider (ollama/anthropic/openai)"),
+    ai_provider: str | None = typer.Option(None, "--ai", help="AI provider (ollama/anthropic/openai)"),
 ):
     """Start an interactive chat session.
 

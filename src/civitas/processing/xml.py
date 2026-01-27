@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 from xml.etree import ElementTree as ET
 
 
@@ -13,10 +12,10 @@ class XMLSection:
     """A section extracted from XML."""
 
     identifier: str
-    title: Optional[str] = None
+    title: str | None = None
     text: str = ""
     level: int = 0
-    children: list["XMLSection"] = field(default_factory=list)
+    children: list[XMLSection] = field(default_factory=list)
 
 
 @dataclass
@@ -24,7 +23,7 @@ class XMLProcessingResult:
     """Result of XML processing."""
 
     original_path: Path
-    markdown_path: Optional[Path] = None
+    markdown_path: Path | None = None
     sections: list[XMLSection] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
     text_content: str = ""
@@ -36,7 +35,7 @@ class XMLProcessor:
     # USLM namespace
     USLM_NS = {"uslm": "http://schemas.gpo.gov/xml/uslm"}
 
-    def __init__(self, output_dir: Optional[Path] = None):
+    def __init__(self, output_dir: Path | None = None):
         """Initialize XML processor.
 
         Args:
@@ -134,7 +133,9 @@ class XMLProcessor:
 
             elif tag in ("chapter", "subchapter", "part"):
                 # Heading elements
-                heading = section.find(".//heading") or section.find(".//uslm:heading", self.USLM_NS)
+                heading = section.find(".//heading") or section.find(
+                    ".//uslm:heading", self.USLM_NS
+                )
                 if heading is not None:
                     level = {"chapter": 2, "subchapter": 3, "part": 3}.get(tag, 2)
                     text = self._get_element_text(heading)
@@ -197,7 +198,11 @@ class XMLProcessor:
         result.text_content = "\n".join(markdown_parts)
         return result
 
-    def _process_generic(self, result: XMLProcessingResult, root: ET.Element) -> XMLProcessingResult:
+    def _process_generic(
+        self,
+        result: XMLProcessingResult,
+        root: ET.Element,
+    ) -> XMLProcessingResult:
         """Process generic XML to markdown."""
         markdown_parts = []
 

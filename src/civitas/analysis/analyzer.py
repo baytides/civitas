@@ -10,12 +10,11 @@ This module sends legislation text to Ollama for:
 import json
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 import httpx
 
-from .categories import CATEGORIES, LawCategory, get_category_by_slug
-from .actions import get_actions_for_category, get_urgent_actions, ResistanceAction
+from .actions import get_actions_for_category, get_urgent_actions
+from .categories import CATEGORIES, get_category_by_slug
 
 
 @dataclass
@@ -30,7 +29,7 @@ class AnalysisResult:
     # Threat assessment
     threat_level: str  # "none", "low", "medium", "high", "critical"
     threat_indicators: list[str]
-    p2025_alignment: Optional[str]  # Which P2025 objective it aligns with, if any
+    p2025_alignment: str | None  # Which P2025 objective it aligns with, if any
 
     # Content analysis
     summary: str
@@ -52,8 +51,8 @@ class LegislationAnalyzer:
 
     def __init__(
         self,
-        ollama_host: Optional[str] = None,
-        model: Optional[str] = None,
+        ollama_host: str | None = None,
+        model: str | None = None,
         timeout: float = 120.0,
     ):
         self.ollama_host = ollama_host or os.getenv(
@@ -74,7 +73,7 @@ class LegislationAnalyzer:
             lines.append(f"- {cat.slug}: {cat.name} - {cat.description}")
             lines.append(f"  Keywords: {keywords_str}")
             if cat.p2025_related:
-                lines.append(f"  P2025-related: Yes")
+                lines.append("  P2025-related: Yes")
                 if cat.threat_keywords:
                     lines.append(f"  Threat keywords: {', '.join(cat.threat_keywords[:5])}")
         return "\n".join(lines)
@@ -84,7 +83,7 @@ class LegislationAnalyzer:
         title: str,
         text: str,
         jurisdiction: str = "unknown",
-        bill_number: Optional[str] = None,
+        bill_number: str | None = None,
     ) -> AnalysisResult:
         """Analyze legislation and return structured result.
 
@@ -266,7 +265,7 @@ Do not include phrases like "This bill" - just describe what it does."""
         title: str,
         text: str,
         jurisdiction: str,
-        bill_number: Optional[str],
+        bill_number: str | None,
     ) -> str:
         """Build the full analysis prompt."""
         bill_info = f"Bill: {bill_number}\n" if bill_number else ""
@@ -353,7 +352,7 @@ IMPORTANT:
                 recommended_actions=actions,
                 urgency=data.get("urgency", "medium"),
             )
-        except (json.JSONDecodeError, IndexError, KeyError) as e:
+        except (json.JSONDecodeError, IndexError, KeyError):
             # Return minimal result on parse failure
             return AnalysisResult(
                 primary_category="government",
@@ -395,7 +394,7 @@ IMPORTANT:
         self.close()
 
 
-def check_ollama_connection(host: Optional[str] = None) -> bool:
+def check_ollama_connection(host: str | None = None) -> bool:
     """Check if Ollama is accessible."""
     host = host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
     try:
@@ -405,7 +404,7 @@ def check_ollama_connection(host: Optional[str] = None) -> bool:
         return False
 
 
-def list_ollama_models(host: Optional[str] = None) -> list[str]:
+def list_ollama_models(host: str | None = None) -> list[str]:
     """List available models on Ollama."""
     host = host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
     try:

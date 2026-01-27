@@ -7,7 +7,6 @@ https://downloads.leginfo.legislature.ca.gov/pubinfo_load.zip
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,13 +23,13 @@ class Bill(BaseModel):
     measure_type: str = Field(description="Bill type: AB, SB, ACA, SCA, ACR, SCR, AJR, SJR, AR, SR")
     measure_num: int = Field(description="Bill number")
     measure_state: str = Field(description="Current state of the measure")
-    chapter_year: Optional[str] = Field(default=None, description="Year chaptered (if enacted)")
-    chapter_type: Optional[str] = Field(default=None, description="Chapter type")
-    chapter_num: Optional[str] = Field(default=None, description="Chapter number (if enacted)")
-    latest_bill_version_id: Optional[str] = Field(default=None, description="ID of latest version")
-    current_location: Optional[str] = Field(default=None, description="Current committee/location")
-    current_house: Optional[str] = Field(default=None, description="Current house (Assembly/Senate)")
-    current_status: Optional[str] = Field(default=None, description="Current status")
+    chapter_year: str | None = Field(default=None, description="Year chaptered (if enacted)")
+    chapter_type: str | None = Field(default=None, description="Chapter type")
+    chapter_num: str | None = Field(default=None, description="Chapter number (if enacted)")
+    latest_bill_version_id: str | None = Field(default=None, description="ID of latest version")
+    current_location: str | None = Field(default=None, description="Current committee/location")
+    current_house: str | None = Field(default=None, description="Current house (Assembly/Senate)")
+    current_status: str | None = Field(default=None, description="Current status")
     active_flg: str = Field(default="Y", description="Active flag")
 
     @property
@@ -44,7 +43,7 @@ class Bill(BaseModel):
         return self.chapter_num is not None
 
     @property
-    def chapter_citation(self) -> Optional[str]:
+    def chapter_citation(self) -> str | None:
         """Generate chapter citation if enacted (e.g., 'Chapter 123, Statutes of 2023')."""
         if self.chapter_num and self.chapter_year:
             return f"Chapter {self.chapter_num}, Statutes of {self.chapter_year}"
@@ -61,13 +60,16 @@ class BillVersion(BaseModel):
     bill_id: str = Field(description="Parent bill ID")
     version_num: int = Field(description="Version number")
     bill_version_action_date: datetime = Field(description="Date of this version")
-    bill_version_action: Optional[str] = Field(default=None, description="Action type")
-    subject: Optional[str] = Field(default=None, description="Bill subject/digest")
-    vote_required: Optional[str] = Field(default=None, description="Vote threshold required")
-    appropriation: Optional[str] = Field(default=None, description="Contains appropriation (YES/NO)")
-    fiscal_committee: Optional[str] = Field(default=None, description="Requires fiscal review (YES/NO)")
-    urgency: Optional[str] = Field(default=None, description="Urgency clause (YES/NO)")
-    bill_xml: Optional[str] = Field(default=None, description="Full bill text in XML format")
+    bill_version_action: str | None = Field(default=None, description="Action type")
+    subject: str | None = Field(default=None, description="Bill subject/digest")
+    vote_required: str | None = Field(default=None, description="Vote threshold required")
+    appropriation: str | None = Field(default=None, description="Contains appropriation (YES/NO)")
+    fiscal_committee: str | None = Field(
+        default=None,
+        description="Requires fiscal review (YES/NO)",
+    )
+    urgency: str | None = Field(default=None, description="Urgency clause (YES/NO)")
+    bill_xml: str | None = Field(default=None, description="Full bill text in XML format")
     active_flg: str = Field(default="Y")
 
 
@@ -79,9 +81,9 @@ class BillVersionAuthor(BaseModel):
 
     bill_version_id: str
     type: str = Field(description="Author type: LEAD_AUTHOR, COAUTHOR, etc.")
-    house: Optional[str] = Field(default=None, description="Assembly or Senate")
-    name: Optional[str] = Field(default=None, description="Author name")
-    contribution: Optional[str] = Field(default=None, description="Contribution type")
+    house: str | None = Field(default=None, description="Assembly or Senate")
+    name: str | None = Field(default=None, description="Author name")
+    contribution: str | None = Field(default=None, description="Contribution type")
     primary_author_flg: str = Field(default="N")
 
 
@@ -92,15 +94,15 @@ class BillHistory(BaseModel):
     """
 
     bill_id: str
-    bill_history_id: Optional[int] = None
-    action_date: Optional[datetime] = None
-    action: Optional[str] = Field(default=None, description="Action text")
-    action_sequence: Optional[int] = None
-    action_code: Optional[str] = None
-    action_status: Optional[str] = None
-    primary_location: Optional[str] = None
-    secondary_location: Optional[str] = None
-    end_status: Optional[str] = None
+    bill_history_id: int | None = None
+    action_date: datetime | None = None
+    action: str | None = Field(default=None, description="Action text")
+    action_sequence: int | None = None
+    action_code: str | None = None
+    action_status: str | None = None
+    primary_location: str | None = None
+    secondary_location: str | None = None
+    end_status: str | None = None
 
 
 class BillAnalysis(BaseModel):
@@ -111,11 +113,11 @@ class BillAnalysis(BaseModel):
 
     analysis_id: int
     bill_id: str
-    house: Optional[str] = Field(default=None, description="A=Assembly, S=Senate")
-    analysis_type: Optional[str] = None
-    committee_code: Optional[str] = None
-    committee_name: Optional[str] = None
-    analysis_date: Optional[datetime] = None
+    house: str | None = Field(default=None, description="A=Assembly, S=Senate")
+    analysis_type: str | None = None
+    committee_code: str | None = None
+    committee_name: str | None = None
+    analysis_date: datetime | None = None
     # source_doc is LONGBLOB - full analysis document
     active_flg: str = Field(default="Y")
 
@@ -131,12 +133,12 @@ class BillSummaryVote(BaseModel):
     vote_date_time: datetime
     vote_date_seq: int
     motion_id: int
-    ayes: Optional[int] = None
-    noes: Optional[int] = None
-    abstain: Optional[int] = None
-    vote_result: Optional[str] = Field(default=None, description="PASS/FAIL")
-    file_location: Optional[str] = None
-    session_date: Optional[datetime] = None
+    ayes: int | None = None
+    noes: int | None = None
+    abstain: int | None = None
+    vote_result: str | None = Field(default=None, description="PASS/FAIL")
+    file_location: str | None = None
+    session_date: datetime | None = None
 
 
 class BillDetailVote(BaseModel):
@@ -150,11 +152,11 @@ class BillDetailVote(BaseModel):
     legislator_name: str
     vote_date_time: datetime
     vote_date_seq: int
-    vote_code: Optional[str] = Field(default=None, description="AYE, NOE, ABS, NVR")
+    vote_code: str | None = Field(default=None, description="AYE, NOE, ABS, NVR")
     motion_id: int
-    member_order: Optional[int] = None
-    session_date: Optional[datetime] = None
-    speaker: Optional[str] = None
+    member_order: int | None = None
+    session_date: datetime | None = None
+    speaker: str | None = None
 
 
 class BillMotion(BaseModel):
@@ -164,7 +166,7 @@ class BillMotion(BaseModel):
     """
 
     motion_id: int
-    motion_text: Optional[str] = None
+    motion_text: str | None = None
 
 
 class Legislator(BaseModel):
@@ -174,16 +176,16 @@ class Legislator(BaseModel):
     """
 
     district: str
-    session_year: Optional[str] = None
-    legislator_name: Optional[str] = None
-    house_type: Optional[str] = Field(default=None, description="A=Assembly, S=Senate")
-    author_name: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    middle_initial: Optional[str] = None
-    party: Optional[str] = Field(default=None, description="DEM, REP, etc.")
+    session_year: str | None = None
+    legislator_name: str | None = None
+    house_type: str | None = Field(default=None, description="A=Assembly, S=Senate")
+    author_name: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    middle_initial: str | None = None
+    party: str | None = Field(default=None, description="DEM, REP, etc.")
     active_flg: str = Field(default="Y")
-    active_legislator: Optional[str] = Field(default="Y")
+    active_legislator: str | None = Field(default="Y")
 
     @property
     def full_name(self) -> str:
@@ -210,16 +212,16 @@ class LawSection(BaseModel):
     """
 
     id: str
-    law_code: Optional[str] = Field(default=None, description="Code abbreviation (e.g., GOV, PRC)")
-    section_num: Optional[str] = None
-    effective_date: Optional[datetime] = None
-    division: Optional[str] = None
-    title: Optional[str] = None
-    part: Optional[str] = None
-    chapter: Optional[str] = None
-    article: Optional[str] = None
-    history: Optional[str] = Field(default=None, description="Legislative history")
-    content_xml: Optional[str] = Field(default=None, description="Section content in XML")
+    law_code: str | None = Field(default=None, description="Code abbreviation (e.g., GOV, PRC)")
+    section_num: str | None = None
+    effective_date: datetime | None = None
+    division: str | None = None
+    title: str | None = None
+    part: str | None = None
+    chapter: str | None = None
+    article: str | None = None
+    history: str | None = Field(default=None, description="Legislative history")
+    content_xml: str | None = Field(default=None, description="Section content in XML")
     active_flg: str = Field(default="Y")
 
 
@@ -230,7 +232,7 @@ class LawCode(BaseModel):
     """
 
     code: str = Field(description="Code abbreviation")
-    title: Optional[str] = Field(default=None, description="Full code title")
+    title: str | None = Field(default=None, description="Full code title")
 
 
 class VetoMessage(BaseModel):
@@ -240,8 +242,8 @@ class VetoMessage(BaseModel):
     """
 
     bill_id: str
-    veto_date: Optional[datetime] = None
-    message: Optional[str] = Field(default=None, description="Full veto message text")
+    veto_date: datetime | None = None
+    message: str | None = Field(default=None, description="Full veto message text")
 
 
 class CommitteeHearing(BaseModel):
@@ -251,10 +253,10 @@ class CommitteeHearing(BaseModel):
     """
 
     bill_id: str
-    committee_type: Optional[str] = None
-    committee_nr: Optional[int] = None
-    hearing_date: Optional[datetime] = None
-    location_code: Optional[str] = None
+    committee_type: str | None = None
+    committee_nr: int | None = None
+    hearing_date: datetime | None = None
+    location_code: str | None = None
 
 
 class LocationCode(BaseModel):
@@ -263,9 +265,9 @@ class LocationCode(BaseModel):
     Corresponds to LOCATION_CODE_TBL in the capublic database.
     """
 
-    session_year: Optional[str] = None
+    session_year: str | None = None
     location_code: str
     location_type: str
-    description: Optional[str] = None
-    long_description: Optional[str] = None
+    description: str | None = None
+    long_description: str | None = None
     active_flg: str = Field(default="Y")

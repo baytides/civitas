@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from civitas.storage import AzureStorageClient
 
@@ -22,14 +21,14 @@ class NormalizedDocument:
     original_path: Path
     document_info: DocumentInfo
     markdown_content: str
-    markdown_path: Optional[Path] = None
-    text_path: Optional[Path] = None
+    markdown_path: Path | None = None
+    text_path: Path | None = None
     word_count: int = 0
     page_count: int = 0
 
     # Azure URLs if uploaded
-    azure_original_url: Optional[str] = None
-    azure_markdown_url: Optional[str] = None
+    azure_original_url: str | None = None
+    azure_markdown_url: str | None = None
 
 
 class DocumentNormalizer:
@@ -41,8 +40,8 @@ class DocumentNormalizer:
 
     def __init__(
         self,
-        output_dir: Optional[Path] = None,
-        azure_client: Optional[AzureStorageClient] = None,
+        output_dir: Path | None = None,
+        azure_client: AzureStorageClient | None = None,
     ):
         """Initialize normalizer.
 
@@ -213,7 +212,7 @@ class DocumentNormalizer:
     def batch_normalize(
         self,
         paths: list[Path],
-        progress_callback: Optional[callable] = None,
+        progress_callback: callable | None = None,
     ) -> list[NormalizedDocument]:
         """Normalize multiple documents.
 

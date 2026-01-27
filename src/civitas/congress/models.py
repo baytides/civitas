@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,7 +34,7 @@ class BillSummary(BaseModel):
     latest_action: LatestAction = Field(alias="latestAction")
     update_date: datetime = Field(alias="updateDate")
     url: str
-    laws: Optional[list[LawReference]] = None
+    laws: list[LawReference] | None = None
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -61,19 +61,19 @@ class Sponsor(BaseModel):
     first_name: str = Field(alias="firstName")
     last_name: str = Field(alias="lastName")
     full_name: str = Field(alias="fullName")
-    party: Optional[str] = None
-    state: Optional[str] = None
-    district: Optional[int] = None
-    is_by_request: Optional[str] = Field(default=None, alias="isByRequest")
+    party: str | None = None
+    state: str | None = None
+    district: int | None = None
+    is_by_request: str | None = Field(default=None, alias="isByRequest")
     model_config = ConfigDict(populate_by_name=True)
 
 
 class TextVersion(BaseModel):
     """Bill text version."""
 
-    date: Optional[date] = None
+    date: date | None = None
     type: str
-    url: Optional[str] = None
+    url: str | None = None
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -86,13 +86,13 @@ class BillDetail(BaseModel):
     title: str
     origin_chamber: str = Field(alias="originChamber")
     origin_chamber_code: str = Field(alias="originChamberCode")
-    introduced_date: Optional[date] = Field(default=None, alias="introducedDate")
+    introduced_date: date | None = Field(default=None, alias="introducedDate")
     latest_action: LatestAction = Field(alias="latestAction")
     update_date: datetime = Field(alias="updateDate")
-    policy_area: Optional[PolicyArea] = Field(default=None, alias="policyArea")
-    sponsors: Optional[list[Sponsor]] = None
-    summaries: Optional[list[CRSSummary]] = None
-    laws: Optional[list[LawReference]] = None
+    policy_area: PolicyArea | None = Field(default=None, alias="policyArea")
+    sponsors: list[Sponsor] | None = None
+    summaries: list[CRSSummary] | None = None
+    laws: list[LawReference] | None = None
     model_config = ConfigDict(populate_by_name=True)
 
     @property
@@ -112,7 +112,7 @@ class BillDetail(BaseModel):
         return f"{prefix} {self.number}"
 
     @property
-    def public_law_number(self) -> Optional[str]:
+    def public_law_number(self) -> str | None:
         """Get the public law number if enacted."""
         if self.laws:
             for law in self.laws:
@@ -125,9 +125,9 @@ class MemberTerm(BaseModel):
     """Congressional term information."""
 
     chamber: str
-    congress: Optional[int] = None
-    start_year: Optional[int] = Field(default=None, alias="startYear")
-    end_year: Optional[int] = Field(default=None, alias="endYear")
+    congress: int | None = None
+    start_year: int | None = Field(default=None, alias="startYear")
+    end_year: int | None = Field(default=None, alias="endYear")
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -136,11 +136,11 @@ class MemberSummary(BaseModel):
 
     bioguide_id: str = Field(alias="bioguideId")
     name: str
-    party_name: Optional[str] = Field(default=None, alias="partyName")
-    state: Optional[str] = None
-    district: Optional[int] = None
-    terms: Optional[list[MemberTerm]] = None
-    url: Optional[str] = None
+    party_name: str | None = Field(default=None, alias="partyName")
+    state: str | None = None
+    district: int | None = None
+    terms: list[MemberTerm] | None = None
+    url: str | None = None
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -150,10 +150,10 @@ class MemberDetail(BaseModel):
     bioguide_id: str = Field(alias="bioguideId")
     first_name: str = Field(alias="firstName")
     last_name: str = Field(alias="lastName")
-    birth_year: Optional[int] = Field(default=None, alias="birthYear")
-    party_history: Optional[list[dict[str, Any]]] = Field(default=None, alias="partyHistory")
-    terms: Optional[list[MemberTerm]] = None
-    sponsored_legislation: Optional[dict[str, Any]] = Field(
+    birth_year: int | None = Field(default=None, alias="birthYear")
+    party_history: list[dict[str, Any]] | None = Field(default=None, alias="partyHistory")
+    terms: list[MemberTerm] | None = None
+    sponsored_legislation: dict[str, Any] | None = Field(
         default=None, alias="sponsoredLegislation"
     )
     model_config = ConfigDict(populate_by_name=True)
@@ -167,7 +167,7 @@ class Pagination(BaseModel):
     """Pagination information from API responses."""
 
     count: int
-    next: Optional[str] = None
+    next: str | None = None
 
 
 class BillListResponse(BaseModel):

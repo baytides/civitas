@@ -5,7 +5,6 @@ Source: US National Archives (Public Domain)
 """
 
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -14,15 +13,15 @@ class ExecutiveOrderModel(BaseModel):
     """Executive Order from Federal Register."""
 
     document_number: str
-    executive_order_number: Optional[int] = None
+    executive_order_number: int | None = None
     title: str
-    signing_date: Optional[date] = None
+    signing_date: date | None = None
     publication_date: date
-    president: Optional[str] = None
-    abstract: Optional[str] = None
-    full_text_xml_url: Optional[str] = None
-    pdf_url: Optional[str] = None
-    html_url: Optional[str] = None
+    president: str | None = None
+    abstract: str | None = None
+    full_text_xml_url: str | None = None
+    pdf_url: str | None = None
+    html_url: str | None = None
 
 
 class FederalRegisterDocument(BaseModel):
@@ -40,7 +39,7 @@ class FederalRegisterDocument(BaseModel):
     title: str
     publication_date: date
     agencies: list[str] = []
-    abstract: Optional[str] = None
-    html_url: Optional[str] = None
-    pdf_url: Optional[str] = None
+    abstract: str | None = None
+    html_url: str | None = None
+    pdf_url: str | None = None
     cfr_references: list[str] = []  # Affected CFR sections

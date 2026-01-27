@@ -8,7 +8,6 @@ counter-strategies.
 import json
 import os
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -134,8 +133,8 @@ class ResistanceAnalyzer:
     def __init__(
         self,
         session: Session,
-        ollama_host: Optional[str] = None,
-        ollama_model: Optional[str] = None,
+        ollama_host: str | None = None,
+        ollama_model: str | None = None,
     ):
         """Initialize the resistance analyzer.
 
@@ -165,7 +164,7 @@ class ResistanceAnalyzer:
         Returns:
             Analysis dict with constitutional issues, precedents, and strategies
         """
-        from civitas.db.models import Project2025Policy, CourtCase, Legislation, LawSection
+        from civitas.db.models import Project2025Policy
 
         # Get the policy
         policy = self.session.query(Project2025Policy).filter_by(id=policy_id).first()
@@ -182,7 +181,7 @@ class ResistanceAnalyzer:
 
     def _gather_legal_context(self, policy) -> dict:
         """Gather relevant legal context for a policy."""
-        from civitas.db.models import CourtCase, Legislation, LawSection
+        from civitas.db.models import CourtCase
 
         context = {
             "policy": {
@@ -200,7 +199,6 @@ class ResistanceAnalyzer:
 
         # Identify potentially relevant constitutional provisions
         proposal_lower = policy.proposal_text.lower()
-        agency_lower = policy.agency.lower()
 
         # Match provisions based on content
         provision_matches = []
@@ -225,7 +223,6 @@ class ResistanceAnalyzer:
         # Search for relevant court cases
         keywords = context["policy"]["keywords"][:5]
         if keywords:
-            search_query = " OR ".join(keywords)
             cases = self.session.query(CourtCase).filter(
                 CourtCase.case_name.ilike(f"%{keywords[0]}%") |
                 CourtCase.holding.ilike(f"%{keywords[0]}%")

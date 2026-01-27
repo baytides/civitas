@@ -10,14 +10,11 @@ This schema consolidates data from multiple sources:
 from __future__ import annotations
 
 from datetime import UTC, date, datetime
-from typing import Optional
 
 from sqlalchemy import (
     Boolean,
-    Column,
     Date,
     DateTime,
-    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -25,7 +22,6 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
-    event,
     text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -100,41 +96,41 @@ class Legislation(Base):
 
     # Display
     citation: Mapped[str] = mapped_column(String(50), index=True)  # e.g., "H.R. 1234", "AB 567"
-    title: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    short_title: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    short_title: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Status
-    status: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    current_location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    status: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    current_location: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Dates
-    introduced_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    last_action_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    introduced_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_action_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
 
     # Enacted law info
     is_enacted: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
-    public_law_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    enacted_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    chapter_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    public_law_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    enacted_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    chapter_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Full text
-    full_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    full_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Subject/topics
-    subjects: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
-    policy_area: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    subjects: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    policy_area: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Metadata
-    source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
-    versions: Mapped[list["LegislationVersion"]] = relationship(back_populates="legislation")
-    actions: Mapped[list["LegislationAction"]] = relationship(back_populates="legislation")
-    votes: Mapped[list["Vote"]] = relationship(back_populates="legislation")
-    sponsors: Mapped[list["Sponsorship"]] = relationship(back_populates="legislation")
+    versions: Mapped[list[LegislationVersion]] = relationship(back_populates="legislation")
+    actions: Mapped[list[LegislationAction]] = relationship(back_populates="legislation")
+    votes: Mapped[list[Vote]] = relationship(back_populates="legislation")
+    sponsors: Mapped[list[Sponsorship]] = relationship(back_populates="legislation")
 
     __table_args__ = (
         UniqueConstraint("jurisdiction", "source_id", name="uq_legislation_source"),
@@ -151,17 +147,17 @@ class LegislationVersion(Base):
     legislation_id: Mapped[int] = mapped_column(ForeignKey("legislation.id"), index=True)
 
     version_number: Mapped[int] = mapped_column(Integer)
-    version_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    version_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    version_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    version_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Content
-    full_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    full_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Metadata
-    source_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    legislation: Mapped["Legislation"] = relationship(back_populates="versions")
+    legislation: Mapped[Legislation] = relationship(back_populates="versions")
 
 
 class LegislationAction(Base):
@@ -174,13 +170,13 @@ class LegislationAction(Base):
 
     action_date: Mapped[date] = mapped_column(Date, index=True)
     action_text: Mapped[str] = mapped_column(Text)
-    action_code: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    chamber: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    action_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    chamber: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     # Location
-    committee: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    committee: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
-    legislation: Mapped["Legislation"] = relationship(back_populates="actions")
+    legislation: Mapped[Legislation] = relationship(back_populates="actions")
 
 
 class Legislator(Base):
@@ -192,28 +188,28 @@ class Legislator(Base):
 
     # Source identification
     jurisdiction: Mapped[str] = mapped_column(String(50), index=True)
-    source_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # bioguide_id, etc.
+    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True)  # bioguide_id, etc.
 
     # Name
     full_name: Mapped[str] = mapped_column(String(200))
-    first_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    last_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Position
-    chamber: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    state: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    district: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    party: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    chamber: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    district: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    party: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Status
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Terms served (JSON)
-    terms: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    terms: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
-    sponsorships: Mapped[list["Sponsorship"]] = relationship(back_populates="legislator")
-    vote_records: Mapped[list["VoteRecord"]] = relationship(back_populates="legislator")
+    sponsorships: Mapped[list[Sponsorship]] = relationship(back_populates="legislator")
+    vote_records: Mapped[list[VoteRecord]] = relationship(back_populates="legislator")
 
     __table_args__ = (
         Index("ix_legislator_search", "jurisdiction", "chamber", "state"),
@@ -232,8 +228,8 @@ class Sponsorship(Base):
     sponsorship_type: Mapped[str] = mapped_column(String(50))  # sponsor, cosponsor, author, coauthor
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    legislation: Mapped["Legislation"] = relationship(back_populates="sponsors")
-    legislator: Mapped["Legislator"] = relationship(back_populates="sponsorships")
+    legislation: Mapped[Legislation] = relationship(back_populates="sponsors")
+    legislator: Mapped[Legislator] = relationship(back_populates="sponsorships")
 
 
 class Vote(Base):
@@ -248,21 +244,21 @@ class Vote(Base):
     chamber: Mapped[str] = mapped_column(String(20))
 
     # Results
-    ayes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    nays: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    abstain: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    not_voting: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ayes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    nays: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    abstain: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    not_voting: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    result: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # passed, failed
+    result: Mapped[str | None] = mapped_column(String(50), nullable=True)  # passed, failed
 
     # Motion
-    motion_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    motion_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Source
-    source_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    legislation: Mapped["Legislation"] = relationship(back_populates="votes")
-    records: Mapped[list["VoteRecord"]] = relationship(back_populates="vote")
+    legislation: Mapped[Legislation] = relationship(back_populates="votes")
+    records: Mapped[list[VoteRecord]] = relationship(back_populates="vote")
 
 
 class VoteRecord(Base):
@@ -276,8 +272,8 @@ class VoteRecord(Base):
 
     vote_cast: Mapped[str] = mapped_column(String(20))  # aye, nay, abstain, not_voting
 
-    vote: Mapped["Vote"] = relationship(back_populates="records")
-    legislator: Mapped["Legislator"] = relationship(back_populates="vote_records")
+    vote: Mapped[Vote] = relationship(back_populates="records")
+    legislator: Mapped[Legislator] = relationship(back_populates="vote_records")
 
 
 class LawCode(Base):
@@ -291,7 +287,7 @@ class LawCode(Base):
     code: Mapped[str] = mapped_column(String(20))  # GOV, PRC, USC, etc.
     title: Mapped[str] = mapped_column(String(500))
 
-    sections: Mapped[list["LawSection"]] = relationship(back_populates="law_code")
+    sections: Mapped[list[LawSection]] = relationship(back_populates="law_code")
 
     __table_args__ = (
         UniqueConstraint("jurisdiction", "code", name="uq_law_code"),
@@ -307,25 +303,25 @@ class LawSection(Base):
     law_code_id: Mapped[int] = mapped_column(ForeignKey("law_codes.id"), index=True)
 
     section_number: Mapped[str] = mapped_column(String(50), index=True)
-    title: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    title: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Hierarchy
-    division: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    part: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    chapter: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    article: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    division: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    part: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    chapter: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    article: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Content
-    content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # History
-    effective_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    history: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    effective_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    history: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Source
-    source_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    law_code: Mapped["LawCode"] = relationship(back_populates="sections")
+    law_code: Mapped[LawCode] = relationship(back_populates="sections")
 
 
 # =============================================================================
@@ -348,49 +344,49 @@ class CourtCase(Base):
     # Identification
     citation: Mapped[str] = mapped_column(String(100), index=True)  # e.g., "598 U.S. 651"
     case_name: Mapped[str] = mapped_column(String(500))
-    docket_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    docket_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Court hierarchy
     court_level: Mapped[str] = mapped_column(String(20), index=True, default="unknown")  # scotus, circuit, district
     court: Mapped[str] = mapped_column(String(100), index=True)  # "Supreme Court", "ca9", etc.
-    court_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # Full court name
+    court_name: Mapped[str | None] = mapped_column(String(200), nullable=True)  # Full court name
 
     # SCOTUS-specific
-    term: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+    term: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
     # Dates
-    decision_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
-    argument_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    date_filed: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    decision_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    argument_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    date_filed: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Vote (primarily for SCOTUS)
-    vote_majority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    vote_dissent: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    vote_majority: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    vote_dissent: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Authors
-    majority_author: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    majority_author: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Content
-    holding: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    syllabus: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    majority_opinion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    dissent_opinion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    concurrence_opinion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    holding: Mapped[str | None] = mapped_column(Text, nullable=True)
+    syllabus: Mapped[str | None] = mapped_column(Text, nullable=True)
+    majority_opinion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dissent_opinion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    concurrence_opinion: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Litigation tracking
-    status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # decided, pending
-    outcome: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # affirmed, reversed
+    status: Mapped[str | None] = mapped_column(String(50), nullable=True)  # decided, pending
+    outcome: Mapped[str | None] = mapped_column(String(50), nullable=True)  # affirmed, reversed
 
     # Related legislation (for cases challenging laws)
-    legislation_id: Mapped[Optional[int]] = mapped_column(ForeignKey("legislation.id"), nullable=True)
+    legislation_id: Mapped[int | None] = mapped_column(ForeignKey("legislation.id"), nullable=True)
 
     # Appeals chain
-    parent_case_id: Mapped[Optional[int]] = mapped_column(ForeignKey("court_cases.id"), nullable=True)
+    parent_case_id: Mapped[int | None] = mapped_column(ForeignKey("court_cases.id"), nullable=True)
 
     # Storage
-    source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    azure_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)  # PDF in Azure
-    source_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # External ID (Court Listener)
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    azure_url: Mapped[str | None] = mapped_column(String(500), nullable=True)  # PDF in Azure
+    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True)  # External ID (Court Listener)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -427,7 +423,7 @@ class Project2025Policy(Base):
 
     # Document location
     section: Mapped[str] = mapped_column(String(200))  # Section title
-    chapter: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    chapter: Mapped[str | None] = mapped_column(String(200), nullable=True)
     page_number: Mapped[int] = mapped_column(Integer)
 
     # Target agency
@@ -435,10 +431,10 @@ class Project2025Policy(Base):
 
     # Proposal content
     proposal_text: Mapped[str] = mapped_column(Text)
-    proposal_summary: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    proposal_summary: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # Keywords for matching
-    keywords: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Enhanced categorization (from AI-assisted extraction)
     category: Mapped[str] = mapped_column(String(50), default="general", index=True)
@@ -455,7 +451,7 @@ class Project2025Policy(Base):
     # Timeline: day_one, first_100_days, first_year, long_term, unknown
 
     # Constitutional analysis
-    constitutional_concerns: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    constitutional_concerns: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
     # e.g., ["First Amendment - free speech", "Tenth Amendment - federalism"]
 
     # AI confidence score (0.0 - 1.0)
@@ -466,13 +462,13 @@ class Project2025Policy(Base):
     # Status values: proposed, in_progress, completed, blocked, reversed
 
     # Matched items (JSON arrays of IDs)
-    matching_legislation_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    matching_eo_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    matching_rule_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    matching_legislation_ids: Mapped[str | None] = mapped_column(Text, nullable=True)
+    matching_eo_ids: Mapped[str | None] = mapped_column(Text, nullable=True)
+    matching_rule_ids: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Analysis
-    implementation_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    last_checked: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    implementation_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_checked: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -500,19 +496,19 @@ class P2025Implementation(Base):
 
     # Implementation type and reference
     action_type: Mapped[str] = mapped_column(String(50))  # executive_order, rule, memo, guidance, personnel
-    action_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # FK to EO/rule table
+    action_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # FK to EO/rule table
     action_reference: Mapped[str] = mapped_column(String(200))  # e.g., "EO 14XXX", "FR 2025-XXXX"
 
     # Status
     status: Mapped[str] = mapped_column(String(50), index=True)  # announced, in_progress, completed, blocked, reversed
-    implementation_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    implementation_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Evidence
-    evidence_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    evidence_urls: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    evidence_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_urls: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # AI analysis
-    ai_confidence_score: Mapped[Optional[float]] = mapped_column(nullable=True)  # 0.0-1.0
+    ai_confidence_score: Mapped[float | None] = mapped_column(nullable=True)  # 0.0-1.0
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -529,42 +525,42 @@ class LegalChallenge(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     # What's being challenged
-    p2025_policy_id: Mapped[Optional[int]] = mapped_column(ForeignKey("project2025_policies.id"), nullable=True)
-    implementation_id: Mapped[Optional[int]] = mapped_column(ForeignKey("p2025_implementations.id"), nullable=True)
-    executive_order_id: Mapped[Optional[int]] = mapped_column(ForeignKey("executive_orders.id"), nullable=True)
+    p2025_policy_id: Mapped[int | None] = mapped_column(ForeignKey("project2025_policies.id"), nullable=True)
+    implementation_id: Mapped[int | None] = mapped_column(ForeignKey("p2025_implementations.id"), nullable=True)
+    executive_order_id: Mapped[int | None] = mapped_column(ForeignKey("executive_orders.id"), nullable=True)
 
     # Challenge details
     challenge_type: Mapped[str] = mapped_column(String(50), index=True)
     # Types: constitutional, apa, ultra_vires, equal_protection, due_process, statutory
 
     legal_basis: Mapped[str] = mapped_column(Text)  # Specific clause/statute
-    constitutional_provisions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    constitutional_provisions: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Court info
     court_level: Mapped[str] = mapped_column(String(20))  # district, circuit, scotus
     court_name: Mapped[str] = mapped_column(String(200))
-    court_case_id: Mapped[Optional[int]] = mapped_column(ForeignKey("court_cases.id"), nullable=True)
-    case_citation: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    docket_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    court_case_id: Mapped[int | None] = mapped_column(ForeignKey("court_cases.id"), nullable=True)
+    case_citation: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    docket_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Parties
-    lead_plaintiffs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
-    representing_orgs: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array (ACLU, etc.)
+    lead_plaintiffs: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    representing_orgs: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array (ACLU, etc.)
 
     # Status
     status: Mapped[str] = mapped_column(String(50), index=True)
     # Status: filed, pending, preliminary_injunction, stayed, won, lost, appealed, settled, dismissed
 
-    filed_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    decision_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    filed_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    decision_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Outcome
-    outcome_summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    precedent_value: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # binding, persuasive, limited
+    outcome_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    precedent_value: Mapped[str | None] = mapped_column(String(50), nullable=True)  # binding, persuasive, limited
 
     # Links
-    complaint_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    ruling_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    complaint_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ruling_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -589,7 +585,7 @@ class StateResistanceAction(Base):
     state_name: Mapped[str] = mapped_column(String(50))
 
     # What it counters
-    p2025_policy_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    p2025_policy_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
     category: Mapped[str] = mapped_column(String(50), index=True)
     # Categories: immigration, environment, healthcare, lgbtq, education, labor, voting, civil_rights
 
@@ -599,23 +595,23 @@ class StateResistanceAction(Base):
 
     title: Mapped[str] = mapped_column(String(500))
     description: Mapped[str] = mapped_column(Text)
-    legal_citation: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    legal_citation: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(String(50), index=True)
     # Status: proposed, passed, enacted, enjoined, effective, overturned
 
-    introduced_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    effective_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    introduced_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    effective_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Replication
     is_model_legislation: Mapped[bool] = mapped_column(Boolean, default=False)
-    model_legislation_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    states_adopted: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array of state codes
+    model_legislation_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    states_adopted: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array of state codes
 
     # Links
-    source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    full_text_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    full_text_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -637,7 +633,7 @@ class ResistanceRecommendation(Base):
 
     # What it addresses
     p2025_policy_id: Mapped[int] = mapped_column(ForeignKey("project2025_policies.id"), index=True)
-    implementation_id: Mapped[Optional[int]] = mapped_column(ForeignKey("p2025_implementations.id"), nullable=True)
+    implementation_id: Mapped[int | None] = mapped_column(ForeignKey("p2025_implementations.id"), nullable=True)
 
     # Recommendation tier
     tier: Mapped[str] = mapped_column(String(20), index=True)
@@ -653,10 +649,10 @@ class ResistanceRecommendation(Base):
     rationale: Mapped[str] = mapped_column(Text)
 
     # Legal basis
-    legal_basis: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    relevant_precedents: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array of case citations
-    constitutional_provisions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
-    statutory_provisions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    legal_basis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    relevant_precedents: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array of case citations
+    constitutional_provisions: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    statutory_provisions: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Assessment
     likelihood_of_success: Mapped[str] = mapped_column(String(20))  # high, medium, low
@@ -664,15 +660,15 @@ class ResistanceRecommendation(Base):
     resources_required: Mapped[str] = mapped_column(String(20))  # low, medium, high
 
     # Prerequisites
-    prerequisites: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    prerequisites: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Model resources
-    model_complaint: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Draft text
-    model_legislation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # Draft text
-    action_steps: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    model_complaint: Mapped[str | None] = mapped_column(Text, nullable=True)  # Draft text
+    model_legislation: Mapped[str | None] = mapped_column(Text, nullable=True)  # Draft text
+    action_steps: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Examples of success
-    successful_examples: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    successful_examples: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # AI metadata
     ai_model_version: Mapped[str] = mapped_column(String(50))
@@ -681,8 +677,8 @@ class ResistanceRecommendation(Base):
 
     # Human review
     reviewed: Mapped[bool] = mapped_column(Boolean, default=False)
-    reviewed_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    reviewed_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
@@ -709,29 +705,29 @@ class ExecutiveOrder(Base):
 
     # Identification
     document_number: Mapped[str] = mapped_column(String(50), unique=True, index=True)
-    executive_order_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    executive_order_number: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
 
     # Content
     title: Mapped[str] = mapped_column(String(500))
-    abstract: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    full_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    abstract: Mapped[str | None] = mapped_column(Text, nullable=True)
+    full_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Dates
-    signing_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    signing_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     publication_date: Mapped[date] = mapped_column(Date, index=True)
 
     # President
-    president: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    president: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
 
     # URLs
-    pdf_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    html_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    xml_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    azure_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    pdf_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    html_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    xml_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    azure_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
     # P2025 tracking
     p2025_related: Mapped[bool] = mapped_column(Boolean, default=False)
-    p2025_policy_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON array
+    p2025_policy_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Legal status
     status: Mapped[str] = mapped_column(String(50), default="active")  # active, challenged, enjoined, reversed

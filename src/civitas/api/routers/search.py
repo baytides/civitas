@@ -50,11 +50,12 @@ async def search(
 
         for obj in objectives:
             snippet = obj.proposal_summary or obj.proposal_text[:200]
+            summary_text = obj.proposal_summary or "P2025 Objective"
             results.append(
                 SearchResult(
                     type="objective",
                     id=obj.id,
-                    title=f"[{obj.agency}] {obj.proposal_summary[:50] if obj.proposal_summary else 'P2025 Objective'}...",
+                    title=f"[{obj.agency}] {summary_text[:50]}...",
                     snippet=snippet,
                     score=1.0,  # TODO: Implement proper scoring
                 )

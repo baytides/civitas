@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import csv
 import zipfile
+from collections.abc import Generator
 from datetime import datetime
-from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Generator, Optional, Type, TypeVar
+from typing import Any, TypeVar
 
 import httpx
 from pydantic import BaseModel
@@ -192,7 +192,7 @@ def _parse_row(row: list[str], fields: list[str]) -> dict[str, Any]:
 class CaliforniaLegislatureClient:
     """Client for downloading and parsing California Legislature data."""
 
-    def __init__(self, data_dir: Optional[Path] = None):
+    def __init__(self, data_dir: Path | None = None):
         """Initialize the client.
 
         Args:
@@ -265,7 +265,7 @@ class CaliforniaLegislatureClient:
         self,
         table_name: str,
         data_path: Path,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Generator[BaseModel, None, None]:
         """Parse a .dat file and yield model instances.
 
@@ -289,7 +289,7 @@ class CaliforniaLegislatureClient:
             return
 
         count = 0
-        with open(dat_file, "r", encoding="utf-8", errors="replace") as f:
+        with open(dat_file, encoding="utf-8", errors="replace") as f:
             reader = csv.reader(f, delimiter="\t")
             for row in reader:
                 if limit and count >= limit:
@@ -309,27 +309,27 @@ class CaliforniaLegislatureClient:
                     print(f"Warning: Could not parse row: {e}")
                     continue
 
-    def parse_bills(self, data_path: Path, limit: Optional[int] = None) -> Generator[Bill, None, None]:
+    def parse_bills(self, data_path: Path, limit: int | None = None) -> Generator[Bill, None, None]:
         """Parse bill records from extracted data."""
         yield from self.parse_table("BILL_TBL.dat", data_path, limit)
 
-    def parse_bill_versions(self, data_path: Path, limit: Optional[int] = None) -> Generator[BillVersion, None, None]:
+    def parse_bill_versions(self, data_path: Path, limit: int | None = None) -> Generator[BillVersion, None, None]:
         """Parse bill version records."""
         yield from self.parse_table("BILL_VERSION_TBL.dat", data_path, limit)
 
-    def parse_bill_history(self, data_path: Path, limit: Optional[int] = None) -> Generator[BillHistory, None, None]:
+    def parse_bill_history(self, data_path: Path, limit: int | None = None) -> Generator[BillHistory, None, None]:
         """Parse bill history/action records."""
         yield from self.parse_table("BILL_HISTORY_TBL.dat", data_path, limit)
 
-    def parse_legislators(self, data_path: Path, limit: Optional[int] = None) -> Generator[Legislator, None, None]:
+    def parse_legislators(self, data_path: Path, limit: int | None = None) -> Generator[Legislator, None, None]:
         """Parse legislator records."""
         yield from self.parse_table("LEGISLATOR_TBL.dat", data_path, limit)
 
-    def parse_votes(self, data_path: Path, limit: Optional[int] = None) -> Generator[BillSummaryVote, None, None]:
+    def parse_votes(self, data_path: Path, limit: int | None = None) -> Generator[BillSummaryVote, None, None]:
         """Parse summary vote records."""
         yield from self.parse_table("BILL_SUMMARY_VOTE_TBL.dat", data_path, limit)
 
-    def parse_detail_votes(self, data_path: Path, limit: Optional[int] = None) -> Generator[BillDetailVote, None, None]:
+    def parse_detail_votes(self, data_path: Path, limit: int | None = None) -> Generator[BillDetailVote, None, None]:
         """Parse individual legislator vote records."""
         yield from self.parse_table("BILL_DETAIL_VOTE_TBL.dat", data_path, limit)
 
@@ -337,7 +337,7 @@ class CaliforniaLegislatureClient:
         """Parse law code records."""
         yield from self.parse_table("CODES_TBL.dat", data_path)
 
-    def parse_law_sections(self, data_path: Path, limit: Optional[int] = None) -> Generator[LawSection, None, None]:
+    def parse_law_sections(self, data_path: Path, limit: int | None = None) -> Generator[LawSection, None, None]:
         """Parse law section records."""
         yield from self.parse_table("LAW_SECTION_TBL.dat", data_path, limit)
 
@@ -348,7 +348,7 @@ class CaliforniaLegislatureClient:
     def get_bills_by_session(
         self,
         session_year: int,
-        measure_type: Optional[str] = None,
+        measure_type: str | None = None,
         chaptered_only: bool = False,
     ) -> list[Bill]:
         """Get bills for a session, optionally filtered.
@@ -380,7 +380,7 @@ class CaliforniaLegislatureClient:
         session_year: int,
         keyword: str,
         search_subjects: bool = True,
-    ) -> list[tuple[Bill, Optional[BillVersion]]]:
+    ) -> list[tuple[Bill, BillVersion | None]]:
         """Search bills by keyword in subject/title.
 
         Args:

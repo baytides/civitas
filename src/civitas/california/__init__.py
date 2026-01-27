@@ -15,13 +15,13 @@ Provides access to:
 from civitas.california.client import CaliforniaLegislatureClient
 from civitas.california.models import (
     Bill,
-    BillVersion,
-    BillHistory,
     BillAnalysis,
-    BillSummaryVote,
     BillDetailVote,
-    Legislator,
+    BillHistory,
+    BillSummaryVote,
+    BillVersion,
     LawSection,
+    Legislator,
     VetoMessage,
 )
 

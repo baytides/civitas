@@ -11,7 +11,6 @@ Each state maintains its own constitution, often available through:
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Optional
 
 import httpx
 
@@ -57,12 +56,12 @@ class StateConstitution:
 
     state_code: str
     state_name: str
-    ratification_date: Optional[date] = None
-    current_version_date: Optional[date] = None
+    ratification_date: date | None = None
+    current_version_date: date | None = None
     preamble: str = ""
     articles: list[ConstitutionArticle] = field(default_factory=list)
     full_text: str = ""
-    source_url: Optional[str] = None
+    source_url: str | None = None
     amendments_count: int = 0
 
 
@@ -276,7 +275,7 @@ class ConstitutionClient:
     def search(
         self,
         query: str,
-        states: Optional[list[str]] = None,
+        states: list[str] | None = None,
         limit: int = 20,
     ) -> list[dict]:
         """Search across state constitutions.

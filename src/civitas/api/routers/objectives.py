@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func
@@ -29,11 +28,11 @@ def get_db(request: Request) -> Session:
 async def list_objectives(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    category: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    agency: Optional[str] = Query(None),
-    priority: Optional[str] = Query(None),
-    timeline: Optional[str] = Query(None),
+    category: str | None = Query(None),
+    status: str | None = Query(None),
+    agency: str | None = Query(None),
+    priority: str | None = Query(None),
+    timeline: str | None = Query(None),
     db: Session = Depends(get_db),
 ) -> ObjectiveList:
     """List P2025 objectives with filtering and pagination."""

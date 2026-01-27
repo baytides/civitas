@@ -13,7 +13,6 @@ FTS5 supports:
 - Proximity: NEAR(word1 word2, 10)
 """
 
-from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -24,8 +23,8 @@ from .models import CourtCase, LawSection, Legislation
 def search_legislation(
     session: Session,
     query: str,
-    jurisdiction: Optional[str] = None,
-    session_filter: Optional[str] = None,
+    jurisdiction: str | None = None,
+    session_filter: str | None = None,
     enacted_only: bool = False,
     limit: int = 20,
     offset: int = 0,
@@ -90,7 +89,7 @@ def search_legislation(
 def search_court_cases(
     session: Session,
     query: str,
-    court: Optional[str] = None,
+    court: str | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[CourtCase]:
@@ -134,8 +133,8 @@ def search_court_cases(
 def search_law_sections(
     session: Session,
     query: str,
-    jurisdiction: Optional[str] = None,
-    code: Optional[str] = None,
+    jurisdiction: str | None = None,
+    code: str | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[LawSection]:

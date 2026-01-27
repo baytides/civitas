@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import os
 import subprocess
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from civitas.storage import AzureStorageClient
 
@@ -17,14 +15,14 @@ class PDFProcessingResult:
     """Result of PDF processing."""
 
     original_path: Path
-    searchable_pdf_path: Optional[Path] = None
-    text_path: Optional[Path] = None
+    searchable_pdf_path: Path | None = None
+    text_path: Path | None = None
     page_count: int = 0
     ocr_applied: bool = False
     confidence: float = 0.0
-    azure_original_url: Optional[str] = None
-    azure_searchable_url: Optional[str] = None
-    azure_text_url: Optional[str] = None
+    azure_original_url: str | None = None
+    azure_searchable_url: str | None = None
+    azure_text_url: str | None = None
 
 
 class PDFProcessor:
@@ -36,9 +34,9 @@ class PDFProcessor:
 
     def __init__(
         self,
-        azure_client: Optional[AzureStorageClient] = None,
-        carl_url: Optional[str] = None,
-        output_dir: Optional[Path] = None,
+        azure_client: AzureStorageClient | None = None,
+        carl_url: str | None = None,
+        output_dir: Path | None = None,
     ):
         """Initialize PDF processor.
 
@@ -147,7 +145,7 @@ class PDFProcessor:
             print(f"Error analyzing PDF: {e}")
             return True, 0, ""
 
-    def _apply_ocr(self, pdf_path: Path) -> Optional[Path]:
+    def _apply_ocr(self, pdf_path: Path) -> Path | None:
         """Apply OCR to PDF using ocrmypdf.
 
         Returns:
@@ -258,7 +256,7 @@ class PDFProcessor:
         self,
         pdf_paths: list[Path],
         document_type: str = "general",
-        progress_callback: Optional[callable] = None,
+        progress_callback: callable | None = None,
     ) -> list[PDFProcessingResult]:
         """Process multiple PDFs.
 

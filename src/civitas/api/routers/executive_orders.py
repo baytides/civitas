@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
@@ -27,8 +25,8 @@ def get_db(request: Request) -> Session:
 async def list_executive_orders(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    president: Optional[str] = Query(None),
-    year: Optional[int] = Query(None),
+    president: str | None = Query(None),
+    year: int | None = Query(None),
     db: Session = Depends(get_db),
 ) -> ExecutiveOrderList:
     """List executive orders with filtering and pagination."""

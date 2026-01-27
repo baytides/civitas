@@ -112,6 +112,17 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"src/civitas/analysis/actions.py" = ["E501"]
+"src/civitas/analysis/resistance.py" = ["E501"]
+"src/civitas/ai/query.py" = ["E501"]
+"src/civitas/cli.py" = ["E501"]
+"src/civitas/db/models.py" = ["E501"]
+"src/civitas/resistance/analyzer.py" = ["E501"]
+"src/civitas/resistance/recommender.py" = ["E501"]
+"src/civitas/resistance/tracker.py" = ["E501"]
+"src/civitas/california/client.py" = ["E501"]
+
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true

@@ -6,9 +6,9 @@ Credits: Inspired by Free Law Project's court scraping infrastructure.
 """
 
 import re
+from collections.abc import Generator
 from datetime import datetime
 from pathlib import Path
-from typing import Generator, Optional
 
 import httpx
 from bs4 import BeautifulSoup
@@ -122,7 +122,7 @@ class SCOTUSClient:
     def download_opinion(
         self,
         opinion: SCOTUSListingItem,
-    ) -> tuple[Path, Optional[str]]:
+    ) -> tuple[Path, str | None]:
         """Download opinion PDF.
 
         Args:
@@ -183,8 +183,8 @@ class SCOTUSClient:
         self,
         pdf_path: Path,
         item: SCOTUSListingItem,
-        azure_url: Optional[str],
-    ) -> Optional[SCOTUSOpinion]:
+        azure_url: str | None,
+    ) -> SCOTUSOpinion | None:
         """Parse a SCOTUS opinion PDF.
 
         Args:
@@ -248,7 +248,7 @@ class SCOTUSClient:
         # Fall back to slip opinion citation
         return f"slip-{item.term}-{item.docket_number}"
 
-    def _extract_holding(self, text: str) -> Optional[str]:
+    def _extract_holding(self, text: str) -> str | None:
         """Extract the holding from the syllabus."""
         # Look for "Held:" section
         held_match = re.search(
@@ -266,7 +266,7 @@ class SCOTUSClient:
 
         return None
 
-    def _extract_syllabus(self, text: str) -> Optional[str]:
+    def _extract_syllabus(self, text: str) -> str | None:
         """Extract the syllabus section."""
         # Syllabus typically appears before the opinion
         syllabus_match = re.search(

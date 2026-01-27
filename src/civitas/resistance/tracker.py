@@ -11,8 +11,7 @@ Cross-references with project2025.observer data structure.
 
 import json
 import os
-from datetime import UTC, datetime, date, timedelta
-from typing import Optional
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -77,8 +76,8 @@ class ImplementationTracker:
     def __init__(
         self,
         session: Session,
-        ollama_host: Optional[str] = None,
-        ollama_model: Optional[str] = None,
+        ollama_host: str | None = None,
+        ollama_model: str | None = None,
     ):
         """Initialize the implementation tracker.
 
@@ -210,7 +209,6 @@ class ImplementationTracker:
         Uses keyword matching and optionally AI for deeper analysis.
         """
         text_lower = text.lower()
-        policy_text = f"{policy.proposal_text} {policy.agency}".lower()
 
         # Keyword-based scoring
         keywords = json.loads(policy.keywords) if policy.keywords else []
@@ -233,8 +231,8 @@ class ImplementationTracker:
         self,
         policy_id: int,
         status: str,
-        evidence_urls: Optional[list[str]] = None,
-        notes: Optional[str] = None,
+        evidence_urls: list[str] | None = None,
+        notes: str | None = None,
     ) -> bool:
         """Update the implementation status of a P2025 policy.
 
@@ -345,7 +343,7 @@ class ImplementationTracker:
         Returns:
             List of blocked policies with blocking details
         """
-        from civitas.db.models import Project2025Policy, LegalChallenge
+        from civitas.db.models import LegalChallenge, Project2025Policy
 
         policies = self.session.query(Project2025Policy).filter(
             Project2025Policy.status == self.STATUS_BLOCKED

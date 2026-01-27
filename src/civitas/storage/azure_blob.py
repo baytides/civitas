@@ -28,7 +28,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 
 class AzureStorageClient:
@@ -43,7 +43,7 @@ class AzureStorageClient:
 
     def __init__(
         self,
-        connection_string: Optional[str] = None,
+        connection_string: str | None = None,
         container_name: str = "civitas-data",
     ):
         """Initialize Azure Storage client.
@@ -98,7 +98,7 @@ class AzureStorageClient:
         source: str,
         document_id: str,
         file_extension: str = "pdf",
-        year: Optional[int] = None,
+        year: int | None = None,
     ) -> str:
         """Upload a document to Azure Blob Storage.
 
@@ -140,7 +140,7 @@ class AzureStorageClient:
         document_type: str,
         source: str,
         document_id: str,
-        year: Optional[int] = None,
+        year: int | None = None,
     ) -> str:
         """Upload JSON data to Azure.
 
@@ -213,9 +213,9 @@ class AzureStorageClient:
 
     def list_documents(
         self,
-        document_type: Optional[str] = None,
-        source: Optional[str] = None,
-        year: Optional[int] = None,
+        document_type: str | None = None,
+        source: str | None = None,
+        year: int | None = None,
     ) -> list[str]:
         """List documents in storage.
 
@@ -374,7 +374,7 @@ class LocalStorageClient:
         source: str,
         document_id: str,
         file_extension: str = "pdf",
-        year: Optional[int] = None,
+        year: int | None = None,
     ) -> str:
         """Upload a document to local storage."""
         year = year or datetime.now().year
@@ -396,7 +396,7 @@ class LocalStorageClient:
         document_type: str,
         source: str,
         document_id: str,
-        year: Optional[int] = None,
+        year: int | None = None,
     ) -> str:
         """Upload JSON data to local storage."""
         json_bytes = json.dumps(data, indent=2, default=str).encode("utf-8")
@@ -436,9 +436,9 @@ class LocalStorageClient:
 
     def list_documents(
         self,
-        document_type: Optional[str] = None,
-        source: Optional[str] = None,
-        year: Optional[int] = None,
+        document_type: str | None = None,
+        source: str | None = None,
+        year: int | None = None,
     ) -> list[str]:
         """List documents in storage."""
         search_path = self.base_dir

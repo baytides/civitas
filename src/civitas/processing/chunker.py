@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 
 @dataclass
@@ -14,9 +13,9 @@ class DocumentChunk:
     content: str
     index: int
     token_count: int
-    page_start: Optional[int] = None
-    page_end: Optional[int] = None
-    section_title: Optional[str] = None
+    page_start: int | None = None
+    page_end: int | None = None
+    section_title: str | None = None
     metadata: dict = field(default_factory=dict)
 
 
@@ -53,7 +52,7 @@ class DocumentChunker:
     def chunk(
         self,
         content: str,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> list[DocumentChunk]:
         """Split content into chunks.
 
@@ -108,7 +107,11 @@ class DocumentChunker:
                 continue
 
             # Check if adding this section would exceed limit
-            combined = current_chunk + "\n\n" + section_content if current_chunk else section_content
+            combined = (
+                current_chunk + "\n\n" + section_content
+                if current_chunk
+                else section_content
+            )
             combined_tokens = len(combined) // self.CHARS_PER_TOKEN
 
             if combined_tokens <= self.max_tokens:
@@ -130,7 +133,12 @@ class DocumentChunker:
                 # Check if section itself is too large
                 if len(section_content) > self.max_chars:
                     # Split large section by paragraphs
-                    sub_chunks = self._split_large_section(section_content, section_title, metadata, len(chunks))
+                    sub_chunks = self._split_large_section(
+                        section_content,
+                        section_title,
+                        metadata,
+                        len(chunks),
+                    )
                     chunks.extend(sub_chunks)
                     current_chunk = ""
                 else:
@@ -155,7 +163,7 @@ class DocumentChunker:
     def _split_large_section(
         self,
         content: str,
-        section_title: Optional[str],
+        section_title: str | None,
         metadata: dict,
         start_index: int,
     ) -> list[DocumentChunk]:
@@ -187,7 +195,12 @@ class DocumentChunker:
 
                 # If single paragraph is too large, split by sentences
                 if len(para) > self.max_chars:
-                    sub_chunks = self._split_by_sentences(para, section_title, metadata, start_index + len(chunks))
+                    sub_chunks = self._split_by_sentences(
+                        para,
+                        section_title,
+                        metadata,
+                        start_index + len(chunks),
+                    )
                     chunks.extend(sub_chunks)
                     current_chunk = ""
                 else:
@@ -209,7 +222,7 @@ class DocumentChunker:
     def _split_by_sentences(
         self,
         content: str,
-        section_title: Optional[str],
+        section_title: str | None,
         metadata: dict,
         start_index: int,
     ) -> list[DocumentChunk]:
@@ -302,7 +315,11 @@ class DocumentChunker:
 
         for i in range(1, len(chunks)):
             prev_content = chunks[i - 1].content
-            overlap_text = prev_content[-self.overlap_chars :] if len(prev_content) > self.overlap_chars else prev_content
+            overlap_text = (
+                prev_content[-self.overlap_chars :]
+                if len(prev_content) > self.overlap_chars
+                else prev_content
+            )
 
             # Add as metadata rather than modifying content
             chunks[i].metadata["overlap_from_previous"] = overlap_text

@@ -7,9 +7,8 @@ Stores extracted citations linking documents to each other:
 """
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text, DateTime
+from sqlalchemy import DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from civitas.db.models import Base, utcnow
@@ -38,21 +37,21 @@ class Citation(Base):
 
     # Target (what's being cited)
     target_type: Mapped[str] = mapped_column(String(20))  # "case", "legislation", "statute"
-    target_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # FK if resolved
+    target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # FK if resolved
     target_citation: Mapped[str] = mapped_column(String(200))  # Raw citation text
 
     # Citation metadata
     citation_type: Mapped[str] = mapped_column(String(50))  # "full", "short", "supra", "id"
-    reporter: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    volume: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    page: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    reporter: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    volume: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    page: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Additional metadata
-    year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    court: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    court: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Context (surrounding text)
-    context: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    context: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Resolution status
     is_resolved: Mapped[bool] = mapped_column(default=False)

@@ -11,7 +11,7 @@ Components:
 - Project2025Tracker: Matches proposals against legislation/EOs
 """
 
-from .parser import Project2025Parser, EnhancedProject2025Parser, PolicyProposal
+from .parser import EnhancedProject2025Parser, PolicyProposal, Project2025Parser
 from .tracker import Project2025Tracker
 
 __all__ = [

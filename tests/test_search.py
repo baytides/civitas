@@ -26,8 +26,8 @@ def fts_engine():
 @pytest.fixture
 def fts_session(fts_engine):
     """Create a database session with FTS5."""
-    Session = sessionmaker(bind=fts_engine)
-    session = Session()
+    session_factory = sessionmaker(bind=fts_engine)
+    session = session_factory()
     yield session
     session.close()
 
@@ -159,6 +159,7 @@ class TestSearchLegislation:
         assert len(page1) == 2
         # page2 may have fewer if not enough results
         assert len(page2) <= 2
+        assert len(page1) + len(page2) <= len(all_results)
 
     def test_empty_results(self, populated_db):
         """Test search that returns no results."""

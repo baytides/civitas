@@ -53,14 +53,21 @@ async def get_blocked_policies(
             agency=p["agency"],
             proposal_summary=p.get("proposal", "")[:200],
             blocked_by=p.get("blocked_by", "unknown"),
-            case_or_action=p.get("challenges", [{}])[0].get("case", "") if p.get("challenges") else "",
+            case_or_action=(
+                p.get("challenges", [{}])[0].get("case", "")
+                if p.get("challenges")
+                else ""
+            ),
             blocked_date=None,
         )
         for p in blocked
     ]
 
 
-@router.get("/resistance/recommendations/{objective_id}", response_model=list[ResistanceRecommendation])
+@router.get(
+    "/resistance/recommendations/{objective_id}",
+    response_model=list[ResistanceRecommendation],
+)
 async def get_recommendations(
     objective_id: int,
     db: Session = Depends(get_db),

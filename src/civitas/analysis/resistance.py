@@ -10,8 +10,7 @@ Generates detailed resistance content including:
 
 import json
 import os
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 from enum import Enum
 
 import httpx
@@ -104,8 +103,8 @@ class ResistanceGenerator:
 
     def __init__(
         self,
-        ollama_host: Optional[str] = None,
-        model: Optional[str] = None,
+        ollama_host: str | None = None,
+        model: str | None = None,
         timeout: float = 180.0,  # Longer timeout for detailed content
     ):
         self.ollama_host = ollama_host or os.getenv(
@@ -507,7 +506,7 @@ Respond with JSON:
         issue_title: str,
         issue_summary: str,
         jurisdiction: str,
-        specific_law: Optional[str] = None,
+        specific_law: str | None = None,
     ) -> ResistanceContent:
         """Generate comprehensive resistance content for an issue.
 

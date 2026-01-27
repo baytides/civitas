@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
-
 
 # =============================================================================
 # Pagination
@@ -34,10 +32,10 @@ class ObjectiveBase(BaseModel):
 
     id: int
     section: str
-    chapter: Optional[str] = None
+    chapter: str | None = None
     agency: str
     proposal_text: str
-    proposal_summary: Optional[str] = None
+    proposal_summary: str | None = None
     page_number: int
     category: str
     action_type: str
@@ -54,7 +52,7 @@ class ObjectiveDetail(ObjectiveBase):
     constitutional_concerns: list[str] = []
     matching_eo_ids: list[int] = []
     matching_legislation_ids: list[int] = []
-    implementation_notes: Optional[str] = None
+    implementation_notes: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -88,19 +86,19 @@ class ExecutiveOrderBase(BaseModel):
 
     id: int
     document_number: str
-    executive_order_number: Optional[int] = None
+    executive_order_number: int | None = None
     title: str
-    signing_date: Optional[date] = None
-    publication_date: Optional[date] = None
-    president: Optional[str] = None
-    abstract: Optional[str] = None
+    signing_date: date | None = None
+    publication_date: date | None = None
+    president: str | None = None
+    abstract: str | None = None
 
 
 class ExecutiveOrderDetail(ExecutiveOrderBase):
     """Detailed EO with matched objectives."""
 
-    pdf_url: Optional[str] = None
-    html_url: Optional[str] = None
+    pdf_url: str | None = None
+    html_url: str | None = None
     matched_objectives: list[ObjectiveBase] = []
 
 
@@ -125,18 +123,18 @@ class CourtCaseBase(BaseModel):
     case_name: str
     court_level: str
     court: str
-    decision_date: Optional[date] = None
-    status: Optional[str] = None
+    decision_date: date | None = None
+    status: str | None = None
 
 
 class CourtCaseDetail(CourtCaseBase):
     """Detailed court case."""
 
-    docket_number: Optional[str] = None
-    holding: Optional[str] = None
-    majority_author: Optional[str] = None
-    dissent_author: Optional[str] = None
-    source_url: Optional[str] = None
+    docket_number: str | None = None
+    holding: str | None = None
+    majority_author: str | None = None
+    dissent_author: str | None = None
+    source_url: str | None = None
     linked_objectives: list[ObjectiveBase] = []
 
 
@@ -168,11 +166,11 @@ class StateBillBase(BaseModel):
 
     id: int
     identifier: str
-    title: Optional[str] = None
+    title: str | None = None
     chamber: str
     session: str
-    status: Optional[str] = None
-    introduced_date: Optional[date] = None
+    status: str | None = None
+    introduced_date: date | None = None
 
 
 class StateLegislatorBase(BaseModel):
@@ -183,7 +181,7 @@ class StateLegislatorBase(BaseModel):
     id: int
     full_name: str
     chamber: str
-    district: Optional[str] = None
+    district: str | None = None
     party: str
     state: str
 
@@ -213,7 +211,7 @@ class ResistanceRecommendation(BaseModel):
     action_type: str
     title: str
     description: str
-    legal_basis: Optional[str] = None
+    legal_basis: str | None = None
     likelihood: str  # high, medium, low
     prerequisites: list[str] = []
 
@@ -246,7 +244,7 @@ class BlockedPolicy(BaseModel):
     proposal_summary: str
     blocked_by: str  # court, state, congress
     case_or_action: str
-    blocked_date: Optional[date] = None
+    blocked_date: date | None = None
 
 
 # =============================================================================

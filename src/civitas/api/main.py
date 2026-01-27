@@ -51,6 +51,8 @@ def create_app(
         "http://localhost:3000",  # Next.js dev
         "https://projectcivitas.com",
         "https://www.projectcivitas.com",
+        "https://civitas-bft.pages.dev",  # Cloudflare Pages
+        "http://civitas-bft.pages.dev",
     ]
 
     app.add_middleware(

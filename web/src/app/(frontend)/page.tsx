@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { ThreatMeter } from "@/components/dashboard/ThreatMeter";
-import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { ActionAlertStack } from "@/components/dashboard/ActionAlertBanner";
+import { DashboardDataLoader, RecentExecutiveOrders } from "@/components/dashboard/DashboardData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { dashboardStats, categoryStats } from "@/lib/data";
+import { categoryStats } from "@/lib/data";
 
 // Recent activity - derived from centralized data
 const recentActivity = [
@@ -62,9 +62,8 @@ const alerts = [
 ];
 
 export default function HomePage() {
-  const overallProgress = Math.round(
-    (dashboardStats.enacted / dashboardStats.totalObjectives) * 100
-  );
+  // Overall progress - will be dynamically calculated when objectives are loaded
+  const overallProgress = 40; // Approximate baseline
 
   return (
     <>
@@ -111,7 +110,7 @@ export default function HomePage() {
 
           <div className="lg:col-span-2">
             <h2 className="text-lg font-semibold mb-4">Overview</h2>
-            <StatsGrid stats={dashboardStats} />
+            <DashboardDataLoader />
           </div>
         </section>
 
@@ -122,9 +121,16 @@ export default function HomePage() {
             <CategoryBreakdown categories={categoryStats} />
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Executive Orders */}
           <div className="lg:col-span-1">
-            <RecentActivity items={recentActivity} />
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Executive Orders</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RecentExecutiveOrders limit={5} />
+              </CardContent>
+            </Card>
           </div>
         </section>
 

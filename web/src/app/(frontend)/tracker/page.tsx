@@ -1,13 +1,39 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatPercentage, snakeToTitle } from "@/lib/utils";
-import { objectivesList } from "@/lib/data";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, snakeToTitle } from "@/lib/utils";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+interface APIObjective {
+  id: number;
+  section: string;
+  chapter: string | null;
+  agency: string;
+  proposal_text: string;
+  proposal_summary: string | null;
+  page_number: number;
+  category: string;
+  action_type: string;
+  priority: string;
+  implementation_timeline: string;
+  status: string;
+  confidence: number;
+}
+
+interface ObjectivesResponse {
+  page: number;
+  per_page: number;
+  total: number;
+  total_pages: number;
+  items: APIObjective[];
+}
 
 const categories = [
   { slug: "all", name: "All Categories" },
@@ -16,40 +42,96 @@ const categories = [
   { slug: "healthcare", name: "Healthcare" },
   { slug: "education", name: "Education" },
   { slug: "civil_rights", name: "Civil Rights" },
-  { slug: "government", name: "Government" },
+  { slug: "government_structure", name: "Government" },
+  { slug: "labor", name: "Labor" },
+  { slug: "economy", name: "Economy" },
+  { slug: "defense", name: "Defense" },
+  { slug: "justice", name: "Justice" },
 ];
 
 const statuses = [
   { slug: "all", name: "All Statuses" },
-  { slug: "enacted", name: "Enacted" },
-  { slug: "in_progress", name: "In Progress" },
   { slug: "proposed", name: "Proposed" },
+  { slug: "in_progress", name: "In Progress" },
+  { slug: "enacted", name: "Enacted" },
   { slug: "blocked", name: "Blocked" },
 ];
 
-const threatLevels = [
-  { slug: "all", name: "All Threat Levels" },
-  { slug: "critical", name: "Critical" },
-  { slug: "high", name: "High" },
-  { slug: "elevated", name: "Elevated" },
-  { slug: "moderate", name: "Moderate" },
+const priorities = [
+  { slug: "all", name: "All Priorities" },
+  { slug: "high", name: "High Priority" },
+  { slug: "medium", name: "Medium Priority" },
+  { slug: "low", name: "Low Priority" },
 ];
 
 function TrackerContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "all";
-  const initialSearch = searchParams.get("search") || "";
+
+  const [objectives, setObjectives] = useState<APIObjective[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedThreat, setSelectedThreat] = useState("all");
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [selectedPriority, setSelectedPriority] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredObjectives = objectivesList.filter((obj) => {
-    if (selectedCategory !== "all" && obj.category !== selectedCategory) return false;
-    if (selectedStatus !== "all" && obj.implementationStatus !== selectedStatus) return false;
-    if (selectedThreat !== "all" && obj.threatLevel !== selectedThreat) return false;
-    if (searchQuery && !obj.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+  useEffect(() => {
+    async function fetchObjectives() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          per_page: "20",
+        });
+
+        if (selectedCategory !== "all") {
+          params.set("category", selectedCategory);
+        }
+        if (selectedStatus !== "all") {
+          params.set("status", selectedStatus);
+        }
+        if (selectedPriority !== "all") {
+          params.set("priority", selectedPriority);
+        }
+
+        const response = await fetch(`${API_BASE}/objectives?${params}`);
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data: ObjectivesResponse = await response.json();
+        setObjectives(data.items);
+        setTotal(data.total);
+        setTotalPages(data.total_pages);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch objectives");
+        setObjectives([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchObjectives();
+  }, [page, selectedCategory, selectedStatus, selectedPriority]);
+
+  // Client-side search filter
+  const filteredObjectives = objectives.filter((obj) => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        obj.proposal_text.toLowerCase().includes(query) ||
+        obj.agency.toLowerCase().includes(query) ||
+        (obj.proposal_summary?.toLowerCase().includes(query) ?? false)
+      );
+    }
     return true;
   });
 
@@ -59,7 +141,7 @@ function TrackerContent() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Project 2025 Tracker</h1>
         <p className="text-muted-foreground">
-          Monitor the implementation status of Project 2025 policy objectives
+          Monitor the implementation status of {total > 0 ? total : "Project 2025"} policy objectives from the Mandate for Leadership
         </p>
       </div>
 
@@ -75,7 +157,7 @@ function TrackerContent() {
               <input
                 id="tracker-search"
                 type="text"
-                placeholder="Search objectives..."
+                placeholder="Search proposals..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md bg-background"
@@ -90,7 +172,10 @@ function TrackerContent() {
               <select
                 id="tracker-category"
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full px-3 py-2 border rounded-md bg-background"
               >
                 {categories.map((cat) => (
@@ -109,7 +194,10 @@ function TrackerContent() {
               <select
                 id="tracker-status"
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
+                onChange={(e) => {
+                  setSelectedStatus(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full px-3 py-2 border rounded-md bg-background"
               >
                 {statuses.map((status) => (
@@ -120,18 +208,21 @@ function TrackerContent() {
               </select>
             </div>
 
-            {/* Threat Level */}
+            {/* Priority */}
             <div>
-              <label htmlFor="tracker-threat" className="text-sm font-medium mb-2 block">
-                Threat Level
+              <label htmlFor="tracker-priority" className="text-sm font-medium mb-2 block">
+                Priority
               </label>
               <select
-                id="tracker-threat"
-                value={selectedThreat}
-                onChange={(e) => setSelectedThreat(e.target.value)}
+                id="tracker-priority"
+                value={selectedPriority}
+                onChange={(e) => {
+                  setSelectedPriority(e.target.value);
+                  setPage(1);
+                }}
                 className="w-full px-3 py-2 border rounded-md bg-background"
               >
-                {threatLevels.map((level) => (
+                {priorities.map((level) => (
                   <option key={level.slug} value={level.slug}>
                     {level.name}
                   </option>
@@ -142,45 +233,120 @@ function TrackerContent() {
         </CardContent>
       </Card>
 
-      {/* Results count */}
+      {/* Results count and pagination */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredObjectives.length} of {objectivesList.length} objectives
+          {loading ? (
+            "Loading..."
+          ) : error ? (
+            <span className="text-destructive">{error}</span>
+          ) : (
+            <>Showing {filteredObjectives.length} of {total} objectives</>
+          )}
         </p>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            Export CSV
-          </Button>
+          {totalPages > 1 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page <= 1}
+                onClick={() => setPage(p => p - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground py-2">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
+                Next
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Objectives List */}
-      <div className="space-y-4">
-        {filteredObjectives.map((objective) => (
-          <ObjectiveCard key={objective.id} objective={objective} />
-        ))}
+      {/* Loading state */}
+      {loading && (
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  <div className="flex-1">
+                    <div className="flex gap-2 mb-2">
+                      <Skeleton className="h-5 w-20" />
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-5 w-12" />
+                    </div>
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3 mt-1" />
+                  </div>
+                  <Skeleton className="h-8 w-32" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-        {filteredObjectives.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">
-                No objectives match your filters.
-              </p>
+      {/* Error state */}
+      {!loading && error && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <p className="text-muted-foreground mb-4">
+              The Project 2025 database may need to be populated.
+            </p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && filteredObjectives.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              {total === 0
+                ? "No Project 2025 objectives have been ingested yet."
+                : "No objectives match your filters."
+              }
+            </p>
+            {total > 0 && (
               <Button
                 variant="link"
                 onClick={() => {
                   setSelectedCategory("all");
                   setSelectedStatus("all");
-                  setSelectedThreat("all");
+                  setSelectedPriority("all");
                   setSearchQuery("");
+                  setPage(1);
                 }}
               >
                 Clear filters
               </Button>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Objectives List */}
+      {!loading && !error && filteredObjectives.length > 0 && (
+        <div className="space-y-4">
+          {filteredObjectives.map((objective) => (
+            <ObjectiveCard key={objective.id} objective={objective} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -189,16 +355,16 @@ function TrackerLoading() {
   return (
     <div className="container py-8">
       <div className="mb-8">
-        <div className="h-9 w-64 bg-muted rounded animate-pulse mb-2" />
-        <div className="h-5 w-96 bg-muted rounded animate-pulse" />
+        <Skeleton className="h-9 w-64 mb-2" />
+        <Skeleton className="h-5 w-96" />
       </div>
       <Card className="mb-8">
         <CardContent className="pt-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i}>
-                <div className="h-4 w-16 bg-muted rounded animate-pulse mb-2" />
-                <div className="h-10 bg-muted rounded animate-pulse" />
+                <Skeleton className="h-4 w-16 mb-2" />
+                <Skeleton className="h-10 w-full" />
               </div>
             ))}
           </div>
@@ -217,28 +383,29 @@ export default function TrackerPage() {
 }
 
 interface ObjectiveCardProps {
-  objective: {
-    id: string;
-    category: string;
-    subcategory: string;
-    title: string;
-    description: string;
-    sourcePage: number;
-    implementationStatus: string;
-    threatLevel: string;
-    progressPercentage: number;
-  };
+  objective: APIObjective;
 }
 
 function ObjectiveCard({ objective }: ObjectiveCardProps) {
-  const threatColors = {
-    critical: "bg-red-500",
-    high: "bg-orange-500",
-    elevated: "bg-yellow-500",
-    moderate: "bg-green-500",
+  const priorityColors = {
+    high: "bg-red-500",
+    medium: "bg-orange-500",
+    low: "bg-green-500",
   };
 
-  const statusVariant = objective.implementationStatus as "enacted" | "in_progress" | "proposed" | "blocked";
+  const priorityVariant = objective.priority as "high" | "medium" | "low";
+  const statusVariant = objective.status === "in_progress" ? "in_progress" :
+                        objective.status === "enacted" ? "enacted" :
+                        objective.status === "blocked" ? "blocked" : "proposed";
+
+  // Calculate a progress percentage based on status
+  const progressByStatus: Record<string, number> = {
+    proposed: 10,
+    in_progress: 50,
+    enacted: 100,
+    blocked: 0,
+  };
+  const progress = progressByStatus[objective.status] || 0;
 
   return (
     <Link href={`/tracker/${objective.id}`}>
@@ -249,43 +416,51 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-2">
                 <Badge variant="outline">{snakeToTitle(objective.category)}</Badge>
-                <Badge variant={statusVariant}>
-                  {snakeToTitle(objective.implementationStatus)}
+                <Badge variant={statusVariant as "proposed" | "in_progress" | "enacted" | "blocked"}>
+                  {snakeToTitle(objective.status)}
                 </Badge>
-                <Badge
-                  variant={objective.threatLevel as "critical" | "high" | "elevated" | "moderate"}
-                >
-                  {objective.threatLevel.toUpperCase()}
+                <Badge variant={priorityVariant === "high" ? "critical" : priorityVariant === "medium" ? "elevated" : "moderate"}>
+                  {objective.priority.toUpperCase()}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {snakeToTitle(objective.action_type)}
                 </Badge>
               </div>
 
-              <h3 className="text-lg font-semibold mb-2">{objective.title}</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {objective.agency}: {snakeToTitle(objective.action_type)}
+              </h3>
               <p className="text-sm text-muted-foreground line-clamp-2">
-                {objective.description}
+                {objective.proposal_summary || objective.proposal_text}
               </p>
 
               <p className="text-xs text-muted-foreground mt-2">
-                Source: Mandate for Leadership, p. {objective.sourcePage}
+                Source: Mandate for Leadership, p. {objective.page_number} | Section: {objective.section}
               </p>
             </div>
 
-            {/* Right: Progress */}
-            <div className="w-full md:w-48 shrink-0">
-              <div className="flex items-center justify-between text-sm mb-1">
-                <span className="text-muted-foreground">Progress</span>
-                <span className="font-semibold">
-                  {formatPercentage(objective.progressPercentage)}
+            {/* Right: Progress & Timeline */}
+            <div className="w-full md:w-48 shrink-0 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Status</span>
+                <span className="font-semibold text-xs">
+                  {snakeToTitle(objective.implementation_timeline)}
                 </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    threatColors[objective.threatLevel as keyof typeof threatColors]
+                    priorityColors[priorityVariant] || "bg-gray-500"
                   )}
-                  style={{ width: `${objective.progressPercentage}%` }}
+                  style={{ width: `${progress}%` }}
                 />
               </div>
+              {objective.confidence > 0 && (
+                <p className="text-xs text-muted-foreground text-right">
+                  Confidence: {Math.round(objective.confidence * 100)}%
+                </p>
+              )}
             </div>
           </div>
         </CardContent>

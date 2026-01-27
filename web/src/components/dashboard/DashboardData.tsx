@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { StatsGrid } from "./StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://20.98.70.48/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface DashboardStats {
   totalObjectives: number;

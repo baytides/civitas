@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { ThreatMeter } from "@/components/dashboard/ThreatMeter";
-import { CategoryBreakdown } from "@/components/dashboard/CategoryBreakdown";
-import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { DynamicCategoryBreakdown } from "@/components/dashboard/DynamicCategoryBreakdown";
 import { ActionAlertStack } from "@/components/dashboard/ActionAlertBanner";
 import { DashboardDataLoader, RecentExecutiveOrders } from "@/components/dashboard/DashboardData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { categoryStats } from "@/lib/data";
 
 // Recent activity - derived from centralized data
 const recentActivity = [
@@ -118,7 +116,7 @@ export default function HomePage() {
         <section className="grid lg:grid-cols-3 gap-8">
           {/* Categories */}
           <div className="lg:col-span-2">
-            <CategoryBreakdown categories={categoryStats} />
+            <DynamicCategoryBreakdown />
           </div>
 
           {/* Recent Executive Orders */}

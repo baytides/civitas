@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { ThreatMeter } from "@/components/dashboard/ThreatMeter";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
@@ -7,31 +6,10 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { ActionAlertStack } from "@/components/dashboard/ActionAlertBanner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { dashboardStats, categoryStats } from "@/lib/data";
 
-// Mock data - will be replaced with API calls
-// Note: 320 objectives based on Project 2025 Mandate for Leadership analysis
-// (similar methodology to project2025.observer)
-const mockStats = {
-  totalObjectives: 320,
-  enacted: 129,
-  inProgress: 68,
-  blocked: 12,
-  executiveOrders: 47,
-  courtCases: 23,
-};
-
-const mockCategories = [
-  { name: "Immigration", slug: "immigration", total: 42, enacted: 18, inProgress: 12, blocked: 2 },
-  { name: "Environment", slug: "environment", total: 38, enacted: 14, inProgress: 8, blocked: 3 },
-  { name: "Healthcare", slug: "healthcare", total: 45, enacted: 16, inProgress: 10, blocked: 2 },
-  { name: "Education", slug: "education", total: 28, enacted: 12, inProgress: 6, blocked: 1 },
-  { name: "Civil Rights", slug: "civil_rights", total: 52, enacted: 22, inProgress: 11, blocked: 2 },
-  { name: "Government", slug: "government", total: 61, enacted: 28, inProgress: 14, blocked: 1 },
-  { name: "Economy", slug: "economy", total: 34, enacted: 12, inProgress: 5, blocked: 1 },
-  { name: "Foreign Policy", slug: "foreign_policy", total: 20, enacted: 7, inProgress: 2, blocked: 0 },
-];
-
-const mockActivity = [
+// Recent activity - derived from centralized data
+const recentActivity = [
   {
     id: "1",
     type: "executive_order" as const,
@@ -39,7 +17,7 @@ const mockActivity = [
     description: "Orders a review of all federal agencies for potential consolidation",
     date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     threatLevel: "critical" as const,
-    url: "/executive-orders/1",
+    url: "/executive-orders/5",
   },
   {
     id: "2",
@@ -48,16 +26,16 @@ const mockActivity = [
     description: "Challenge to new federal education funding requirements",
     date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     status: "in_progress",
-    url: "/cases/2",
+    url: "/cases/1",
   },
   {
     id: "3",
     type: "legislation" as const,
-    title: "H.R. 1234 - Federal Agency Accountability Act",
-    description: "Would eliminate specific agency oversight requirements",
+    title: "H.R. 899 - To terminate the Department of Education",
+    description: "Would eliminate the Department of Education entirely",
     date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     status: "proposed",
-    url: "/legislation/3",
+    url: "/legislation/1",
   },
   {
     id: "4",
@@ -66,11 +44,11 @@ const mockActivity = [
     description: "P2025 objective status updated to 'In Progress'",
     date: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
     threatLevel: "high" as const,
-    url: "/tracker/education-1",
+    url: "/tracker/ed-1",
   },
 ];
 
-const mockAlerts = [
+const alerts = [
   {
     id: "alert-1",
     title: "URGENT: Comment Period Ending",
@@ -78,20 +56,20 @@ const mockAlerts = [
     urgency: "critical" as const,
     callToAction: {
       text: "Submit Comment",
-      url: "/action/epa-comment",
+      url: "/resistance",
     },
   },
 ];
 
 export default function HomePage() {
   const overallProgress = Math.round(
-    (mockStats.enacted / mockStats.totalObjectives) * 100
+    (dashboardStats.enacted / dashboardStats.totalObjectives) * 100
   );
 
   return (
     <>
       {/* Action Alerts */}
-      <ActionAlertStack alerts={mockAlerts} />
+      <ActionAlertStack alerts={alerts} />
 
       <div className="container py-8 space-y-8">
         {/* Hero Section */}
@@ -133,7 +111,7 @@ export default function HomePage() {
 
           <div className="lg:col-span-2">
             <h2 className="text-lg font-semibold mb-4">Overview</h2>
-            <StatsGrid stats={mockStats} />
+            <StatsGrid stats={dashboardStats} />
           </div>
         </section>
 
@@ -141,12 +119,12 @@ export default function HomePage() {
         <section className="grid lg:grid-cols-3 gap-8">
           {/* Categories */}
           <div className="lg:col-span-2">
-            <CategoryBreakdown categories={mockCategories} />
+            <CategoryBreakdown categories={categoryStats} />
           </div>
 
           {/* Recent Activity */}
           <div className="lg:col-span-1">
-            <RecentActivity items={mockActivity} />
+            <RecentActivity items={recentActivity} />
           </div>
         </section>
 

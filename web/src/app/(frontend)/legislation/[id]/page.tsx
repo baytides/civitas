@@ -4,68 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate, snakeToTitle } from "@/lib/utils";
+import { getLegislation, getAllLegislationIds } from "@/lib/data";
 
-// Mock data - will be replaced with API call
-const mockLegislation: Record<string, {
-  id: string;
-  title: string;
-  number: string;
-  type: string;
-  status: string;
-  jurisdiction: string;
-  chamber: string;
-  session: string;
-  introducedDate: string;
-  summary: string;
-  sponsors: { name: string; party: string; state: string }[];
-  relatedObjectives: { id: string; title: string }[];
-  actions: { date: string; description: string }[];
-}> = {
-  "1": {
-    id: "1",
-    title: "To terminate the Department of Education",
-    number: "H.R. 899",
-    type: "bill",
-    status: "proposed",
-    jurisdiction: "federal",
-    chamber: "house",
-    session: "119th Congress",
-    introducedDate: "2025-01-15",
-    summary: "A bill to terminate the Department of Education and transfer its functions to the states.",
-    sponsors: [
-      { name: "Rep. Thomas Massie", party: "R", state: "KY" },
-    ],
-    relatedObjectives: [
-      { id: "ed-1", title: "Eliminate Department of Education" },
-    ],
-    actions: [
-      { date: "2025-01-15", description: "Introduced in House" },
-      { date: "2025-01-16", description: "Referred to Committee on Education and the Workforce" },
-    ],
-  },
-  "2": {
-    id: "2",
-    title: "Education Freedom Act",
-    number: "S. 323",
-    type: "bill",
-    status: "proposed",
-    jurisdiction: "federal",
-    chamber: "senate",
-    session: "119th Congress",
-    introducedDate: "2025-01-18",
-    summary: "A bill to provide block grants to states for education and reduce federal education mandates.",
-    sponsors: [
-      { name: "Sen. Mike Lee", party: "R", state: "UT" },
-    ],
-    relatedObjectives: [
-      { id: "ed-1", title: "Eliminate Department of Education" },
-    ],
-    actions: [
-      { date: "2025-01-18", description: "Introduced in Senate" },
-      { date: "2025-01-19", description: "Referred to Committee on Health, Education, Labor, and Pensions" },
-    ],
-  },
-};
+// Generate static paths for all legislation
+export async function generateStaticParams() {
+  return getAllLegislationIds().map((id) => ({ id }));
+}
 
 export default async function LegislationDetailPage({
   params,
@@ -73,7 +17,7 @@ export default async function LegislationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const legislation = mockLegislation[id];
+  const legislation = getLegislation(id);
 
   if (!legislation) {
     notFound();
@@ -89,7 +33,7 @@ export default async function LegislationDetailPage({
         <span>/</span>
         <span>Legislation</span>
         <span>/</span>
-        <span className="text-foreground">{legislation.number}</span>
+        <span className="text-foreground">{legislation.billNumber}</span>
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -98,13 +42,13 @@ export default async function LegislationDetailPage({
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-3">
               <Badge variant="outline">{legislation.chamber.toUpperCase()}</Badge>
-              <Badge variant={legislation.status as "enacted" | "proposed" | "in_progress" | "blocked"}>
+              <Badge variant={legislation.status === "signed" ? "enacted" : legislation.status === "introduced" || legislation.status === "in_committee" ? "proposed" : "in_progress"}>
                 {snakeToTitle(legislation.status)}
               </Badge>
               <Badge variant="outline">{legislation.jurisdiction}</Badge>
             </div>
 
-            <h1 className="text-3xl font-bold mb-2">{legislation.number}</h1>
+            <h1 className="text-3xl font-bold mb-2">{legislation.billNumber}</h1>
             <h2 className="text-xl text-muted-foreground mb-4">{legislation.title}</h2>
 
             <p className="text-muted-foreground">{legislation.summary}</p>
@@ -141,7 +85,7 @@ export default async function LegislationDetailPage({
                     <span className="text-sm text-muted-foreground whitespace-nowrap">
                       {formatDate(action.date)}
                     </span>
-                    <p>{action.description}</p>
+                    <p>{action.action}</p>
                   </div>
                 ))}
               </div>
@@ -178,16 +122,16 @@ export default async function LegislationDetailPage({
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <p className="text-sm text-muted-foreground">Session</p>
-                <p className="font-medium">{legislation.session}</p>
+                <p className="text-sm text-muted-foreground">Jurisdiction</p>
+                <p className="font-medium capitalize">{legislation.jurisdiction}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Introduced</p>
                 <p className="font-medium">{formatDate(legislation.introducedDate)}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Type</p>
-                <p className="font-medium">{snakeToTitle(legislation.type)}</p>
+                <p className="text-sm text-muted-foreground">Chamber</p>
+                <p className="font-medium capitalize">{legislation.chamber}</p>
               </div>
             </CardContent>
           </Card>

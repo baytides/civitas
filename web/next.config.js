@@ -3,7 +3,9 @@ const path = require("path");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: __dirname,
-  // Required for Payload CMS in Next.js 15
+  // Static export for Cloudflare Pages
+  output: "export",
+  // Required for Payload CMS in Next.js 15 (when not using static export)
   serverExternalPackages: ["payload"],
   webpack: (config) => {
     config.resolve.alias["@payload-config"] = path.resolve(
@@ -12,6 +14,8 @@ const nextConfig = {
     );
     return config;
   },
+  // Skip trailing slash issues
+  trailingSlash: true,
   images: {
     remotePatterns: [
       {

@@ -6,110 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// Mock data - will be replaced with API calls
-const mockStates = [
-  {
-    code: "CA",
-    name: "California",
-    resistanceScore: 92,
-    protectionLevel: "strong",
-    governorParty: "D",
-    legislatureControl: "D",
-    activeProtections: 45,
-    pendingThreats: 3,
-  },
-  {
-    code: "NY",
-    name: "New York",
-    resistanceScore: 88,
-    protectionLevel: "strong",
-    governorParty: "D",
-    legislatureControl: "D",
-    activeProtections: 38,
-    pendingThreats: 5,
-  },
-  {
-    code: "TX",
-    name: "Texas",
-    resistanceScore: 15,
-    protectionLevel: "hostile",
-    governorParty: "R",
-    legislatureControl: "R",
-    activeProtections: 2,
-    pendingThreats: 28,
-  },
-  {
-    code: "FL",
-    name: "Florida",
-    resistanceScore: 12,
-    protectionLevel: "hostile",
-    governorParty: "R",
-    legislatureControl: "R",
-    activeProtections: 1,
-    pendingThreats: 32,
-  },
-  {
-    code: "IL",
-    name: "Illinois",
-    resistanceScore: 85,
-    protectionLevel: "strong",
-    governorParty: "D",
-    legislatureControl: "D",
-    activeProtections: 32,
-    pendingThreats: 4,
-  },
-  {
-    code: "PA",
-    name: "Pennsylvania",
-    resistanceScore: 55,
-    protectionLevel: "moderate",
-    governorParty: "D",
-    legislatureControl: "Split",
-    activeProtections: 15,
-    pendingThreats: 12,
-  },
-  {
-    code: "OH",
-    name: "Ohio",
-    resistanceScore: 35,
-    protectionLevel: "weak",
-    governorParty: "R",
-    legislatureControl: "R",
-    activeProtections: 8,
-    pendingThreats: 18,
-  },
-  {
-    code: "MI",
-    name: "Michigan",
-    resistanceScore: 78,
-    protectionLevel: "strong",
-    governorParty: "D",
-    legislatureControl: "D",
-    activeProtections: 28,
-    pendingThreats: 6,
-  },
-  {
-    code: "WA",
-    name: "Washington",
-    resistanceScore: 90,
-    protectionLevel: "strong",
-    governorParty: "D",
-    legislatureControl: "D",
-    activeProtections: 42,
-    pendingThreats: 2,
-  },
-  {
-    code: "AZ",
-    name: "Arizona",
-    resistanceScore: 45,
-    protectionLevel: "moderate",
-    governorParty: "D",
-    legislatureControl: "R",
-    activeProtections: 12,
-    pendingThreats: 15,
-  },
-];
+import { statesList } from "@/lib/data";
 
 const protectionLevelColors = {
   strong: "bg-green-500",
@@ -129,7 +26,7 @@ export default function StatesPage() {
   const [sortBy, setSortBy] = useState<"name" | "score">("score");
   const [filterLevel, setFilterLevel] = useState<string>("all");
 
-  const filteredStates = mockStates
+  const filteredStates = statesList
     .filter((state) => filterLevel === "all" || state.protectionLevel === filterLevel)
     .sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name);
@@ -137,10 +34,10 @@ export default function StatesPage() {
     });
 
   const statsByLevel = {
-    strong: mockStates.filter((s) => s.protectionLevel === "strong").length,
-    moderate: mockStates.filter((s) => s.protectionLevel === "moderate").length,
-    weak: mockStates.filter((s) => s.protectionLevel === "weak").length,
-    hostile: mockStates.filter((s) => s.protectionLevel === "hostile").length,
+    strong: statesList.filter((s) => s.protectionLevel === "strong").length,
+    moderate: statesList.filter((s) => s.protectionLevel === "moderate").length,
+    weak: statesList.filter((s) => s.protectionLevel === "weak").length,
+    hostile: statesList.filter((s) => s.protectionLevel === "hostile").length,
   };
 
   return (

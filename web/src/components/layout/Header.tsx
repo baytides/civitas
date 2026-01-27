@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -16,7 +16,43 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Handle keyboard shortcut (Cmd+K or Ctrl+K)
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Focus search input when modal opens
+  React.useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/tracker?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+      setSearchQuery("");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -50,8 +86,14 @@ export function Header() {
 
         {/* Right side */}
         <div className="ml-auto flex items-center space-x-4">
-          {/* Search */}
-          <Button variant="outline" size="sm" className="hidden md:flex" type="button">
+          {/* Search Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="hidden md:flex"
+            type="button"
+            onClick={() => setSearchOpen(true)}
+          >
             <SearchIcon className="mr-2 h-4 w-4" aria-hidden="true" />
             Search...
             <kbd className="pointer-events-none ml-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
@@ -112,6 +154,41 @@ export function Header() {
               </Link>
             ))}
           </nav>
+        </div>
+      )}
+
+      {/* Search Modal */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50"
+          onClick={() => setSearchOpen(false)}
+        >
+          <div
+            className="fixed left-1/2 top-1/4 -translate-x-1/2 w-full max-w-lg bg-background rounded-lg shadow-lg border p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <form onSubmit={handleSearch}>
+              <div className="flex items-center gap-3">
+                <SearchIcon className="h-5 w-5 text-muted-foreground" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search objectives, legislation, cases..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-lg"
+                />
+                <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  ESC
+                </kbd>
+              </div>
+            </form>
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                Press Enter to search the tracker, or use the filters on the tracker page for advanced search.
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </header>

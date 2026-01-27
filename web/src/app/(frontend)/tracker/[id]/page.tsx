@@ -3,90 +3,13 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { cn, formatDate, formatPercentage, snakeToTitle } from "@/lib/utils";
+import { getObjective, getAllObjectiveIds } from "@/lib/data";
 
-// Mock data - will be replaced with API call
-const mockObjective = {
-  id: "ed-1",
-  category: "education",
-  subcategory: "federal",
-  title: "Eliminate Department of Education",
-  description:
-    "The Project 2025 Mandate for Leadership calls for the complete abolition of the federal Department of Education. This would transfer all education policy authority to individual states, eliminate federal student loan programs, end Title I funding, and remove federal oversight of educational civil rights protections.",
-  sourcePage: 319,
-  implementationStatus: "in_progress",
-  threatLevel: "critical",
-  progressPercentage: 35,
-  relatedLegislation: [
-    {
-      id: 1,
-      title: "H.R. 899 - To terminate the Department of Education",
-      status: "proposed",
-      jurisdiction: "federal",
-    },
-    {
-      id: 2,
-      title: "S. 323 - Education Freedom Act",
-      status: "proposed",
-      jurisdiction: "federal",
-    },
-  ],
-  relatedExecutiveOrders: [
-    {
-      id: 1,
-      orderNumber: 14567,
-      title: "Executive Order on Education Policy Review",
-      signingDate: "2025-01-25",
-      status: "active",
-    },
-  ],
-  relatedCourtCases: [
-    {
-      id: 1,
-      citation: "2025 WL 123456",
-      caseName: "State of California v. Department of Education",
-      court: "Ninth Circuit",
-      status: "pending",
-    },
-  ],
-  resistanceActions: [
-    {
-      id: "ra-1",
-      tier: 1,
-      title: "Contact Your Senator",
-      description: "Call your senators to oppose education defunding bills",
-      urgency: "high",
-    },
-    {
-      id: "ra-2",
-      tier: 1,
-      title: "Support State Protections",
-      description: "Advocate for state-level education funding guarantees",
-      urgency: "medium",
-    },
-  ],
-  timeline: [
-    {
-      date: "2025-01-25",
-      eventType: "executive_order",
-      title: "Education Policy Review Executive Order Signed",
-      description: "President signs EO directing review of all federal education programs",
-    },
-    {
-      date: "2025-01-20",
-      eventType: "objective",
-      title: "Status Changed to In Progress",
-      description: "Multiple executive actions signal active implementation",
-    },
-    {
-      date: "2025-01-15",
-      eventType: "legislation",
-      title: "H.R. 899 Reintroduced",
-      description: "Bill to terminate Department of Education reintroduced in new Congress",
-    },
-  ],
-};
+// Generate static paths for all objectives
+export async function generateStaticParams() {
+  return getAllObjectiveIds().map((id) => ({ id }));
+}
 
 export default async function ObjectiveDetailPage({
   params,
@@ -94,10 +17,7 @@ export default async function ObjectiveDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
-  // In production, fetch from API
-  // const objective = await api.objectives.get(id);
-  const objective = mockObjective;
+  const objective = getObjective(id);
 
   if (!objective) {
     notFound();

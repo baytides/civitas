@@ -6,78 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { cn, formatPercentage, snakeToTitle } from "@/lib/utils";
-
-// Mock data - will be replaced with API calls
-const mockObjectives = [
-  {
-    id: "ed-1",
-    category: "education",
-    subcategory: "federal",
-    title: "Eliminate Department of Education",
-    description: "Abolish the federal Department of Education and return education policy to states",
-    sourcePage: 319,
-    implementationStatus: "in_progress",
-    threatLevel: "critical",
-    progressPercentage: 35,
-  },
-  {
-    id: "env-1",
-    category: "environment",
-    subcategory: "epa",
-    title: "Restructure Environmental Protection Agency",
-    description: "Reduce EPA regulatory authority and streamline permitting processes",
-    sourcePage: 417,
-    implementationStatus: "in_progress",
-    threatLevel: "high",
-    progressPercentage: 28,
-  },
-  {
-    id: "imm-1",
-    category: "immigration",
-    subcategory: "enforcement",
-    title: "Expand Immigration Enforcement",
-    description: "Increase deportation capacity and expand enforcement priorities",
-    sourcePage: 133,
-    implementationStatus: "enacted",
-    threatLevel: "critical",
-    progressPercentage: 65,
-  },
-  {
-    id: "hc-1",
-    category: "healthcare",
-    subcategory: "aca",
-    title: "Reform Affordable Care Act",
-    description: "Modify or eliminate key provisions of the Affordable Care Act",
-    sourcePage: 449,
-    implementationStatus: "proposed",
-    threatLevel: "elevated",
-    progressPercentage: 15,
-  },
-  {
-    id: "cr-1",
-    category: "civil_rights",
-    subcategory: "dei",
-    title: "End DEI Programs in Federal Agencies",
-    description: "Eliminate diversity, equity, and inclusion programs across federal government",
-    sourcePage: 81,
-    implementationStatus: "enacted",
-    threatLevel: "critical",
-    progressPercentage: 72,
-  },
-  {
-    id: "gov-1",
-    category: "government",
-    subcategory: "workforce",
-    title: "Implement Schedule F",
-    description: "Reclassify federal employees to remove civil service protections",
-    sourcePage: 71,
-    implementationStatus: "in_progress",
-    threatLevel: "critical",
-    progressPercentage: 45,
-  },
-];
+import { objectivesList } from "@/lib/data";
 
 const categories = [
   { slug: "all", name: "All Categories" },
@@ -108,13 +38,14 @@ const threatLevels = [
 function TrackerContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "all";
+  const initialSearch = searchParams.get("search") || "";
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedThreat, setSelectedThreat] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
 
-  const filteredObjectives = mockObjectives.filter((obj) => {
+  const filteredObjectives = objectivesList.filter((obj) => {
     if (selectedCategory !== "all" && obj.category !== selectedCategory) return false;
     if (selectedStatus !== "all" && obj.implementationStatus !== selectedStatus) return false;
     if (selectedThreat !== "all" && obj.threatLevel !== selectedThreat) return false;
@@ -214,7 +145,7 @@ function TrackerContent() {
       {/* Results count */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-muted-foreground">
-          Showing {filteredObjectives.length} of {mockObjectives.length} objectives
+          Showing {filteredObjectives.length} of {objectivesList.length} objectives
         </p>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">

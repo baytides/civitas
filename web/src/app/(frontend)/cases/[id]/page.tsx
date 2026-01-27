@@ -4,45 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { getCourtCase, getAllCourtCaseIds } from "@/lib/data";
 
-// Mock data - will be replaced with API call
-const mockCases: Record<string, {
-  id: string;
-  caseName: string;
-  citation: string;
-  court: string;
-  status: string;
-  filedDate: string;
-  summary: string;
-  plaintiffs: string[];
-  defendants: string[];
-  relatedObjectives: { id: string; title: string }[];
-  relatedExecutiveOrders: { id: string; orderNumber: number; title: string }[];
-  docket: { date: string; entry: string }[];
-}> = {
-  "1": {
-    id: "1",
-    caseName: "State of California v. Department of Education",
-    citation: "2025 WL 123456",
-    court: "United States Court of Appeals for the Ninth Circuit",
-    status: "pending",
-    filedDate: "2025-01-26",
-    summary: "The State of California challenges the Department of Education's implementation of Executive Order 14567, arguing that the federal government cannot unilaterally alter education funding requirements without Congressional action. The state seeks injunctive relief to maintain current funding levels.",
-    plaintiffs: ["State of California", "State of New York", "State of Washington"],
-    defendants: ["United States Department of Education", "Secretary of Education"],
-    relatedObjectives: [
-      { id: "ed-1", title: "Eliminate Department of Education" },
-    ],
-    relatedExecutiveOrders: [
-      { id: "1", orderNumber: 14567, title: "Executive Order on Education Policy Review" },
-    ],
-    docket: [
-      { date: "2025-01-26", entry: "Complaint filed" },
-      { date: "2025-01-26", entry: "Motion for temporary restraining order filed" },
-      { date: "2025-01-27", entry: "Hearing on TRO scheduled for 2025-01-30" },
-    ],
-  },
-};
+// Generate static paths for all cases
+export async function generateStaticParams() {
+  return getAllCourtCaseIds().map((id) => ({ id }));
+}
 
 export default async function CaseDetailPage({
   params,
@@ -50,7 +17,7 @@ export default async function CaseDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const courtCase = mockCases[id];
+  const courtCase = getCourtCase(id);
 
   if (!courtCase) {
     notFound();

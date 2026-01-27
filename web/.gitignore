@@ -35,3 +35,10 @@ next-env.d.ts
 
 # Payload
 .payload/
+
+# Vercel (not used - we use Cloudflare)
+.vercel/
+vercel.json
+
+# Cloudflare
+.wrangler/

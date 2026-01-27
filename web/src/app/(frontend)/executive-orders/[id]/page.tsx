@@ -4,35 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+import { getExecutiveOrder, getAllExecutiveOrderIds } from "@/lib/data";
 
-// Mock data - will be replaced with API call
-const mockExecutiveOrders: Record<string, {
-  id: string;
-  orderNumber: number;
-  title: string;
-  signingDate: string;
-  status: string;
-  summary: string;
-  fullTextUrl: string;
-  relatedObjectives: { id: string; title: string }[];
-  legalChallenges: { id: string; caseName: string; status: string }[];
-}> = {
-  "1": {
-    id: "1",
-    orderNumber: 14567,
-    title: "Executive Order on Education Policy Review",
-    signingDate: "2025-01-25",
-    status: "active",
-    summary: "This executive order directs the Secretary of Education to conduct a comprehensive review of all federal education programs with the goal of identifying opportunities for devolution to states, elimination of redundant programs, and reduction of regulatory burden on educational institutions.",
-    fullTextUrl: "https://www.whitehouse.gov/presidential-actions/",
-    relatedObjectives: [
-      { id: "ed-1", title: "Eliminate Department of Education" },
-    ],
-    legalChallenges: [
-      { id: "1", caseName: "State of California v. Department of Education", status: "pending" },
-    ],
-  },
-};
+// Generate static paths for all executive orders
+export async function generateStaticParams() {
+  return getAllExecutiveOrderIds().map((id) => ({ id }));
+}
 
 export default async function ExecutiveOrderDetailPage({
   params,
@@ -40,7 +17,7 @@ export default async function ExecutiveOrderDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const eo = mockExecutiveOrders[id];
+  const eo = getExecutiveOrder(id);
 
   if (!eo) {
     notFound();

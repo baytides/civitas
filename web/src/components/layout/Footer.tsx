@@ -2,21 +2,16 @@ import Link from "next/link";
 
 const footerLinks = {
   about: [
-    { name: "About Civitas", href: "/about" },
-    { name: "Methodology", href: "/methodology" },
-    { name: "Data Sources", href: "/sources" },
-    { name: "Credits", href: "/credits" },
+    { name: "About Civitas", href: "/" },
+    { name: "GitHub", href: "https://github.com/baytides/civitas", external: true },
   ],
   track: [
     { name: "P2025 Tracker", href: "/tracker" },
     { name: "State Map", href: "/states" },
     { name: "Timeline", href: "/timeline" },
-    { name: "Categories", href: "/categories" },
   ],
   action: [
     { name: "Take Action", href: "/resistance" },
-    { name: "Find Your Rep", href: "/representatives" },
-    { name: "Alerts", href: "/alerts" },
   ],
 };
 
@@ -44,12 +39,23 @@ export function Footer() {
             <ul className="space-y-2">
               {footerLinks.about.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {link.name}
-                  </Link>
+                  {"external" in link && link.external ? (
+                    <a
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -97,20 +103,14 @@ export function Footer() {
             available under MIT license.
           </p>
           <div className="flex items-center space-x-4">
-            <Link
-              href="/privacy"
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Privacy
-            </Link>
-            <Link
+            <a
               href="https://github.com/baytides/civitas"
               className="text-xs text-muted-foreground hover:text-foreground"
               target="_blank"
               rel="noopener noreferrer"
             >
               GitHub
-            </Link>
+            </a>
           </div>
         </div>
       </div>

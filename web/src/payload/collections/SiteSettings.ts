@@ -88,7 +88,7 @@ export const SiteSettings: GlobalConfig = {
         {
           name: "copyrightText",
           type: "text",
-          defaultValue: "Civitas Project",
+          defaultValue: "Project Civitas",
         },
         {
           name: "links",

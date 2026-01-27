@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "civic engagement",
     "resistance",
   ],
-  authors: [{ name: "Civitas Project" }],
+  authors: [{ name: "Project Civitas" }],
   openGraph: {
     title: "Civitas - Tracking Project 2025 Implementation",
     description:

@@ -114,10 +114,14 @@ def ingest_scotus(
 
                 with Session(engine) as session:
                     # Check if already exists
-                    existing = session.query(CourtCase).filter(
-                        CourtCase.court == "Supreme Court",
-                        CourtCase.docket_number == opinion.docket_number,
-                    ).first()
+                    existing = (
+                        session.query(CourtCase)
+                        .filter(
+                            CourtCase.court == "Supreme Court",
+                            CourtCase.docket_number == opinion.docket_number,
+                        )
+                        .first()
+                    )
 
                     if not existing:
                         case = CourtCase(
@@ -161,7 +165,9 @@ def ingest_courts(
     azure_client = AzureStorageClient() if azure else None
     api_token = os.getenv("COURT_LISTENER_TOKEN")
 
-    console.print(f"[bold blue]Ingesting federal court opinions from last {days} days...[/bold blue]")
+    console.print(
+        f"[bold blue]Ingesting federal court opinions from last {days} days...[/bold blue]"
+    )
 
     engine = get_engine(db_path)
     counts = {"cases": 0}
@@ -170,9 +176,13 @@ def ingest_courts(
         for opinion in client.get_recent_opinions(days=days, limit=200):
             with Session(engine) as session:
                 # Check if already exists
-                existing = session.query(CourtCase).filter(
-                    CourtCase.source_id == str(opinion.id),
-                ).first()
+                existing = (
+                    session.query(CourtCase)
+                    .filter(
+                        CourtCase.source_id == str(opinion.id),
+                    )
+                    .first()
+                )
 
                 if not existing:
                     court_level = "circuit" if opinion.court.startswith("ca") else "district"
@@ -220,9 +230,13 @@ def ingest_executive_orders(
         for eo in client.get_executive_orders(president=president, year=year, limit=500):
             with Session(engine) as session:
                 # Check if already exists
-                existing = session.query(ExecutiveOrder).filter(
-                    ExecutiveOrder.document_number == eo.document_number,
-                ).first()
+                existing = (
+                    session.query(ExecutiveOrder)
+                    .filter(
+                        ExecutiveOrder.document_number == eo.document_number,
+                    )
+                    .first()
+                )
 
                 if not existing:
                     db_eo = ExecutiveOrder(
@@ -249,7 +263,9 @@ def ingest_executive_orders(
 
 @ingest_app.command("project2025")
 def ingest_project2025(
-    pdf_path: str = typer.Option("data/project2025/mandate_for_leadership.pdf", "--pdf", help="Path to PDF"),
+    pdf_path: str = typer.Option(
+        "data/project2025/mandate_for_leadership.pdf", "--pdf", help="Path to PDF"
+    ),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
     enhanced: bool = typer.Option(True, "--enhanced/--basic", help="Use AI-enhanced extraction"),
     batch_size: int = typer.Option(10, "--batch-size", help="AI batch size (for enhanced mode)"),
@@ -272,10 +288,14 @@ def ingest_project2025(
     pdf_file = Path(pdf_path)
     if not pdf_file.exists():
         console.print(f"[red]PDF not found: {pdf_path}[/red]")
-        console.print("\nDownload from: https://s3.documentcloud.org/documents/24088042/project-2025s-mandate-for-leadership-the-conservative-promise.pdf")
+        console.print(
+            "\nDownload from: https://s3.documentcloud.org/documents/24088042/project-2025s-mandate-for-leadership-the-conservative-promise.pdf"
+        )
         console.print("\nOr run:")
         console.print("  mkdir -p data/project2025")
-        console.print("  curl -L -o data/project2025/mandate_for_leadership.pdf 'https://s3.documentcloud.org/documents/24088042/project-2025s-mandate-for-leadership-the-conservative-promise.pdf'")
+        console.print(
+            "  curl -L -o data/project2025/mandate_for_leadership.pdf 'https://s3.documentcloud.org/documents/24088042/project-2025s-mandate-for-leadership-the-conservative-promise.pdf'"
+        )
         return
 
     console.print("[bold blue]Parsing Project 2025 document...[/bold blue]")
@@ -331,7 +351,9 @@ def ingest_project2025(
 
 @ingest_app.command("uscode")
 def ingest_uscode(
-    titles: str | None = typer.Option(None, "--titles", help="Comma-separated title numbers (e.g., '18,26,42')"),
+    titles: str | None = typer.Option(
+        None, "--titles", help="Comma-separated title numbers (e.g., '18,26,42')"
+    ),
     azure: bool = typer.Option(False, "--azure", help="Store in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -359,20 +381,28 @@ def ingest_uscode(
             title_nums = [int(t.strip()) for t in titles.split(",")]
         else:
             title_nums = list(client.TITLES.keys())[:10]  # Default to first 10 titles
-            console.print("  [yellow]Defaulting to first 10 titles. Use --titles to specify.[/yellow]")
+            console.print(
+                "  [yellow]Defaulting to first 10 titles. Use --titles to specify.[/yellow]"
+            )
 
         for title_num in title_nums:
-            console.print(f"  [cyan]Title {title_num}: {client.TITLES.get(title_num, 'Unknown')}...[/cyan]")
+            console.print(
+                f"  [cyan]Title {title_num}: {client.TITLES.get(title_num, 'Unknown')}...[/cyan]"
+            )
 
             try:
                 title = client.get_title(title_num)
 
                 with Session(engine) as session:
                     # Check if law code exists
-                    existing = session.query(LawCode).filter(
-                        LawCode.jurisdiction == "federal",
-                        LawCode.code_name == f"US Code Title {title_num}",
-                    ).first()
+                    existing = (
+                        session.query(LawCode)
+                        .filter(
+                            LawCode.jurisdiction == "federal",
+                            LawCode.code_name == f"US Code Title {title_num}",
+                        )
+                        .first()
+                    )
 
                     if not existing:
                         law_code = LawCode(
@@ -390,10 +420,14 @@ def ingest_uscode(
 
                     # Add sections
                     for section in title.sections[:100]:  # Limit to 100 sections per title
-                        existing_section = session.query(LawSection).filter(
-                            LawSection.law_code_id == code_id,
-                            LawSection.section_number == section.section,
-                        ).first()
+                        existing_section = (
+                            session.query(LawSection)
+                            .filter(
+                                LawSection.law_code_id == code_id,
+                                LawSection.section_number == section.section,
+                            )
+                            .first()
+                        )
 
                         if not existing_section:
                             law_section = LawSection(
@@ -418,7 +452,9 @@ def ingest_uscode(
 
 @ingest_app.command("constitutions")
 def ingest_constitutions(
-    states: str | None = typer.Option(None, "--states", help="Comma-separated state codes (e.g., 'CA,NY,TX')"),
+    states: str | None = typer.Option(
+        None, "--states", help="Comma-separated state codes (e.g., 'CA,NY,TX')"
+    ),
     azure: bool = typer.Option(False, "--azure", help="Store in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -460,10 +496,14 @@ def ingest_constitutions(
                 if const.full_text and not const.full_text.startswith("[PDF"):
                     with Session(engine) as session:
                         # Check if law code exists
-                        existing = session.query(LawCode).filter(
-                            LawCode.jurisdiction == state_code.lower(),
-                            LawCode.code_name == "Constitution",
-                        ).first()
+                        existing = (
+                            session.query(LawCode)
+                            .filter(
+                                LawCode.jurisdiction == state_code.lower(),
+                                LawCode.code_name == "Constitution",
+                            )
+                            .first()
+                        )
 
                         if not existing:
                             law_code = LawCode(
@@ -547,10 +587,14 @@ def ingest_state_bills(
             for bill in client.get_bills(state=state, session=session, limit=limit):
                 with Session(engine) as db_session:
                     # Check if already exists
-                    existing = db_session.query(Legislation).filter(
-                        Legislation.jurisdiction == state.lower(),
-                        Legislation.source_id == bill.id,
-                    ).first()
+                    existing = (
+                        db_session.query(Legislation)
+                        .filter(
+                            Legislation.jurisdiction == state.lower(),
+                            Legislation.source_id == bill.id,
+                        )
+                        .first()
+                    )
 
                     if existing:
                         counts["skipped"] += 1
@@ -626,7 +670,9 @@ def ingest_state_legislators(
         console.print("Get a free API key at: https://openstates.org/accounts/login/")
         return
 
-    console.print(f"[bold blue]Ingesting {state.upper()} legislators from Open States...[/bold blue]")
+    console.print(
+        f"[bold blue]Ingesting {state.upper()} legislators from Open States...[/bold blue]"
+    )
 
     engine = get_engine(db_path)
     counts = {"legislators": 0, "skipped": 0}
@@ -636,10 +682,14 @@ def ingest_state_legislators(
             for legislator in client.get_legislators(state=state, limit=500):
                 with Session(engine) as db_session:
                     # Check if already exists
-                    existing = db_session.query(Legislator).filter(
-                        Legislator.jurisdiction == state.lower(),
-                        Legislator.source_id == legislator.id,
-                    ).first()
+                    existing = (
+                        db_session.query(Legislator)
+                        .filter(
+                            Legislator.jurisdiction == state.lower(),
+                            Legislator.source_id == legislator.id,
+                        )
+                        .first()
+                    )
 
                     if existing:
                         counts["skipped"] += 1
@@ -649,8 +699,10 @@ def ingest_state_legislators(
                     chamber = "assembly" if legislator.chamber == "lower" else "senate"
 
                     # Map party
-                    party = "D" if "democrat" in legislator.party.lower() else (
-                        "R" if "republican" in legislator.party.lower() else "I"
+                    party = (
+                        "D"
+                        if "democrat" in legislator.party.lower()
+                        else ("R" if "republican" in legislator.party.lower() else "I")
                     )
 
                     db_legislator = Legislator(
@@ -682,7 +734,9 @@ def ingest_state_legislators(
 
 @ingest_app.command("all-states")
 def ingest_all_states(
-    states: str | None = typer.Option(None, "--states", help="Comma-separated state codes (default: key states)"),
+    states: str | None = typer.Option(
+        None, "--states", help="Comma-separated state codes (default: key states)"
+    ),
     bills_limit: int = typer.Option(200, "--bills", help="Bills per state"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -744,10 +798,14 @@ def ingest_us_constitution(
         constitution_text = client.get_constitution()
 
         with Session(engine) as session:
-            existing = session.query(LawCode).filter(
-                LawCode.jurisdiction == "federal",
-                LawCode.code_name == "Constitution",
-            ).first()
+            existing = (
+                session.query(LawCode)
+                .filter(
+                    LawCode.jurisdiction == "federal",
+                    LawCode.code_name == "Constitution",
+                )
+                .first()
+            )
 
             if not existing:
                 law_code = LawCode(
@@ -788,11 +846,14 @@ def ingest_us_constitution(
 # Court Case Commands
 # =============================================================================
 
+
 @app.command("cases")
 def search_cases(
     query: str | None = typer.Argument(None, help="Search query"),
     court: str | None = typer.Option(None, "-c", "--court", help="Filter by court"),
-    level: str | None = typer.Option(None, "-l", "--level", help="Filter by court level (scotus, circuit, district)"),
+    level: str | None = typer.Option(
+        None, "-l", "--level", help="Filter by court level (scotus, circuit, district)"
+    ),
     limit: int = typer.Option(10, "-n", "--limit", help="Max results"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -809,9 +870,9 @@ def search_cases(
         if query:
             search_term = f"%{query}%"
             q = q.filter(
-                CourtCase.case_name.ilike(search_term) |
-                CourtCase.holding.ilike(search_term) |
-                CourtCase.citation.ilike(search_term)
+                CourtCase.case_name.ilike(search_term)
+                | CourtCase.holding.ilike(search_term)
+                | CourtCase.citation.ilike(search_term)
             )
 
         if court:
@@ -847,6 +908,7 @@ def search_cases(
 # =============================================================================
 # Project 2025 Tracking Commands
 # =============================================================================
+
 
 @app.command("p2025-report")
 def project2025_report(
@@ -945,8 +1007,11 @@ def resistance_progress(
                 console.print("\n[bold]Objectives:[/bold]")
                 for obj in report["objectives"]:
                     status_emoji = {
-                        "completed": "🔴", "in_progress": "🟡",
-                        "blocked": "🟢", "reversed": "✅", "not_started": "⚪"
+                        "completed": "🔴",
+                        "in_progress": "🟡",
+                        "blocked": "🟢",
+                        "reversed": "✅",
+                        "not_started": "⚪",
                     }.get(obj["status"], "⚪")
                     console.print(f"  {status_emoji} {obj['proposal'][:80]}...")
         else:
@@ -963,15 +1028,21 @@ def resistance_progress(
             for status, count in summary["by_status"].items():
                 pct = (count / total * 100) if total > 0 else 0
                 bar = "█" * int(pct / 5) + "░" * (20 - int(pct / 5))
-                table.add_row(status.replace("_", " ").title(), str(count), f"[dim]{bar}[/dim] {pct:.1f}%")
+                table.add_row(
+                    status.replace("_", " ").title(), str(count), f"[dim]{bar}[/dim] {pct:.1f}%"
+                )
 
             console.print(table)
-            console.print(f"\n[bold red]Completion: {summary['completion_percentage']:.1f}%[/bold red]")
+            console.print(
+                f"\n[bold red]Completion: {summary['completion_percentage']:.1f}%[/bold red]"
+            )
 
             # Top agencies
             if summary.get("by_agency"):
                 console.print("\n[bold]Top Agencies by Objective Count:[/bold]")
-                for agency_name, count in sorted(summary["by_agency"].items(), key=lambda x: -x[1])[:10]:
+                for agency_name, count in sorted(summary["by_agency"].items(), key=lambda x: -x[1])[
+                    :10
+                ]:
                     console.print(f"  {agency_name}: {count}")
 
 
@@ -1007,7 +1078,9 @@ def resistance_analyze(
             for issue in analysis["constitutional_issues"]:
                 severity = issue.get("severity", "medium")
                 color = {"high": "red", "medium": "yellow", "low": "green"}.get(severity, "white")
-                console.print(f"  [{color}]●[/{color}] {issue.get('provision', 'Unknown')}: {issue.get('issue', '')}")
+                console.print(
+                    f"  [{color}]●[/{color}] {issue.get('provision', 'Unknown')}: {issue.get('issue', '')}"
+                )
 
         # Challenge strategies
         if analysis.get("challenge_strategies"):
@@ -1029,14 +1102,21 @@ def resistance_analyze(
         # Vulnerability score
         score = analysis.get("overall_vulnerability_score", 0)
         score_color = "green" if score > 60 else "yellow" if score > 30 else "red"
-        console.print(f"\n[bold]Vulnerability Score: [{score_color}]{score}/100[/{score_color}][/bold]")
+        console.print(
+            f"\n[bold]Vulnerability Score: [{score_color}]{score}/100[/{score_color}][/bold]"
+        )
         console.print("[dim](Higher = more vulnerable to legal challenge)[/dim]")
 
 
 @resistance_app.command("recommend")
 def resistance_recommend(
     policy_id: int = typer.Argument(..., help="P2025 policy ID"),
-    tier: str | None = typer.Option(None, "-t", "--tier", help="Tier (tier_1_immediate, tier_2_congressional, tier_3_presidential)"),
+    tier: str | None = typer.Option(
+        None,
+        "-t",
+        "--tier",
+        help="Tier (tier_1_immediate, tier_2_congressional, tier_3_presidential)",
+    ),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Generate tiered resistance recommendations for a P2025 policy."""
@@ -1047,7 +1127,9 @@ def resistance_recommend(
 
     engine = get_engine(db_path)
 
-    console.print(f"[bold blue]Generating resistance recommendations for policy {policy_id}...[/bold blue]")
+    console.print(
+        f"[bold blue]Generating resistance recommendations for policy {policy_id}...[/bold blue]"
+    )
     console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
 
     with Session(engine) as session:
@@ -1060,7 +1142,12 @@ def resistance_recommend(
             console.print(f"[red]Error: {results['error']}[/red]")
             return
 
-        console.print(Panel(f"[bold]Resistance Recommendations[/bold]\n{results.get('policy_summary', '')[:150]}...", style="blue"))
+        console.print(
+            Panel(
+                f"[bold]Resistance Recommendations[/bold]\n{results.get('policy_summary', '')[:150]}...",
+                style="blue",
+            )
+        )
 
         recommendations = results.get("recommendations", {})
 
@@ -1080,7 +1167,9 @@ def resistance_recommend(
 
         # Tier 2: Congressional
         if "tier_2_congressional" in recommendations:
-            console.print("\n[bold yellow]━━━ TIER 2: CONGRESSIONAL ACTIONS (2027+) ━━━[/bold yellow]")
+            console.print(
+                "\n[bold yellow]━━━ TIER 2: CONGRESSIONAL ACTIONS (2027+) ━━━[/bold yellow]"
+            )
             console.print("[dim]If Democrats win House/Senate in 2026[/dim]\n")
             for rec in recommendations["tier_2_congressional"]:
                 if rec.get("error"):
@@ -1092,7 +1181,9 @@ def resistance_recommend(
 
         # Tier 3: Presidential
         if "tier_3_presidential" in recommendations:
-            console.print("\n[bold magenta]━━━ TIER 3: PRESIDENTIAL ACTIONS (2029+) ━━━[/bold magenta]")
+            console.print(
+                "\n[bold magenta]━━━ TIER 3: PRESIDENTIAL ACTIONS (2029+) ━━━[/bold magenta]"
+            )
             console.print("[dim]If Democrat wins presidency in 2028[/dim]\n")
             for rec in recommendations["tier_3_presidential"]:
                 if rec.get("error"):
@@ -1126,14 +1217,21 @@ def resistance_scan_eos(
             console.print("[green]No P2025-related executive orders found.[/green]")
             return
 
-        console.print(Panel(f"[bold red]Found {len(matches)} executive orders matching P2025 objectives[/bold red]", style="red"))
+        console.print(
+            Panel(
+                f"[bold red]Found {len(matches)} executive orders matching P2025 objectives[/bold red]",
+                style="red",
+            )
+        )
 
         for eo in matches:
             console.print(f"\n[bold]EO {eo.get('eo_number', 'N/A')}[/bold]: {eo['title'][:60]}...")
             console.print(f"  Date: {eo['date']}")
             console.print("  [yellow]Matches:[/yellow]")
             for match in eo.get("matches", [])[:3]:
-                confidence_bar = "█" * int(match["confidence"] * 10) + "░" * (10 - int(match["confidence"] * 10))
+                confidence_bar = "█" * int(match["confidence"] * 10) + "░" * (
+                    10 - int(match["confidence"] * 10)
+                )
                 console.print(f"    • ({match['agency']}) {match['proposal'][:50]}...")
                 console.print(f"      Confidence: [{confidence_bar}] {match['confidence']:.0%}")
 
@@ -1158,10 +1256,17 @@ def resistance_blocked(
             console.print("[yellow]No blocked policies found.[/yellow]")
             return
 
-        console.print(Panel(f"[bold green]🛡️ {len(blocked)} Policies Successfully Blocked[/bold green]", style="green"))
+        console.print(
+            Panel(
+                f"[bold green]🛡️ {len(blocked)} Policies Successfully Blocked[/bold green]",
+                style="green",
+            )
+        )
 
         for policy in blocked:
-            console.print(f"\n[bold green]✓[/bold green] {policy['agency']}: {policy['proposal'][:60]}...")
+            console.print(
+                f"\n[bold green]✓[/bold green] {policy['agency']}: {policy['proposal'][:60]}..."
+            )
 
             for challenge in policy.get("challenges", []):
                 console.print(f"    [cyan]Case:[/cyan] {challenge['case']}")
@@ -1193,12 +1298,16 @@ def resistance_urgent(
         console.print(Panel("[bold red]⚠️ URGENT ACTIONS NEEDED[/bold red]", style="red"))
 
         for action in urgent:
-            likelihood_color = {"high": "green", "medium": "yellow", "low": "red"}.get(action["likelihood"], "white")
+            likelihood_color = {"high": "green", "medium": "yellow", "low": "red"}.get(
+                action["likelihood"], "white"
+            )
             console.print(f"\n[bold]{action['title']}[/bold]")
             console.print(f"  Type: {action['action_type']}")
             console.print(f"  {action['description'][:150]}...")
             console.print(f"  [dim]Legal basis: {action.get('legal_basis', 'N/A')[:80]}...[/dim]")
-            console.print(f"  Likelihood: [{likelihood_color}]{action['likelihood']}[/{likelihood_color}]")
+            console.print(
+                f"  Likelihood: [{likelihood_color}]{action['likelihood']}[/{likelihood_color}]"
+            )
 
 
 @resistance_app.command("report")
@@ -1233,23 +1342,36 @@ def resistance_full_report(
 
             # Overall
             console.print(f"\nTotal Objectives: {summary['total_objectives']}")
-            console.print(f"Implementation Progress: [red]{summary['completion_percentage']:.1f}%[/red]")
+            console.print(
+                f"Implementation Progress: [red]{summary['completion_percentage']:.1f}%[/red]"
+            )
 
             # Status breakdown
             console.print("\n[bold]Status Breakdown:[/bold]")
             for status, count in summary["by_status"].items():
-                emoji = {"completed": "🔴", "in_progress": "🟡", "blocked": "🟢", "reversed": "✅"}.get(status, "⚪")
+                emoji = {
+                    "completed": "🔴",
+                    "in_progress": "🟡",
+                    "blocked": "🟢",
+                    "reversed": "✅",
+                }.get(status, "⚪")
                 console.print(f"  {emoji} {status.replace('_', ' ').title()}: {count}")
 
             # Recent activity
             if report.get("recent_activity"):
-                console.print(f"\n[bold]Recent Implementation Activity ({len(report['recent_activity'])} items):[/bold]")
+                console.print(
+                    f"\n[bold]Recent Implementation Activity ({len(report['recent_activity'])} items):[/bold]"
+                )
                 for activity in report["recent_activity"][:5]:
-                    console.print(f"  • [{activity['date']}] {activity['agency']}: {activity['action_reference']}")
+                    console.print(
+                        f"  • [{activity['date']}] {activity['agency']}: {activity['action_reference']}"
+                    )
 
             # Blocked policies
             if report.get("blocked_policies"):
-                console.print(f"\n[bold green]Blocked Policies: {len(report['blocked_policies'])}[/bold green]")
+                console.print(
+                    f"\n[bold green]Blocked Policies: {len(report['blocked_policies'])}[/bold green]"
+                )
 
             console.print(f"\n[dim]Report generated: {report['generated_at']}[/dim]")
 
@@ -1257,6 +1379,7 @@ def resistance_full_report(
 # =============================================================================
 # Credits Command
 # =============================================================================
+
 
 @app.command("credits")
 def show_credits():
@@ -1312,10 +1435,13 @@ def show_credits():
 # Search Commands
 # =============================================================================
 
+
 @app.command("search")
 def search(
     query: str = typer.Argument(..., help="Search query"),
-    jurisdiction: str | None = typer.Option(None, "-j", "--jurisdiction", help="Filter by jurisdiction"),
+    jurisdiction: str | None = typer.Option(
+        None, "-j", "--jurisdiction", help="Filter by jurisdiction"
+    ),
     enacted: bool = typer.Option(False, "--enacted", help="Only show enacted laws"),
     limit: int = typer.Option(20, "-n", "--limit", help="Max results"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
@@ -1374,18 +1500,21 @@ def show_legislation(
 
     # Header
     status = "✓ ENACTED" if leg["is_enacted"] else leg["status"] or "PENDING"
-    console.print(Panel(
-        f"[bold]{leg['citation']}[/bold] - {leg['jurisdiction'].upper()}\n"
-        f"Status: {status}",
-        title="Legislation Details",
-    ))
+    console.print(
+        Panel(
+            f"[bold]{leg['citation']}[/bold] - {leg['jurisdiction'].upper()}\nStatus: {status}",
+            title="Legislation Details",
+        )
+    )
 
     # Title and summary
     if leg["title"]:
         console.print(f"\n[bold]Title:[/bold] {leg['title']}\n")
 
     if leg["summary"]:
-        console.print(f"[bold]Summary:[/bold]\n{leg['summary'][:500]}{'...' if len(leg['summary'] or '') > 500 else ''}\n")
+        console.print(
+            f"[bold]Summary:[/bold]\n{leg['summary'][:500]}{'...' if len(leg['summary'] or '') > 500 else ''}\n"
+        )
 
     # Dates
     if leg["introduced_date"] or leg["last_action_date"]:
@@ -1416,13 +1545,21 @@ def show_legislation(
     if leg["votes"]:
         console.print("[bold]Votes:[/bold]")
         for vote in leg["votes"]:
-            result = f"[green]{vote['result']}[/green]" if vote["result"] == "PASS" else f"[red]{vote['result']}[/red]"
-            console.print(f"  [{vote['date']}] {vote['chamber'].title()}: {vote['ayes']}-{vote['nays']} {result}")
+            result = (
+                f"[green]{vote['result']}[/green]"
+                if vote["result"] == "PASS"
+                else f"[red]{vote['result']}[/red]"
+            )
+            console.print(
+                f"  [{vote['date']}] {vote['chamber'].title()}: {vote['ayes']}-{vote['nays']} {result}"
+            )
 
 
 @app.command("recent")
 def recent_laws(
-    jurisdiction: str | None = typer.Option(None, "-j", "--jurisdiction", help="Filter by jurisdiction"),
+    jurisdiction: str | None = typer.Option(
+        None, "-j", "--jurisdiction", help="Filter by jurisdiction"
+    ),
     limit: int = typer.Option(10, "-n", "--limit", help="Max results"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -1492,11 +1629,14 @@ def show_stats(
 # Interactive/AI Commands
 # =============================================================================
 
+
 @app.command("ask")
 def ask_question(
     question: str = typer.Argument(..., help="Natural language question"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    ai_provider: str | None = typer.Option(None, "--ai", help="AI provider (ollama/anthropic/openai)"),
+    ai_provider: str | None = typer.Option(
+        None, "--ai", help="AI provider (ollama/anthropic/openai)"
+    ),
 ):
     """Ask a natural language question about legislation.
 
@@ -1516,7 +1656,9 @@ def ask_question(
 @app.command("chat")
 def interactive_chat(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    ai_provider: str | None = typer.Option(None, "--ai", help="AI provider (ollama/anthropic/openai)"),
+    ai_provider: str | None = typer.Option(
+        None, "--ai", help="AI provider (ollama/anthropic/openai)"
+    ),
 ):
     """Start an interactive chat session.
 
@@ -1529,17 +1671,19 @@ def interactive_chat(
         ai_provider=ai_provider,
     )
 
-    console.print(Panel(
-        "[bold]Civitas Interactive Mode[/bold]\n\n"
-        "Ask questions about legislation in natural language.\n"
-        "Type 'quit' or 'exit' to leave.\n\n"
-        "Examples:\n"
-        "  • What laws about water were enacted in California?\n"
-        "  • Show me recent environmental legislation\n"
-        "  • How many bills were enacted in Congress 118?",
-        title="Welcome",
-        style="blue",
-    ))
+    console.print(
+        Panel(
+            "[bold]Civitas Interactive Mode[/bold]\n\n"
+            "Ask questions about legislation in natural language.\n"
+            "Type 'quit' or 'exit' to leave.\n\n"
+            "Examples:\n"
+            "  • What laws about water were enacted in California?\n"
+            "  • Show me recent environmental legislation\n"
+            "  • How many bills were enacted in Congress 118?",
+            title="Welcome",
+            style="blue",
+        )
+    )
 
     while True:
         try:
@@ -1565,6 +1709,7 @@ def interactive_chat(
 # =============================================================================
 # Main
 # =============================================================================
+
 
 def main():
     """Main entry point."""

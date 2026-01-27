@@ -108,9 +108,7 @@ class DocumentChunker:
 
             # Check if adding this section would exceed limit
             combined = (
-                current_chunk + "\n\n" + section_content
-                if current_chunk
-                else section_content
+                current_chunk + "\n\n" + section_content if current_chunk else section_content
             )
             combined_tokens = len(combined) // self.CHARS_PER_TOKEN
 

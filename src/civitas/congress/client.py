@@ -177,9 +177,7 @@ class CongressClient:
         """
         return self._request(f"/bill/{congress}/{bill_type}/{bill_number}/subjects")
 
-    def get_bill_summaries(
-        self, congress: int, bill_type: str, bill_number: int
-    ) -> dict[str, Any]:
+    def get_bill_summaries(self, congress: int, bill_type: str, bill_number: int) -> dict[str, Any]:
         """Get CRS summaries for a specific bill.
 
         Args:

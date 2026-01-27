@@ -168,7 +168,7 @@ class Project2025Parser:
         Looks for imperative statements suggesting policy changes.
         """
         # Split into sentences
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+        sentences = re.split(r"(?<=[.!?])\s+", text)
 
         for sentence in sentences:
             # Skip short sentences and headers
@@ -246,20 +246,91 @@ class Project2025Parser:
         """Extract keywords for matching against legislation."""
         # Common words to skip
         skip_words = {
-            "the", "a", "an", "to", "of", "and", "or", "should", "must", "will",
-            "would", "could", "this", "that", "these", "those", "be", "been",
-            "being", "have", "has", "had", "do", "does", "did", "for", "with",
-            "in", "on", "at", "by", "from", "up", "about", "into", "through",
-            "during", "before", "after", "above", "below", "between", "under",
-            "again", "further", "then", "once", "here", "there", "when", "where",
-            "why", "how", "all", "each", "few", "more", "most", "other", "some",
-            "such", "no", "nor", "not", "only", "own", "same", "so", "than",
-            "too", "very", "can", "just", "new", "next", "administration",
-            "president", "federal", "government", "agency", "department",
+            "the",
+            "a",
+            "an",
+            "to",
+            "of",
+            "and",
+            "or",
+            "should",
+            "must",
+            "will",
+            "would",
+            "could",
+            "this",
+            "that",
+            "these",
+            "those",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "for",
+            "with",
+            "in",
+            "on",
+            "at",
+            "by",
+            "from",
+            "up",
+            "about",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "above",
+            "below",
+            "between",
+            "under",
+            "again",
+            "further",
+            "then",
+            "once",
+            "here",
+            "there",
+            "when",
+            "where",
+            "why",
+            "how",
+            "all",
+            "each",
+            "few",
+            "more",
+            "most",
+            "other",
+            "some",
+            "such",
+            "no",
+            "nor",
+            "not",
+            "only",
+            "own",
+            "same",
+            "so",
+            "than",
+            "too",
+            "very",
+            "can",
+            "just",
+            "new",
+            "next",
+            "administration",
+            "president",
+            "federal",
+            "government",
+            "agency",
+            "department",
         }
 
         # Extract significant words
-        words = re.findall(r'\b[a-z]{4,}\b', text.lower())
+        words = re.findall(r"\b[a-z]{4,}\b", text.lower())
         keywords = [w for w in words if w not in skip_words]
 
         # Return unique keywords, limited to 15
@@ -453,13 +524,25 @@ class EnhancedProject2025Parser(Project2025Parser):
 
         # High priority indicators
         high_indicators = [
-            "immediately", "urgent", "critical", "essential", "must",
-            "day one", "first priority", "top priority", "eliminate",
+            "immediately",
+            "urgent",
+            "critical",
+            "essential",
+            "must",
+            "day one",
+            "first priority",
+            "top priority",
+            "eliminate",
         ]
 
         # Low priority indicators
         low_indicators = [
-            "consider", "explore", "may", "could", "eventually", "long.?term",
+            "consider",
+            "explore",
+            "may",
+            "could",
+            "eventually",
+            "long.?term",
         ]
 
         high_score = sum(1 for ind in high_indicators if ind in text_lower)
@@ -480,9 +563,7 @@ class EnhancedProject2025Parser(Project2025Parser):
         client = self._get_ollama_client()
 
         # Prepare proposals for AI
-        proposal_texts = [
-            f"[{i}] {p.proposal_text[:500]}" for i, p in enumerate(proposals)
-        ]
+        proposal_texts = [f"[{i}] {p.proposal_text[:500]}" for i, p in enumerate(proposals)]
 
         system_prompt = """You are analyzing policy proposals from Project 2025.
 For each proposal, provide:
@@ -553,9 +634,9 @@ Provide structured analysis for each."""
 
                 # Detect chapter headers
                 chapter_match = re.search(
-                    r'^(?:CHAPTER\s+\d+|SECTION\s+\d+)[:\s]+(.+?)$',
+                    r"^(?:CHAPTER\s+\d+|SECTION\s+\d+)[:\s]+(.+?)$",
                     text,
-                    re.MULTILINE | re.IGNORECASE
+                    re.MULTILINE | re.IGNORECASE,
                 )
                 if chapter_match:
                     current_chapter = chapter_match.group(1).strip()
@@ -629,10 +710,7 @@ Provide structured analysis for each."""
         proposals = list(self.extract_proposals_with_ai(use_ai=True))
 
         # Filter high-confidence actionable items
-        actionable = [
-            p for p in proposals
-            if p.confidence > 0.6 and p.action_type != "unknown"
-        ]
+        actionable = [p for p in proposals if p.confidence > 0.6 and p.action_type != "unknown"]
 
         if category:
             actionable = [p for p in actionable if p.category == category]

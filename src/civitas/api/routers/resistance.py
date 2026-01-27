@@ -54,9 +54,7 @@ async def get_blocked_policies(
             proposal_summary=p.get("proposal", "")[:200],
             blocked_by=p.get("blocked_by", "unknown"),
             case_or_action=(
-                p.get("challenges", [{}])[0].get("case", "")
-                if p.get("challenges")
-                else ""
+                p.get("challenges", [{}])[0].get("case", "") if p.get("challenges") else ""
             ),
             blocked_date=None,
         )

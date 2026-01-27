@@ -123,8 +123,34 @@ class USCodeClient:
 
     # Titles enacted as positive law (authoritative text)
     POSITIVE_LAW_TITLES = {
-        1, 3, 4, 5, 9, 10, 11, 13, 14, 17, 18, 23, 28, 31, 32, 34, 35, 36,
-        37, 38, 39, 40, 41, 44, 46, 49, 51, 54
+        1,
+        3,
+        4,
+        5,
+        9,
+        10,
+        11,
+        13,
+        14,
+        17,
+        18,
+        23,
+        28,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        44,
+        46,
+        49,
+        51,
+        54,
     }
 
     def __init__(
@@ -169,7 +195,9 @@ class USCodeClient:
             Full text of the US Constitution
         """
         # The Constitution is available from the Government Publishing Office
-        constitution_url = "https://www.govinfo.gov/content/pkg/CDOC-110hdoc50/html/CDOC-110hdoc50.htm"
+        constitution_url = (
+            "https://www.govinfo.gov/content/pkg/CDOC-110hdoc50/html/CDOC-110hdoc50.htm"
+        )
 
         try:
             response = self._client.get(constitution_url)
@@ -177,6 +205,7 @@ class USCodeClient:
 
             # Parse HTML and extract text
             from bs4 import BeautifulSoup
+
             soup = BeautifulSoup(response.text, "lxml")
 
             # Remove script and style elements
@@ -354,8 +383,8 @@ States of America.
                 title = self.get_title(title_num)
                 for section in title.sections:
                     if (
-                        query_lower in section.heading.lower() or
-                        query_lower in section.text.lower()
+                        query_lower in section.heading.lower()
+                        or query_lower in section.text.lower()
                     ):
                         results.append(section)
                         if len(results) >= limit:

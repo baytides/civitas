@@ -35,15 +35,15 @@ class CourtListenerClient:
 
     # Federal Circuit Courts
     CIRCUIT_COURTS = [
-        "ca1",   # First Circuit
-        "ca2",   # Second Circuit
-        "ca3",   # Third Circuit
-        "ca4",   # Fourth Circuit
-        "ca5",   # Fifth Circuit
-        "ca6",   # Sixth Circuit
-        "ca7",   # Seventh Circuit
-        "ca8",   # Eighth Circuit
-        "ca9",   # Ninth Circuit
+        "ca1",  # First Circuit
+        "ca2",  # Second Circuit
+        "ca3",  # Third Circuit
+        "ca4",  # Fourth Circuit
+        "ca5",  # Fifth Circuit
+        "ca6",  # Sixth Circuit
+        "ca7",  # Seventh Circuit
+        "ca8",  # Eighth Circuit
+        "ca9",  # Ninth Circuit
         "ca10",  # Tenth Circuit
         "ca11",  # Eleventh Circuit
         "cadc",  # D.C. Circuit
@@ -110,10 +110,7 @@ class CourtListenerClient:
         response = self._client.get("/search/", params=params)
         response.raise_for_status()
 
-        return [
-            self._parse_opinion(item)
-            for item in response.json().get("results", [])
-        ]
+        return [self._parse_opinion(item) for item in response.json().get("results", [])]
 
     def get_recent_opinions(
         self,
@@ -234,11 +231,7 @@ class CourtListenerClient:
             html=data.get("html_with_citations"),
             opinion_type=data.get("type", "unknown"),
             author=data.get("author_str"),
-            citation=(
-                data.get("citations", [None])[0]
-                if data.get("citations")
-                else None
-            ),
+            citation=(data.get("citations", [None])[0] if data.get("citations") else None),
             absolute_url=data.get("absolute_url"),
         )
 

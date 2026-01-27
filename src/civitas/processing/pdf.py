@@ -159,8 +159,10 @@ class PDFProcessor:
                 [
                     "ocrmypdf",
                     "--skip-text",  # Don't OCR pages that already have text
-                    "--optimize", "1",  # Light optimization
-                    "--output-type", "pdf",
+                    "--optimize",
+                    "1",  # Light optimization
+                    "--output-type",
+                    "pdf",
                     str(pdf_path),
                     str(output_path),
                 ],

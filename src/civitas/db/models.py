@@ -29,6 +29,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 class Base(DeclarativeBase):
     """Base class for all models."""
+
     pass
 
 
@@ -41,8 +42,10 @@ def utcnow() -> datetime:
 # Enums
 # =============================================================================
 
+
 class Jurisdiction(str):
     """Jurisdiction types."""
+
     FEDERAL = "federal"
     CALIFORNIA = "california"
     # Add more states as needed
@@ -50,6 +53,7 @@ class Jurisdiction(str):
 
 class LegislationType(str):
     """Types of legislation."""
+
     BILL = "bill"
     RESOLUTION = "resolution"
     JOINT_RESOLUTION = "joint_resolution"
@@ -59,6 +63,7 @@ class LegislationType(str):
 
 class Chamber(str):
     """Legislative chambers."""
+
     HOUSE = "house"  # US House / CA Assembly
     SENATE = "senate"
     JOINT = "joint"
@@ -66,6 +71,7 @@ class Chamber(str):
 
 class VoteType(str):
     """Vote types."""
+
     AYE = "aye"
     NAY = "nay"
     ABSTAIN = "abstain"
@@ -76,6 +82,7 @@ class VoteType(str):
 # =============================================================================
 # Core Models
 # =============================================================================
+
 
 class Legislation(Base):
     """Unified legislation record (bills, resolutions, etc.)."""
@@ -211,9 +218,7 @@ class Legislator(Base):
     sponsorships: Mapped[list[Sponsorship]] = relationship(back_populates="legislator")
     vote_records: Mapped[list[VoteRecord]] = relationship(back_populates="legislator")
 
-    __table_args__ = (
-        Index("ix_legislator_search", "jurisdiction", "chamber", "state"),
-    )
+    __table_args__ = (Index("ix_legislator_search", "jurisdiction", "chamber", "state"),)
 
 
 class Sponsorship(Base):
@@ -225,7 +230,9 @@ class Sponsorship(Base):
     legislation_id: Mapped[int] = mapped_column(ForeignKey("legislation.id"), index=True)
     legislator_id: Mapped[int] = mapped_column(ForeignKey("legislators.id"), index=True)
 
-    sponsorship_type: Mapped[str] = mapped_column(String(50))  # sponsor, cosponsor, author, coauthor
+    sponsorship_type: Mapped[str] = mapped_column(
+        String(50)
+    )  # sponsor, cosponsor, author, coauthor
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
 
     legislation: Mapped[Legislation] = relationship(back_populates="sponsors")
@@ -289,9 +296,7 @@ class LawCode(Base):
 
     sections: Mapped[list[LawSection]] = relationship(back_populates="law_code")
 
-    __table_args__ = (
-        UniqueConstraint("jurisdiction", "code", name="uq_law_code"),
-    )
+    __table_args__ = (UniqueConstraint("jurisdiction", "code", name="uq_law_code"),)
 
 
 class LawSection(Base):
@@ -328,6 +333,7 @@ class LawSection(Base):
 # Court Cases (SCOTUS, Circuit, District)
 # =============================================================================
 
+
 class CourtCase(Base):
     """Court case (Supreme Court, Circuit, District).
 
@@ -347,7 +353,9 @@ class CourtCase(Base):
     docket_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Court hierarchy
-    court_level: Mapped[str] = mapped_column(String(20), index=True, default="unknown")  # scotus, circuit, district
+    court_level: Mapped[str] = mapped_column(
+        String(20), index=True, default="unknown"
+    )  # scotus, circuit, district
     court: Mapped[str] = mapped_column(String(100), index=True)  # "Supreme Court", "ca9", etc.
     court_name: Mapped[str | None] = mapped_column(String(200), nullable=True)  # Full court name
 
@@ -386,7 +394,9 @@ class CourtCase(Base):
     # Storage
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     azure_url: Mapped[str | None] = mapped_column(String(500), nullable=True)  # PDF in Azure
-    source_id: Mapped[str | None] = mapped_column(String(100), nullable=True)  # External ID (Court Listener)
+    source_id: Mapped[str | None] = mapped_column(
+        String(100), nullable=True
+    )  # External ID (Court Listener)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -401,6 +411,7 @@ class CourtCase(Base):
 # =============================================================================
 # Project 2025 Tracking
 # =============================================================================
+
 
 class Project2025Policy(Base):
     """A policy proposal from Project 2025 Mandate for Leadership.
@@ -495,12 +506,16 @@ class P2025Implementation(Base):
     policy_id: Mapped[int] = mapped_column(ForeignKey("project2025_policies.id"), index=True)
 
     # Implementation type and reference
-    action_type: Mapped[str] = mapped_column(String(50))  # executive_order, rule, memo, guidance, personnel
+    action_type: Mapped[str] = mapped_column(
+        String(50)
+    )  # executive_order, rule, memo, guidance, personnel
     action_id: Mapped[int | None] = mapped_column(Integer, nullable=True)  # FK to EO/rule table
     action_reference: Mapped[str] = mapped_column(String(200))  # e.g., "EO 14XXX", "FR 2025-XXXX"
 
     # Status
-    status: Mapped[str] = mapped_column(String(50), index=True)  # announced, in_progress, completed, blocked, reversed
+    status: Mapped[str] = mapped_column(
+        String(50), index=True
+    )  # announced, in_progress, completed, blocked, reversed
     implementation_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Evidence
@@ -525,9 +540,15 @@ class LegalChallenge(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     # What's being challenged
-    p2025_policy_id: Mapped[int | None] = mapped_column(ForeignKey("project2025_policies.id"), nullable=True)
-    implementation_id: Mapped[int | None] = mapped_column(ForeignKey("p2025_implementations.id"), nullable=True)
-    executive_order_id: Mapped[int | None] = mapped_column(ForeignKey("executive_orders.id"), nullable=True)
+    p2025_policy_id: Mapped[int | None] = mapped_column(
+        ForeignKey("project2025_policies.id"), nullable=True
+    )
+    implementation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("p2025_implementations.id"), nullable=True
+    )
+    executive_order_id: Mapped[int | None] = mapped_column(
+        ForeignKey("executive_orders.id"), nullable=True
+    )
 
     # Challenge details
     challenge_type: Mapped[str] = mapped_column(String(50), index=True)
@@ -545,7 +566,9 @@ class LegalChallenge(Base):
 
     # Parties
     lead_plaintiffs: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
-    representing_orgs: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array (ACLU, etc.)
+    representing_orgs: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # JSON array (ACLU, etc.)
 
     # Status
     status: Mapped[str] = mapped_column(String(50), index=True)
@@ -556,7 +579,9 @@ class LegalChallenge(Base):
 
     # Outcome
     outcome_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
-    precedent_value: Mapped[str | None] = mapped_column(String(50), nullable=True)  # binding, persuasive, limited
+    precedent_value: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )  # binding, persuasive, limited
 
     # Links
     complaint_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -565,9 +590,7 @@ class LegalChallenge(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
-    __table_args__ = (
-        Index("ix_legal_challenge_status_type", "status", "challenge_type"),
-    )
+    __table_args__ = (Index("ix_legal_challenge_status_type", "status", "challenge_type"),)
 
 
 class StateResistanceAction(Base):
@@ -607,7 +630,9 @@ class StateResistanceAction(Base):
     # Replication
     is_model_legislation: Mapped[bool] = mapped_column(Boolean, default=False)
     model_legislation_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    states_adopted: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array of state codes
+    states_adopted: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # JSON array of state codes
 
     # Links
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -616,9 +641,7 @@ class StateResistanceAction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
-    __table_args__ = (
-        Index("ix_state_resistance_state_category", "state_code", "category"),
-    )
+    __table_args__ = (Index("ix_state_resistance_state_category", "state_code", "category"),)
 
 
 class ResistanceRecommendation(Base):
@@ -633,7 +656,9 @@ class ResistanceRecommendation(Base):
 
     # What it addresses
     p2025_policy_id: Mapped[int] = mapped_column(ForeignKey("project2025_policies.id"), index=True)
-    implementation_id: Mapped[int | None] = mapped_column(ForeignKey("p2025_implementations.id"), nullable=True)
+    implementation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("p2025_implementations.id"), nullable=True
+    )
 
     # Recommendation tier
     tier: Mapped[str] = mapped_column(String(20), index=True)
@@ -650,7 +675,9 @@ class ResistanceRecommendation(Base):
 
     # Legal basis
     legal_basis: Mapped[str | None] = mapped_column(Text, nullable=True)
-    relevant_precedents: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array of case citations
+    relevant_precedents: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # JSON array of case citations
     constitutional_provisions: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
     statutory_provisions: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
@@ -693,6 +720,7 @@ class ResistanceRecommendation(Base):
 # Executive Actions (Executive Orders, Agency Rules)
 # =============================================================================
 
+
 class ExecutiveOrder(Base):
     """Executive Order from the Federal Register.
 
@@ -730,7 +758,9 @@ class ExecutiveOrder(Base):
     p2025_policy_ids: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
 
     # Legal status
-    status: Mapped[str] = mapped_column(String(50), default="active")  # active, challenged, enjoined, reversed
+    status: Mapped[str] = mapped_column(
+        String(50), default="active"
+    )  # active, challenged, enjoined, reversed
     challenged_in_court: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Timestamps
@@ -741,6 +771,7 @@ class ExecutiveOrder(Base):
 # =============================================================================
 # Database Initialization
 # =============================================================================
+
 
 def get_database_url(db_url: str | None = None) -> str:
     """Get database URL from parameter, environment, or default.
@@ -795,6 +826,7 @@ def get_engine(db_url: str | None = None):
 # Full-Text Search (FTS5)
 # =============================================================================
 
+
 def setup_fts(engine) -> None:
     """Create FTS5 virtual tables for full-text search.
 
@@ -807,95 +839,119 @@ def setup_fts(engine) -> None:
     """
     with engine.connect() as conn:
         # Legislation FTS
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS legislation_fts USING fts5(
                 title, summary, full_text,
                 content='legislation', content_rowid='id'
             )
-        """))
+        """)
+        )
 
         # Court Cases FTS
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS court_cases_fts USING fts5(
                 case_name, holding, majority_opinion,
                 content='court_cases', content_rowid='id'
             )
-        """))
+        """)
+        )
 
         # Law Sections FTS
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE VIRTUAL TABLE IF NOT EXISTS law_sections_fts USING fts5(
                 title, content,
                 content='law_sections', content_rowid='id'
             )
-        """))
+        """)
+        )
 
         # Triggers to keep FTS tables in sync
         # Legislation triggers
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS legislation_ai AFTER INSERT ON legislation BEGIN
                 INSERT INTO legislation_fts(rowid, title, summary, full_text)
                 VALUES (new.id, new.title, new.summary, new.full_text);
             END
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS legislation_ad AFTER DELETE ON legislation BEGIN
                 INSERT INTO legislation_fts(legislation_fts, rowid, title, summary, full_text)
                 VALUES ('delete', old.id, old.title, old.summary, old.full_text);
             END
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS legislation_au AFTER UPDATE ON legislation BEGIN
                 INSERT INTO legislation_fts(legislation_fts, rowid, title, summary, full_text)
                 VALUES ('delete', old.id, old.title, old.summary, old.full_text);
                 INSERT INTO legislation_fts(rowid, title, summary, full_text)
                 VALUES (new.id, new.title, new.summary, new.full_text);
             END
-        """))
+        """)
+        )
 
         # Court Cases triggers
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS court_cases_ai AFTER INSERT ON court_cases BEGIN
                 INSERT INTO court_cases_fts(rowid, case_name, holding, majority_opinion)
                 VALUES (new.id, new.case_name, new.holding, new.majority_opinion);
             END
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS court_cases_ad AFTER DELETE ON court_cases BEGIN
                 INSERT INTO court_cases_fts(court_cases_fts, rowid, case_name, holding, majority_opinion)
                 VALUES ('delete', old.id, old.case_name, old.holding, old.majority_opinion);
             END
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS court_cases_au AFTER UPDATE ON court_cases BEGIN
                 INSERT INTO court_cases_fts(court_cases_fts, rowid, case_name, holding, majority_opinion)
                 VALUES ('delete', old.id, old.case_name, old.holding, old.majority_opinion);
                 INSERT INTO court_cases_fts(rowid, case_name, holding, majority_opinion)
                 VALUES (new.id, new.case_name, new.holding, new.majority_opinion);
             END
-        """))
+        """)
+        )
 
         # Law Sections triggers
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS law_sections_ai AFTER INSERT ON law_sections BEGIN
                 INSERT INTO law_sections_fts(rowid, title, content)
                 VALUES (new.id, new.title, new.content);
             END
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS law_sections_ad AFTER DELETE ON law_sections BEGIN
                 INSERT INTO law_sections_fts(law_sections_fts, rowid, title, content)
                 VALUES ('delete', old.id, old.title, old.content);
             END
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TRIGGER IF NOT EXISTS law_sections_au AFTER UPDATE ON law_sections BEGIN
                 INSERT INTO law_sections_fts(law_sections_fts, rowid, title, content)
                 VALUES ('delete', old.id, old.title, old.content);
                 INSERT INTO law_sections_fts(rowid, title, content)
                 VALUES (new.id, new.title, new.content);
             END
-        """))
+        """)
+        )
 
         conn.commit()
 

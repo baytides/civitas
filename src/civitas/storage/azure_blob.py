@@ -65,8 +65,7 @@ class AzureStorageClient:
                 from azure.storage.blob import BlobServiceClient
             except ImportError:
                 raise ImportError(
-                    "Azure Storage SDK not installed. "
-                    "Install with: pip install azure-storage-blob"
+                    "Azure Storage SDK not installed. Install with: pip install azure-storage-blob"
                 )
 
             if not self.connection_string:
@@ -155,9 +154,7 @@ class AzureStorageClient:
             The blob URL
         """
         json_bytes = json.dumps(data, indent=2, default=str).encode("utf-8")
-        return self.upload_document(
-            json_bytes, document_type, source, document_id, "json", year
-        )
+        return self.upload_document(json_bytes, document_type, source, document_id, "json", year)
 
     def upload_reference(
         self,
@@ -294,11 +291,13 @@ class AzureStorageClient:
         backups = []
 
         for blob in container.list_blobs(name_starts_with="backups/database/"):
-            backups.append({
-                "name": blob.name,
-                "size": blob.size,
-                "created_at": blob.creation_time,
-            })
+            backups.append(
+                {
+                    "name": blob.name,
+                    "size": blob.size,
+                    "created_at": blob.creation_time,
+                }
+            )
 
         return sorted(backups, key=lambda x: x["created_at"], reverse=True)
 
@@ -400,9 +399,7 @@ class LocalStorageClient:
     ) -> str:
         """Upload JSON data to local storage."""
         json_bytes = json.dumps(data, indent=2, default=str).encode("utf-8")
-        return self.upload_document(
-            json_bytes, document_type, source, document_id, "json", year
-        )
+        return self.upload_document(json_bytes, document_type, source, document_id, "json", year)
 
     def upload_reference(
         self,
@@ -467,6 +464,7 @@ class LocalStorageClient:
         backup_path = backup_dir / f"civitas_{timestamp}.db"
 
         import shutil
+
         shutil.copy2(db_path, backup_path)
 
         return str(backup_path)

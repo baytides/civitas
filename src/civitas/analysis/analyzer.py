@@ -55,9 +55,7 @@ class LegislationAnalyzer:
         model: str | None = None,
         timeout: float = 120.0,
     ):
-        self.ollama_host = ollama_host or os.getenv(
-            "OLLAMA_HOST", "http://20.98.70.48:11434"
-        )
+        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.2")
         self.timeout = timeout
         self._client = httpx.Client(timeout=timeout)
@@ -162,8 +160,8 @@ Title: {title}
 Text excerpt: {text[:3000]}
 
 CATEGORY: {category_slug}
-KNOWN THREAT INDICATORS FOR THIS CATEGORY: {', '.join(threat_keywords)}
-KNOWN PROTECTIVE INDICATORS: {', '.join(resistance_keywords)}
+KNOWN THREAT INDICATORS FOR THIS CATEGORY: {", ".join(threat_keywords)}
+KNOWN PROTECTIVE INDICATORS: {", ".join(resistance_keywords)}
 
 Assess the threat level. Consider:
 1. Does it restrict rights or access to services?
@@ -235,8 +233,7 @@ Do not include phrases like "This bill" - just describe what it does."""
 
         # Filter by jurisdiction
         filtered_actions = [
-            a for a in actions
-            if not a.effective_for or jurisdiction in a.effective_for
+            a for a in actions if not a.effective_for or jurisdiction in a.effective_for
         ]
 
         # If high threat, prioritize urgent actions

@@ -178,7 +178,7 @@ export default function ResistancePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Resistance Strategy</h1>
         <p className="text-muted-foreground max-w-3xl">
-          A three-tier approach to protecting democracy. Focus on what's most
+          A three-tier approach to protecting democracy. Focus on what is most
           effective now while building toward longer-term goals.
         </p>
       </div>

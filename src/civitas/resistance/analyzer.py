@@ -37,43 +37,43 @@ class ResistanceAnalyzer:
         "1st_amendment": {
             "name": "First Amendment",
             "text": "Congress shall make no law respecting an establishment of religion, "
-                    "or prohibiting the free exercise thereof; or abridging the freedom of speech, "
-                    "or of the press; or the right of the people peaceably to assemble, "
-                    "and to petition the Government for a redress of grievances.",
+            "or prohibiting the free exercise thereof; or abridging the freedom of speech, "
+            "or of the press; or the right of the people peaceably to assemble, "
+            "and to petition the Government for a redress of grievances.",
             "areas": ["religion", "speech", "press", "assembly", "petition"],
         },
         "4th_amendment": {
             "name": "Fourth Amendment",
             "text": "The right of the people to be secure in their persons, houses, papers, "
-                    "and effects, against unreasonable searches and seizures, shall not be violated.",
+            "and effects, against unreasonable searches and seizures, shall not be violated.",
             "areas": ["privacy", "searches", "surveillance"],
         },
         "5th_amendment": {
             "name": "Fifth Amendment",
             "text": "No person shall be... deprived of life, liberty, or property, "
-                    "without due process of law; nor shall private property be taken "
-                    "for public use, without just compensation.",
+            "without due process of law; nor shall private property be taken "
+            "for public use, without just compensation.",
             "areas": ["due_process", "self_incrimination", "takings"],
         },
         "10th_amendment": {
             "name": "Tenth Amendment",
             "text": "The powers not delegated to the United States by the Constitution, "
-                    "nor prohibited by it to the States, are reserved to the States respectively, "
-                    "or to the people.",
+            "nor prohibited by it to the States, are reserved to the States respectively, "
+            "or to the people.",
             "areas": ["federalism", "state_rights", "commandeering"],
         },
         "14th_amendment": {
             "name": "Fourteenth Amendment",
             "text": "No State shall make or enforce any law which shall abridge the privileges "
-                    "or immunities of citizens of the United States; nor shall any State deprive "
-                    "any person of life, liberty, or property, without due process of law; "
-                    "nor deny to any person within its jurisdiction the equal protection of the laws.",
+            "or immunities of citizens of the United States; nor shall any State deprive "
+            "any person of life, liberty, or property, without due process of law; "
+            "nor deny to any person within its jurisdiction the equal protection of the laws.",
             "areas": ["equal_protection", "due_process", "privileges_immunities"],
         },
         "apa": {
             "name": "Administrative Procedure Act",
             "text": "Requires federal agencies to follow notice-and-comment rulemaking, "
-                    "provides for judicial review of agency actions as arbitrary and capricious.",
+            "provides for judicial review of agency actions as arbitrary and capricious.",
             "areas": ["rulemaking", "notice_comment", "arbitrary_capricious"],
         },
     }
@@ -223,18 +223,25 @@ class ResistanceAnalyzer:
         # Search for relevant court cases
         keywords = context["policy"]["keywords"][:5]
         if keywords:
-            cases = self.session.query(CourtCase).filter(
-                CourtCase.case_name.ilike(f"%{keywords[0]}%") |
-                CourtCase.holding.ilike(f"%{keywords[0]}%")
-            ).limit(10).all()
+            cases = (
+                self.session.query(CourtCase)
+                .filter(
+                    CourtCase.case_name.ilike(f"%{keywords[0]}%")
+                    | CourtCase.holding.ilike(f"%{keywords[0]}%")
+                )
+                .limit(10)
+                .all()
+            )
 
             for case in cases:
-                context["relevant_cases"].append({
-                    "citation": case.citation,
-                    "case_name": case.case_name,
-                    "holding": case.holding[:500] if case.holding else None,
-                    "court": case.court,
-                })
+                context["relevant_cases"].append(
+                    {
+                        "citation": case.citation,
+                        "case_name": case.case_name,
+                        "holding": case.holding[:500] if case.holding else None,
+                        "court": case.court,
+                    }
+                )
 
         return context
 
@@ -269,10 +276,10 @@ PROPOSAL: {policy.proposal_text}
 
 CONTEXT FROM DATABASE:
 Constitutional Provisions Potentially Relevant:
-{json.dumps(context['constitutional_provisions'], indent=2)}
+{json.dumps(context["constitutional_provisions"], indent=2)}
 
 Related Court Cases in Database:
-{json.dumps(context['relevant_cases'], indent=2)}
+{json.dumps(context["relevant_cases"], indent=2)}
 
 KEY PRECEDENTS TO CONSIDER:
 {json.dumps(list(self.KEY_PRECEDENTS.values()), indent=2)}
@@ -324,9 +331,12 @@ Focus on realistic, actionable legal strategies."""
         from civitas.db.models import Project2025Policy
 
         # Get policies without recent analysis
-        policies = self.session.query(Project2025Policy).filter(
-            Project2025Policy.last_checked.is_(None)
-        ).limit(limit).all()
+        policies = (
+            self.session.query(Project2025Policy)
+            .filter(Project2025Policy.last_checked.is_(None))
+            .limit(limit)
+            .all()
+        )
 
         results = []
         for policy in policies:

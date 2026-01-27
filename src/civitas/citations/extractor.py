@@ -73,9 +73,7 @@ class CitationExtractor:
             List of ExtractedCitation objects
         """
         if not self._check_eyecite():
-            raise ImportError(
-                "eyecite not installed. Install with: pip install eyecite"
-            )
+            raise ImportError("eyecite not installed. Install with: pip install eyecite")
 
         from eyecite import get_citations
         from eyecite.models import (
@@ -90,38 +88,46 @@ class CitationExtractor:
 
         for cite in citations:
             if isinstance(cite, FullCaseCitation):
-                results.append(ExtractedCitation(
-                    raw_text=str(cite),
-                    citation_type="full",
-                    reporter=cite.groups.get("reporter"),
-                    volume=self._safe_int(cite.groups.get("volume")),
-                    page=self._safe_int(cite.groups.get("page")),
-                    year=self._safe_int(cite.groups.get("year")),
-                    court=cite.metadata.court if cite.metadata else None,
-                    span=cite.span(),
-                    normalized=cite.corrected_citation(),
-                ))
+                results.append(
+                    ExtractedCitation(
+                        raw_text=str(cite),
+                        citation_type="full",
+                        reporter=cite.groups.get("reporter"),
+                        volume=self._safe_int(cite.groups.get("volume")),
+                        page=self._safe_int(cite.groups.get("page")),
+                        year=self._safe_int(cite.groups.get("year")),
+                        court=cite.metadata.court if cite.metadata else None,
+                        span=cite.span(),
+                        normalized=cite.corrected_citation(),
+                    )
+                )
             elif isinstance(cite, ShortCaseCitation):
-                results.append(ExtractedCitation(
-                    raw_text=str(cite),
-                    citation_type="short",
-                    reporter=cite.groups.get("reporter"),
-                    volume=self._safe_int(cite.groups.get("volume")),
-                    page=self._safe_int(cite.groups.get("page")),
-                    span=cite.span(),
-                ))
+                results.append(
+                    ExtractedCitation(
+                        raw_text=str(cite),
+                        citation_type="short",
+                        reporter=cite.groups.get("reporter"),
+                        volume=self._safe_int(cite.groups.get("volume")),
+                        page=self._safe_int(cite.groups.get("page")),
+                        span=cite.span(),
+                    )
+                )
             elif isinstance(cite, SupraCitation):
-                results.append(ExtractedCitation(
-                    raw_text=str(cite),
-                    citation_type="supra",
-                    span=cite.span(),
-                ))
+                results.append(
+                    ExtractedCitation(
+                        raw_text=str(cite),
+                        citation_type="supra",
+                        span=cite.span(),
+                    )
+                )
             elif isinstance(cite, IdCitation):
-                results.append(ExtractedCitation(
-                    raw_text=str(cite),
-                    citation_type="id",
-                    span=cite.span(),
-                ))
+                results.append(
+                    ExtractedCitation(
+                        raw_text=str(cite),
+                        citation_type="id",
+                        span=cite.span(),
+                    )
+                )
 
         return results
 
@@ -164,11 +170,13 @@ class CitationExtractor:
         results = []
         for pattern in patterns:
             for match in re.finditer(pattern, text, re.IGNORECASE):
-                results.append(ExtractedCitation(
-                    raw_text=match.group(0),
-                    citation_type="statute",
-                    span=(match.start(), match.end()),
-                ))
+                results.append(
+                    ExtractedCitation(
+                        raw_text=match.group(0),
+                        citation_type="statute",
+                        span=(match.start(), match.end()),
+                    )
+                )
 
         return results
 
@@ -253,8 +261,6 @@ class CitationExtractor:
             "short_citations": len([c for c in citations if c.citation_type == "short"]),
             "id_citations": len([c for c in citations if c.citation_type == "id"]),
             "supra_citations": len([c for c in citations if c.citation_type == "supra"]),
-            "unique_reporters": list(set(
-                c.reporter for c in citations if c.reporter
-            )),
+            "unique_reporters": list(set(c.reporter for c in citations if c.reporter)),
             "citations": citations,
         }

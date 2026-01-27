@@ -13,7 +13,6 @@ FTS5 supports:
 - Proximity: NEAR(word1 word2, 10)
 """
 
-
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 

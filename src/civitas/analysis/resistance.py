@@ -18,6 +18,7 @@ import httpx
 
 class StrategyType(Enum):
     """Types of resistance strategies."""
+
     LEGAL = "legal"
     ORGANIZING = "organizing"
     ADVOCACY = "advocacy"
@@ -107,9 +108,7 @@ class ResistanceGenerator:
         model: str | None = None,
         timeout: float = 180.0,  # Longer timeout for detailed content
     ):
-        self.ollama_host = ollama_host or os.getenv(
-            "OLLAMA_HOST", "http://20.98.70.48:11434"
-        )
+        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.2")
         self.timeout = timeout
         self._client = httpx.Client(timeout=timeout)
@@ -568,49 +567,116 @@ Respond with JSON:
             "civil_rights": [
                 {"name": "ACLU", "url": "https://www.aclu.org", "focus": "Civil liberties"},
                 {"name": "NAACP LDF", "url": "https://www.naacpldf.org", "focus": "Racial justice"},
-                {"name": "Lambda Legal", "url": "https://www.lambdalegal.org", "focus": "LGBTQ+ rights"},
+                {
+                    "name": "Lambda Legal",
+                    "url": "https://www.lambdalegal.org",
+                    "focus": "LGBTQ+ rights",
+                },
             ],
             "immigration": [
-                {"name": "RAICES", "url": "https://www.raicestexas.org", "focus": "Immigration legal services"},
+                {
+                    "name": "RAICES",
+                    "url": "https://www.raicestexas.org",
+                    "focus": "Immigration legal services",
+                },
                 {"name": "NILC", "url": "https://www.nilc.org", "focus": "Immigrant rights policy"},
-                {"name": "United We Dream", "url": "https://unitedwedream.org", "focus": "Youth immigrant organizing"},
+                {
+                    "name": "United We Dream",
+                    "url": "https://unitedwedream.org",
+                    "focus": "Youth immigrant organizing",
+                },
             ],
             "healthcare": [
-                {"name": "Families USA", "url": "https://familiesusa.org", "focus": "Healthcare access"},
-                {"name": "Community Catalyst", "url": "https://communitycatalyst.org", "focus": "Health advocacy"},
+                {
+                    "name": "Families USA",
+                    "url": "https://familiesusa.org",
+                    "focus": "Healthcare access",
+                },
+                {
+                    "name": "Community Catalyst",
+                    "url": "https://communitycatalyst.org",
+                    "focus": "Health advocacy",
+                },
             ],
             "reproductive_rights": [
-                {"name": "National Abortion Federation", "url": "https://prochoice.org", "focus": "Abortion access"},
-                {"name": "Center for Reproductive Rights", "url": "https://reproductiverights.org", "focus": "Legal advocacy"},
-                {"name": "National Network of Abortion Funds", "url": "https://abortionfunds.org", "focus": "Funding access"},
+                {
+                    "name": "National Abortion Federation",
+                    "url": "https://prochoice.org",
+                    "focus": "Abortion access",
+                },
+                {
+                    "name": "Center for Reproductive Rights",
+                    "url": "https://reproductiverights.org",
+                    "focus": "Legal advocacy",
+                },
+                {
+                    "name": "National Network of Abortion Funds",
+                    "url": "https://abortionfunds.org",
+                    "focus": "Funding access",
+                },
             ],
             "environment": [
-                {"name": "Sierra Club", "url": "https://www.sierraclub.org", "focus": "Environmental protection"},
-                {"name": "Earthjustice", "url": "https://earthjustice.org", "focus": "Environmental law"},
+                {
+                    "name": "Sierra Club",
+                    "url": "https://www.sierraclub.org",
+                    "focus": "Environmental protection",
+                },
+                {
+                    "name": "Earthjustice",
+                    "url": "https://earthjustice.org",
+                    "focus": "Environmental law",
+                },
                 {"name": "350.org", "url": "https://350.org", "focus": "Climate action"},
             ],
             "elections": [
-                {"name": "League of Women Voters", "url": "https://www.lwv.org", "focus": "Voting rights"},
-                {"name": "Common Cause", "url": "https://www.commoncause.org", "focus": "Democracy reform"},
-                {"name": "Brennan Center", "url": "https://www.brennancenter.org", "focus": "Voting rights legal"},
+                {
+                    "name": "League of Women Voters",
+                    "url": "https://www.lwv.org",
+                    "focus": "Voting rights",
+                },
+                {
+                    "name": "Common Cause",
+                    "url": "https://www.commoncause.org",
+                    "focus": "Democracy reform",
+                },
+                {
+                    "name": "Brennan Center",
+                    "url": "https://www.brennancenter.org",
+                    "focus": "Voting rights legal",
+                },
             ],
         }
-        return orgs.get(category, [
-            {"name": "ACLU", "url": "https://www.aclu.org", "focus": "Civil liberties"},
-        ])
+        return orgs.get(
+            category,
+            [
+                {"name": "ACLU", "url": "https://www.aclu.org", "focus": "Civil liberties"},
+            ],
+        )
 
     def _get_emergency_contacts(self, category: str) -> list[dict]:
         """Get emergency contacts for a category."""
         contacts = {
             "immigration": [
-                {"name": "ICE Detainee Locator", "number": "1-888-351-4024", "when": "If someone is detained"},
-                {"name": "RAICES Hotline", "number": "1-800-516-3996", "when": "Immigration legal emergency"},
+                {
+                    "name": "ICE Detainee Locator",
+                    "number": "1-888-351-4024",
+                    "when": "If someone is detained",
+                },
+                {
+                    "name": "RAICES Hotline",
+                    "number": "1-800-516-3996",
+                    "when": "Immigration legal emergency",
+                },
             ],
             "civil_rights": [
                 {"name": "ACLU", "number": "Local affiliate", "when": "Rights violation"},
             ],
             "criminal_justice": [
-                {"name": "National Bail Fund Network", "url": "https://www.communityjusticeexchange.org/nbfn-directory", "when": "Bail needed"},
+                {
+                    "name": "National Bail Fund Network",
+                    "url": "https://www.communityjusticeexchange.org/nbfn-directory",
+                    "when": "Bail needed",
+                },
             ],
         }
         return contacts.get(category, [])

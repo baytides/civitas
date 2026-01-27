@@ -141,9 +141,9 @@ class CivitasAI:
             # Search in citation and title
             search_term = f"%{query}%"
             q = q.filter(
-                (Legislation.citation.ilike(search_term)) |
-                (Legislation.title.ilike(search_term)) |
-                (Legislation.summary.ilike(search_term))
+                (Legislation.citation.ilike(search_term))
+                | (Legislation.title.ilike(search_term))
+                | (Legislation.summary.ilike(search_term))
             )
 
             if jurisdiction:
@@ -158,16 +158,18 @@ class CivitasAI:
 
             results = []
             for leg in q.all():
-                results.append({
-                    "id": leg.id,
-                    "jurisdiction": leg.jurisdiction,
-                    "citation": leg.citation,
-                    "title": leg.title,
-                    "status": leg.status,
-                    "is_enacted": leg.is_enacted,
-                    "public_law_number": leg.public_law_number,
-                    "session": leg.session,
-                })
+                results.append(
+                    {
+                        "id": leg.id,
+                        "jurisdiction": leg.jurisdiction,
+                        "citation": leg.citation,
+                        "title": leg.title,
+                        "status": leg.status,
+                        "is_enacted": leg.is_enacted,
+                        "public_law_number": leg.public_law_number,
+                        "session": leg.session,
+                    }
+                )
 
             return results
         finally:
@@ -189,13 +191,20 @@ class CivitasAI:
                 return None
 
             # Get related data
-            actions = db_session.query(LegislationAction).filter_by(
-                legislation_id=legislation_id
-            ).order_by(LegislationAction.action_date.desc()).limit(10).all()
+            actions = (
+                db_session.query(LegislationAction)
+                .filter_by(legislation_id=legislation_id)
+                .order_by(LegislationAction.action_date.desc())
+                .limit(10)
+                .all()
+            )
 
-            votes = db_session.query(Vote).filter_by(
-                legislation_id=legislation_id
-            ).order_by(Vote.vote_date.desc()).all()
+            votes = (
+                db_session.query(Vote)
+                .filter_by(legislation_id=legislation_id)
+                .order_by(Vote.vote_date.desc())
+                .all()
+            )
 
             return {
                 "id": leg.id,
@@ -211,7 +220,9 @@ class CivitasAI:
                 "session": leg.session,
                 "introduced_date": str(leg.introduced_date) if leg.introduced_date else None,
                 "last_action_date": str(leg.last_action_date) if leg.last_action_date else None,
-                "full_text": leg.full_text[:1000] + "..." if leg.full_text and len(leg.full_text) > 1000 else leg.full_text,
+                "full_text": leg.full_text[:1000] + "..."
+                if leg.full_text and len(leg.full_text) > 1000
+                else leg.full_text,
                 "recent_actions": [
                     {
                         "date": str(a.action_date),
@@ -341,12 +352,14 @@ class CivitasAI:
             }
 
             # Count by jurisdiction
-            for row in db_session.execute(text("""
+            for row in db_session.execute(
+                text("""
                 SELECT jurisdiction, COUNT(*) as total,
                        SUM(CASE WHEN is_enacted = 1 THEN 1 ELSE 0 END) as enacted
                 FROM legislation
                 GROUP BY jurisdiction
-            """)):
+            """)
+            ):
                 stats["by_jurisdiction"][row[0]] = {
                     "total": row[1],
                     "enacted": row[2],
@@ -384,22 +397,48 @@ class CivitasAI:
         """Generate response using keyword search (no AI)."""
         # Extract potential search terms
         words = question.lower().split()
-        skip_words = {"what", "which", "who", "how", "many", "is", "are", "the", "a", "an",
-                      "about", "find", "search", "show", "me", "list", "get", "legislation",
-                      "bill", "bills", "law", "laws", "on", "for", "in", "related", "to"}
+        skip_words = {
+            "what",
+            "which",
+            "who",
+            "how",
+            "many",
+            "is",
+            "are",
+            "the",
+            "a",
+            "an",
+            "about",
+            "find",
+            "search",
+            "show",
+            "me",
+            "list",
+            "get",
+            "legislation",
+            "bill",
+            "bills",
+            "law",
+            "laws",
+            "on",
+            "for",
+            "in",
+            "related",
+            "to",
+        }
 
         search_terms = [w for w in words if w not in skip_words and len(w) > 2]
 
         if not search_terms:
             stats = self.get_statistics()
             return f"""Database Statistics:
-- Total legislation: {stats['total_legislation']:,}
-- Enacted laws: {stats['enacted_laws']:,}
-- Legislators: {stats['total_legislators']:,}
-- Votes recorded: {stats['total_votes']:,}
+- Total legislation: {stats["total_legislation"]:,}
+- Enacted laws: {stats["enacted_laws"]:,}
+- Legislators: {stats["total_legislators"]:,}
+- Votes recorded: {stats["total_votes"]:,}
 
 By jurisdiction:
-{chr(10).join(f"  - {k}: {v['total']:,} total, {v['enacted']:,} enacted" for k, v in stats['by_jurisdiction'].items())}
+{chr(10).join(f"  - {k}: {v['total']:,} total, {v['enacted']:,} enacted" for k, v in stats["by_jurisdiction"].items())}
 
 Try asking about specific topics like 'water', 'climate', 'housing', etc."""
 
@@ -452,11 +491,11 @@ Try asking about specific topics like 'water', 'climate', 'housing', etc."""
         system_prompt = f"""You are a helpful assistant for the Civitas legislative database, a civic empowerment platform that tracks legislation, court cases, and executive actions.
 
 Database contains:
-- {stats['total_legislation']:,} pieces of legislation
-- {stats['enacted_laws']:,} enacted laws
-- {stats['total_legislators']:,} legislators
-- {stats.get('law_codes', 0)} law codes
-- Jurisdictions: {', '.join(stats['by_jurisdiction'].keys()) if stats['by_jurisdiction'] else 'None yet'}
+- {stats["total_legislation"]:,} pieces of legislation
+- {stats["enacted_laws"]:,} enacted laws
+- {stats["total_legislators"]:,} legislators
+- {stats.get("law_codes", 0)} law codes
+- Jurisdictions: {", ".join(stats["by_jurisdiction"].keys()) if stats["by_jurisdiction"] else "None yet"}
 
 When answering questions about legislation:
 1. Use the context provided from database searches
@@ -497,15 +536,80 @@ Please answer the question based on this data. If the data doesn't contain relev
         # Extract keywords from question
         words = question.lower().split()
         skip_words = {
-            "what", "which", "who", "how", "many", "is", "are", "the", "a", "an",
-            "about", "find", "search", "show", "me", "list", "get", "legislation",
-            "bill", "bills", "law", "laws", "on", "for", "in", "related", "to",
-            "case", "cases", "court", "executive", "order", "orders", "recent",
-            "latest", "new", "any", "all", "does", "do", "have", "has", "been",
-            "was", "were", "will", "would", "could", "should", "can", "may",
-            "might", "must", "shall", "there", "their", "they", "them", "this",
-            "that", "these", "those", "with", "from", "into", "through", "during",
-            "before", "after", "above", "below", "between", "under", "again",
+            "what",
+            "which",
+            "who",
+            "how",
+            "many",
+            "is",
+            "are",
+            "the",
+            "a",
+            "an",
+            "about",
+            "find",
+            "search",
+            "show",
+            "me",
+            "list",
+            "get",
+            "legislation",
+            "bill",
+            "bills",
+            "law",
+            "laws",
+            "on",
+            "for",
+            "in",
+            "related",
+            "to",
+            "case",
+            "cases",
+            "court",
+            "executive",
+            "order",
+            "orders",
+            "recent",
+            "latest",
+            "new",
+            "any",
+            "all",
+            "does",
+            "do",
+            "have",
+            "has",
+            "been",
+            "was",
+            "were",
+            "will",
+            "would",
+            "could",
+            "should",
+            "can",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "there",
+            "their",
+            "they",
+            "them",
+            "this",
+            "that",
+            "these",
+            "those",
+            "with",
+            "from",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "above",
+            "below",
+            "between",
+            "under",
+            "again",
         }
 
         search_terms = [w for w in words if w not in skip_words and len(w) > 2]
@@ -522,7 +626,14 @@ Please answer the question based on this data. If the data doesn't contain relev
             results["legislation"] = self.search(query, limit=10)
 
             # Search legislators if relevant terms present
-            legislator_terms = {"senator", "representative", "congressman", "congresswoman", "member", "sponsor"}
+            legislator_terms = {
+                "senator",
+                "representative",
+                "congressman",
+                "congresswoman",
+                "member",
+                "sponsor",
+            }
             if any(term in question.lower() for term in legislator_terms):
                 results["legislators"] = self.get_legislator(name=query, limit=5)
 
@@ -545,10 +656,10 @@ Please answer the question based on this data. If the data doesn't contain relev
         system_prompt = f"""You are a helpful assistant for the Civitas legislative database.
 
 Database contains:
-- {stats['total_legislation']:,} pieces of legislation
-- {stats['enacted_laws']:,} enacted laws
-- {stats['total_legislators']:,} legislators
-- Jurisdictions: {', '.join(stats['by_jurisdiction'].keys())}
+- {stats["total_legislation"]:,} pieces of legislation
+- {stats["enacted_laws"]:,} enacted laws
+- {stats["total_legislators"]:,} legislators
+- Jurisdictions: {", ".join(stats["by_jurisdiction"].keys())}
 
 You have access to these functions to query the database:
 - search(query, jurisdiction, enacted_only, limit): Search legislation by keyword
@@ -634,11 +745,13 @@ Recent laws in database:
             for content in response.content:
                 if content.type == "tool_use":
                     result = self._execute_tool(content.name, content.input)
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content.id,
-                        "content": json.dumps(result),
-                    })
+                    tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": content.id,
+                            "content": json.dumps(result),
+                        }
+                    )
 
             # Continue conversation with tool results
             response = self._ai_client.messages.create(

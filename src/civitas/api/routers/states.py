@@ -80,12 +80,8 @@ async def get_state(
         raise HTTPException(status_code=404, detail="State not found")
 
     # Get counts
-    bill_count = (
-        db.query(Legislation).filter(Legislation.jurisdiction == code).count()
-    )
-    legislator_count = (
-        db.query(Legislator).filter(Legislator.jurisdiction == code).count()
-    )
+    bill_count = db.query(Legislation).filter(Legislation.jurisdiction == code).count()
+    legislator_count = db.query(Legislator).filter(Legislator.jurisdiction == code).count()
 
     # Get recent bills
     recent_bills = (
@@ -115,9 +111,7 @@ async def get_state(
             StateBillBase(
                 id=b.id,
                 identifier=(
-                    f"{b.chamber.upper()[0]}B {b.number}"
-                    if b.number
-                    else b.source_id or str(b.id)
+                    f"{b.chamber.upper()[0]}B {b.number}" if b.number else b.source_id or str(b.id)
                 ),
                 title=b.title,
                 chamber=b.chamber,
@@ -182,9 +176,7 @@ async def get_state_bills(
             StateBillBase(
                 id=b.id,
                 identifier=(
-                    f"{b.chamber.upper()[0]}B {b.number}"
-                    if b.number
-                    else b.source_id or str(b.id)
+                    f"{b.chamber.upper()[0]}B {b.number}" if b.number else b.source_id or str(b.id)
                 ),
                 title=b.title,
                 chamber=b.chamber,

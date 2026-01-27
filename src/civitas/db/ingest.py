@@ -171,10 +171,14 @@ class DataIngester:
     ) -> Legislation | None:
         """Ingest a California bill."""
         # Check if already exists
-        existing = session.query(Legislation).filter_by(
-            jurisdiction="california",
-            source_id=bill.bill_id,
-        ).first()
+        existing = (
+            session.query(Legislation)
+            .filter_by(
+                jurisdiction="california",
+                source_id=bill.bill_id,
+            )
+            .first()
+        )
 
         if existing:
             return existing
@@ -284,21 +288,19 @@ class DataIngester:
     ) -> Legislator | None:
         """Ingest a California legislator."""
         # Check if exists
-        existing = session.query(Legislator).filter_by(
-            jurisdiction="california",
-            full_name=leg.full_name,
-        ).first()
+        existing = (
+            session.query(Legislator)
+            .filter_by(
+                jurisdiction="california",
+                full_name=leg.full_name,
+            )
+            .first()
+        )
 
         if existing:
             return existing
 
-        chamber = (
-            "house"
-            if leg.house_type == "A"
-            else "senate"
-            if leg.house_type == "S"
-            else None
-        )
+        chamber = "house" if leg.house_type == "A" else "senate" if leg.house_type == "S" else None
         db_leg = Legislator(
             jurisdiction="california",
             source_id=leg.district,
@@ -321,10 +323,14 @@ class DataIngester:
         code: CALawCode,
     ) -> None:
         """Ingest a California law code."""
-        existing = session.query(LawCode).filter_by(
-            jurisdiction="california",
-            code=code.code,
-        ).first()
+        existing = (
+            session.query(LawCode)
+            .filter_by(
+                jurisdiction="california",
+                code=code.code,
+            )
+            .first()
+        )
 
         if not existing:
             db_code = LawCode(
@@ -413,10 +419,14 @@ class DataIngester:
         source_id = f"{congress}_{bill_data['type']}_{bill_data['number']}"
 
         # Check if exists
-        existing = session.query(Legislation).filter_by(
-            jurisdiction="federal",
-            source_id=source_id,
-        ).first()
+        existing = (
+            session.query(Legislation)
+            .filter_by(
+                jurisdiction="federal",
+                source_id=source_id,
+            )
+            .first()
+        )
 
         if existing:
             return existing
@@ -450,8 +460,7 @@ class DataIngester:
         if bill_data.get("latestAction", {}).get("actionDate"):
             try:
                 last_action_date = datetime.strptime(
-                    bill_data["latestAction"]["actionDate"],
-                    "%Y-%m-%d"
+                    bill_data["latestAction"]["actionDate"], "%Y-%m-%d"
                 ).date()
             except (ValueError, TypeError):
                 pass
@@ -496,12 +505,12 @@ class DataIngester:
         """Get database statistics."""
         session = self.get_session()
         try:
-            federal_legislation = session.query(Legislation).filter_by(
-                jurisdiction="federal"
-            ).count()
-            california_legislation = session.query(Legislation).filter_by(
-                jurisdiction="california"
-            ).count()
+            federal_legislation = (
+                session.query(Legislation).filter_by(jurisdiction="federal").count()
+            )
+            california_legislation = (
+                session.query(Legislation).filter_by(jurisdiction="california").count()
+            )
             enacted_laws = session.query(Legislation).filter_by(is_enacted=True).count()
             return {
                 "total_legislation": session.query(Legislation).count(),

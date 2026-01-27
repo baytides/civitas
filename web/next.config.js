@@ -2,6 +2,7 @@ const path = require("path");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: __dirname,
   // Required for Payload CMS in Next.js 15
   serverExternalPackages: ["payload"],
   webpack: (config) => {

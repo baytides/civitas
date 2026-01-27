@@ -42,62 +42,138 @@ TABLE_CONFIGS: dict[str, dict[str, Any]] = {
     "BILL_TBL.dat": {
         "model": Bill,
         "fields": [
-            "bill_id", "session_year", "session_num", "measure_type", "measure_num",
-            "measure_state", "chapter_year", "chapter_type", "chapter_session_num",
-            "chapter_num", "latest_bill_version_id", "active_flg", "trans_uid",
-            "trans_update", "current_location", "current_secondary_loc",
-            "current_house", "current_status", "days_31st_in_print"
+            "bill_id",
+            "session_year",
+            "session_num",
+            "measure_type",
+            "measure_num",
+            "measure_state",
+            "chapter_year",
+            "chapter_type",
+            "chapter_session_num",
+            "chapter_num",
+            "latest_bill_version_id",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "current_location",
+            "current_secondary_loc",
+            "current_house",
+            "current_status",
+            "days_31st_in_print",
         ],
     },
     "BILL_VERSION_TBL.dat": {
         "model": BillVersion,
         "fields": [
-            "bill_version_id", "bill_id", "version_num", "bill_version_action_date",
-            "bill_version_action", "request_num", "subject", "vote_required",
-            "appropriation", "fiscal_committee", "local_program", "substantive_changes",
-            "urgency", "taxlevy", "bill_xml", "active_flg", "trans_uid", "trans_update"
+            "bill_version_id",
+            "bill_id",
+            "version_num",
+            "bill_version_action_date",
+            "bill_version_action",
+            "request_num",
+            "subject",
+            "vote_required",
+            "appropriation",
+            "fiscal_committee",
+            "local_program",
+            "substantive_changes",
+            "urgency",
+            "taxlevy",
+            "bill_xml",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
         ],
     },
     "BILL_VERSION_AUTHORS_TBL.dat": {
         "model": BillVersionAuthor,
         "fields": [
-            "bill_version_id", "type", "house", "name", "contribution",
-            "committee_members", "active_flg", "trans_uid", "trans_update",
-            "primary_author_flg"
+            "bill_version_id",
+            "type",
+            "house",
+            "name",
+            "contribution",
+            "committee_members",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "primary_author_flg",
         ],
     },
     "BILL_HISTORY_TBL.dat": {
         "model": BillHistory,
         "fields": [
-            "bill_id", "bill_history_id", "action_date", "action", "trans_uid",
-            "trans_update_dt", "action_sequence", "action_code", "action_status",
-            "primary_location", "secondary_location", "ternary_location", "end_status"
+            "bill_id",
+            "bill_history_id",
+            "action_date",
+            "action",
+            "trans_uid",
+            "trans_update_dt",
+            "action_sequence",
+            "action_code",
+            "action_status",
+            "primary_location",
+            "secondary_location",
+            "ternary_location",
+            "end_status",
         ],
     },
     "BILL_ANALYSIS_TBL.dat": {
         "model": BillAnalysis,
         "fields": [
-            "analysis_id", "bill_id", "house", "analysis_type", "committee_code",
-            "committee_name", "amendment_author", "analysis_date", "amendment_date",
-            "page_num", "source_doc", "released_floor", "active_flg", "trans_uid",
-            "trans_update"
+            "analysis_id",
+            "bill_id",
+            "house",
+            "analysis_type",
+            "committee_code",
+            "committee_name",
+            "amendment_author",
+            "analysis_date",
+            "amendment_date",
+            "page_num",
+            "source_doc",
+            "released_floor",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
         ],
     },
     "BILL_SUMMARY_VOTE_TBL.dat": {
         "model": BillSummaryVote,
         "fields": [
-            "bill_id", "location_code", "vote_date_time", "vote_date_seq",
-            "motion_id", "ayes", "noes", "abstain", "vote_result", "trans_uid",
-            "trans_update", "file_item_num", "file_location", "display_lines",
-            "session_date"
+            "bill_id",
+            "location_code",
+            "vote_date_time",
+            "vote_date_seq",
+            "motion_id",
+            "ayes",
+            "noes",
+            "abstain",
+            "vote_result",
+            "trans_uid",
+            "trans_update",
+            "file_item_num",
+            "file_location",
+            "display_lines",
+            "session_date",
         ],
     },
     "BILL_DETAIL_VOTE_TBL.dat": {
         "model": BillDetailVote,
         "fields": [
-            "bill_id", "location_code", "legislator_name", "vote_date_time",
-            "vote_date_seq", "vote_code", "motion_id", "trans_uid", "trans_update",
-            "member_order", "session_date", "speaker"
+            "bill_id",
+            "location_code",
+            "legislator_name",
+            "vote_date_time",
+            "vote_date_seq",
+            "vote_code",
+            "motion_id",
+            "trans_uid",
+            "trans_update",
+            "member_order",
+            "session_date",
+            "speaker",
         ],
     },
     "BILL_MOTION_TBL.dat": {
@@ -107,19 +183,45 @@ TABLE_CONFIGS: dict[str, dict[str, Any]] = {
     "LEGISLATOR_TBL.dat": {
         "model": Legislator,
         "fields": [
-            "district", "session_year", "legislator_name", "house_type", "author_name",
-            "first_name", "last_name", "middle_initial", "name_suffix", "name_title",
-            "web_name_title", "party", "active_flg", "trans_uid", "trans_update",
-            "active_legislator"
+            "district",
+            "session_year",
+            "legislator_name",
+            "house_type",
+            "author_name",
+            "first_name",
+            "last_name",
+            "middle_initial",
+            "name_suffix",
+            "name_title",
+            "web_name_title",
+            "party",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "active_legislator",
         ],
     },
     "LAW_SECTION_TBL.dat": {
         "model": LawSection,
         "fields": [
-            "id", "law_code", "section_num", "op_statues", "op_chapter", "op_section",
-            "effective_date", "law_section_version_id", "division", "title", "part",
-            "chapter", "article", "history", "content_xml", "active_flg", "trans_uid",
-            "trans_update"
+            "id",
+            "law_code",
+            "section_num",
+            "op_statues",
+            "op_chapter",
+            "op_section",
+            "effective_date",
+            "law_section_version_id",
+            "division",
+            "title",
+            "part",
+            "chapter",
+            "article",
+            "history",
+            "content_xml",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
         ],
     },
     "CODES_TBL.dat": {
@@ -133,16 +235,28 @@ TABLE_CONFIGS: dict[str, dict[str, Any]] = {
     "COMMITTEE_HEARING_TBL.dat": {
         "model": CommitteeHearing,
         "fields": [
-            "bill_id", "committee_type", "committee_nr", "hearing_date",
-            "location_code", "trans_uid", "trans_update_date"
+            "bill_id",
+            "committee_type",
+            "committee_nr",
+            "hearing_date",
+            "location_code",
+            "trans_uid",
+            "trans_update_date",
         ],
     },
     "LOCATION_CODE_TBL.dat": {
         "model": LocationCode,
         "fields": [
-            "session_year", "location_code", "location_type", "consent_calendar_code",
-            "description", "long_description", "active_flg", "trans_uid", "trans_update",
-            "inactive_file_flg"
+            "session_year",
+            "location_code",
+            "location_type",
+            "consent_calendar_code",
+            "description",
+            "long_description",
+            "active_flg",
+            "trans_uid",
+            "trans_update",
+            "inactive_file_flg",
         ],
     },
 }
@@ -167,9 +281,21 @@ def _parse_value(value: str, field_name: str) -> Any:
             return value
 
     # Handle numeric fields
-    if field_name in ("measure_num", "version_num", "analysis_id", "bill_history_id",
-                      "motion_id", "vote_date_seq", "ayes", "noes", "abstain",
-                      "committee_nr", "member_order", "action_sequence", "page_num"):
+    if field_name in (
+        "measure_num",
+        "version_num",
+        "analysis_id",
+        "bill_history_id",
+        "motion_id",
+        "vote_date_seq",
+        "ayes",
+        "noes",
+        "abstain",
+        "committee_nr",
+        "member_order",
+        "action_sequence",
+        "page_num",
+    ):
         try:
             return int(float(value))  # Handle "123.0" format
         except (ValueError, TypeError):
@@ -313,23 +439,33 @@ class CaliforniaLegislatureClient:
         """Parse bill records from extracted data."""
         yield from self.parse_table("BILL_TBL.dat", data_path, limit)
 
-    def parse_bill_versions(self, data_path: Path, limit: int | None = None) -> Generator[BillVersion, None, None]:
+    def parse_bill_versions(
+        self, data_path: Path, limit: int | None = None
+    ) -> Generator[BillVersion, None, None]:
         """Parse bill version records."""
         yield from self.parse_table("BILL_VERSION_TBL.dat", data_path, limit)
 
-    def parse_bill_history(self, data_path: Path, limit: int | None = None) -> Generator[BillHistory, None, None]:
+    def parse_bill_history(
+        self, data_path: Path, limit: int | None = None
+    ) -> Generator[BillHistory, None, None]:
         """Parse bill history/action records."""
         yield from self.parse_table("BILL_HISTORY_TBL.dat", data_path, limit)
 
-    def parse_legislators(self, data_path: Path, limit: int | None = None) -> Generator[Legislator, None, None]:
+    def parse_legislators(
+        self, data_path: Path, limit: int | None = None
+    ) -> Generator[Legislator, None, None]:
         """Parse legislator records."""
         yield from self.parse_table("LEGISLATOR_TBL.dat", data_path, limit)
 
-    def parse_votes(self, data_path: Path, limit: int | None = None) -> Generator[BillSummaryVote, None, None]:
+    def parse_votes(
+        self, data_path: Path, limit: int | None = None
+    ) -> Generator[BillSummaryVote, None, None]:
         """Parse summary vote records."""
         yield from self.parse_table("BILL_SUMMARY_VOTE_TBL.dat", data_path, limit)
 
-    def parse_detail_votes(self, data_path: Path, limit: int | None = None) -> Generator[BillDetailVote, None, None]:
+    def parse_detail_votes(
+        self, data_path: Path, limit: int | None = None
+    ) -> Generator[BillDetailVote, None, None]:
         """Parse individual legislator vote records."""
         yield from self.parse_table("BILL_DETAIL_VOTE_TBL.dat", data_path, limit)
 
@@ -337,7 +473,9 @@ class CaliforniaLegislatureClient:
         """Parse law code records."""
         yield from self.parse_table("CODES_TBL.dat", data_path)
 
-    def parse_law_sections(self, data_path: Path, limit: int | None = None) -> Generator[LawSection, None, None]:
+    def parse_law_sections(
+        self, data_path: Path, limit: int | None = None
+    ) -> Generator[LawSection, None, None]:
         """Parse law section records."""
         yield from self.parse_table("LAW_SECTION_TBL.dat", data_path, limit)
 

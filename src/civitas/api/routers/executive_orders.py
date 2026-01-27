@@ -75,9 +75,11 @@ async def get_executive_order(
 
     # Find matched objectives
     matched_objectives = []
-    objectives = db.query(Project2025Policy).filter(
-        Project2025Policy.matching_eo_ids.contains(f'"{eo_id}"')
-    ).all()
+    objectives = (
+        db.query(Project2025Policy)
+        .filter(Project2025Policy.matching_eo_ids.contains(f'"{eo_id}"'))
+        .all()
+    )
 
     for obj in objectives:
         matched_objectives.append(ObjectiveBase.model_validate(obj))

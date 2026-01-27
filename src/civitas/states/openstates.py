@@ -92,19 +92,57 @@ class OpenStatesClient:
 
     # State codes to full names
     STATES = {
-        "al": "Alabama", "ak": "Alaska", "az": "Arizona", "ar": "Arkansas",
-        "ca": "California", "co": "Colorado", "ct": "Connecticut", "de": "Delaware",
-        "fl": "Florida", "ga": "Georgia", "hi": "Hawaii", "id": "Idaho",
-        "il": "Illinois", "in": "Indiana", "ia": "Iowa", "ks": "Kansas",
-        "ky": "Kentucky", "la": "Louisiana", "me": "Maine", "md": "Maryland",
-        "ma": "Massachusetts", "mi": "Michigan", "mn": "Minnesota", "ms": "Mississippi",
-        "mo": "Missouri", "mt": "Montana", "ne": "Nebraska", "nv": "Nevada",
-        "nh": "New Hampshire", "nj": "New Jersey", "nm": "New Mexico", "ny": "New York",
-        "nc": "North Carolina", "nd": "North Dakota", "oh": "Ohio", "ok": "Oklahoma",
-        "or": "Oregon", "pa": "Pennsylvania", "ri": "Rhode Island", "sc": "South Carolina",
-        "sd": "South Dakota", "tn": "Tennessee", "tx": "Texas", "ut": "Utah",
-        "vt": "Vermont", "va": "Virginia", "wa": "Washington", "wv": "West Virginia",
-        "wi": "Wisconsin", "wy": "Wyoming", "dc": "District of Columbia",
+        "al": "Alabama",
+        "ak": "Alaska",
+        "az": "Arizona",
+        "ar": "Arkansas",
+        "ca": "California",
+        "co": "Colorado",
+        "ct": "Connecticut",
+        "de": "Delaware",
+        "fl": "Florida",
+        "ga": "Georgia",
+        "hi": "Hawaii",
+        "id": "Idaho",
+        "il": "Illinois",
+        "in": "Indiana",
+        "ia": "Iowa",
+        "ks": "Kansas",
+        "ky": "Kentucky",
+        "la": "Louisiana",
+        "me": "Maine",
+        "md": "Maryland",
+        "ma": "Massachusetts",
+        "mi": "Michigan",
+        "mn": "Minnesota",
+        "ms": "Mississippi",
+        "mo": "Missouri",
+        "mt": "Montana",
+        "ne": "Nebraska",
+        "nv": "Nevada",
+        "nh": "New Hampshire",
+        "nj": "New Jersey",
+        "nm": "New Mexico",
+        "ny": "New York",
+        "nc": "North Carolina",
+        "nd": "North Dakota",
+        "oh": "Ohio",
+        "ok": "Oklahoma",
+        "or": "Oregon",
+        "pa": "Pennsylvania",
+        "ri": "Rhode Island",
+        "sc": "South Carolina",
+        "sd": "South Dakota",
+        "tn": "Tennessee",
+        "tx": "Texas",
+        "ut": "Utah",
+        "vt": "Vermont",
+        "va": "Virginia",
+        "wa": "Washington",
+        "wv": "West Virginia",
+        "wi": "Wisconsin",
+        "wy": "Wyoming",
+        "dc": "District of Columbia",
         "pr": "Puerto Rico",
     }
 
@@ -144,8 +182,7 @@ class OpenStatesClient:
             state: Two-letter state code (e.g., "ca")
         """
         response = self._client.get(
-            "/jurisdictions",
-            params={"classification": "state", "abbr": state.lower()}
+            "/jurisdictions", params={"classification": "state", "abbr": state.lower()}
         )
         response.raise_for_status()
 
@@ -157,13 +194,15 @@ class OpenStatesClient:
         sessions = []
 
         for session_data in jurisdiction.get("legislative_sessions", []):
-            sessions.append(StateSession(
-                identifier=session_data["identifier"],
-                name=session_data["name"],
-                classification=session_data.get("classification", "primary"),
-                start_date=self._parse_date(session_data.get("start_date")),
-                end_date=self._parse_date(session_data.get("end_date")),
-            ))
+            sessions.append(
+                StateSession(
+                    identifier=session_data["identifier"],
+                    name=session_data["name"],
+                    classification=session_data.get("classification", "primary"),
+                    start_date=self._parse_date(session_data.get("start_date")),
+                    end_date=self._parse_date(session_data.get("end_date")),
+                )
+            )
 
         return sessions
 
@@ -253,8 +292,7 @@ class OpenStatesClient:
 
         if states:
             jurisdictions = [
-                f"ocd-jurisdiction/country:us/state:{s.lower()}/government"
-                for s in states
+                f"ocd-jurisdiction/country:us/state:{s.lower()}/government" for s in states
             ]
             params["jurisdiction"] = jurisdictions
 

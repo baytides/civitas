@@ -11,6 +11,7 @@ from enum import Enum
 
 class ActionType(Enum):
     """Types of actions users can take."""
+
     CONTACT = "contact"  # Contact officials
     ORGANIZE = "organize"  # Community organizing
     LEGAL = "legal"  # Legal/rights-based
@@ -22,6 +23,7 @@ class ActionType(Enum):
 
 class ActionUrgency(Enum):
     """Urgency level for actions."""
+
     IMMEDIATE = "immediate"  # Act now (vote coming, deadline)
     SOON = "soon"  # Act within days/weeks
     ONGOING = "ongoing"  # Continuous engagement
@@ -43,7 +45,6 @@ class ResistanceAction:
 
 # Actions organized by category slug
 CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
-
     # === CIVIL RIGHTS ===
     "civil_rights": [
         ResistanceAction(
@@ -79,10 +80,11 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             title="Contact Your State Civil Rights Office",
             description="File complaints or get information from your state's civil rights enforcement agency.",
             how_to="1. Find your state's civil rights commission/office\n2. Document the violation with dates, witnesses\n3. File a formal complaint\n4. Follow up in writing",
-            resources=["https://www.findlaw.com/civilrights/civil-rights-overview/state-civil-rights-offices.html"],
+            resources=[
+                "https://www.findlaw.com/civilrights/civil-rights-overview/state-civil-rights-offices.html"
+            ],
         ),
     ],
-
     # === IMMIGRATION ===
     "immigration": [
         ResistanceAction(
@@ -128,7 +130,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             effective_for=["local"],
         ),
     ],
-
     # === HEALTHCARE ===
     "healthcare": [
         ResistanceAction(
@@ -173,7 +174,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             ],
         ),
     ],
-
     # === REPRODUCTIVE RIGHTS ===
     "reproductive_rights": [
         ResistanceAction(
@@ -217,7 +217,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             how_to="1. Follow reputable medical sources\n2. Share factual information on social media\n3. Correct misinformation when you see it\n4. Direct people to verified resources",
         ),
     ],
-
     # === EDUCATION ===
     "education": [
         ResistanceAction(
@@ -255,7 +254,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             resources=["https://www.aclu.org/issues/free-speech/student-speech-and-privacy"],
         ),
     ],
-
     # === ENVIRONMENT ===
     "environment": [
         ResistanceAction(
@@ -298,7 +296,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             resources=["https://www.ejnet.org/ej/"],
         ),
     ],
-
     # === ELECTIONS ===
     "elections": [
         ResistanceAction(
@@ -338,7 +335,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             effective_for=["state"],
         ),
     ],
-
     # === CRIMINAL JUSTICE ===
     "criminal_justice": [
         ResistanceAction(
@@ -376,7 +372,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             effective_for=["local", "state"],
         ),
     ],
-
     # === GOVERNMENT ===
     "government": [
         ResistanceAction(
@@ -414,7 +409,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             resources=["https://www.ignet.gov/"],
         ),
     ],
-
     # === ECONOMY & LABOR ===
     "economy": [
         ResistanceAction(
@@ -451,7 +445,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             how_to="1. Monitor NLRB case filings\n2. Attend public hearings\n3. Show solidarity with organizing workers\n4. Report unfair labor practices you witness",
         ),
     ],
-
     # === HOUSING ===
     "housing": [
         ResistanceAction(
@@ -479,7 +472,9 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             title="File Fair Housing Complaints",
             description="Report housing discrimination.",
             how_to="1. Document discriminatory behavior\n2. File with HUD or your state fair housing agency\n3. File within one year of incident\n4. Contact fair housing organizations for help",
-            resources=["https://www.hud.gov/program_offices/fair_housing_equal_opp/online-complaint"],
+            resources=[
+                "https://www.hud.gov/program_offices/fair_housing_equal_opp/online-complaint"
+            ],
         ),
         ResistanceAction(
             action_type=ActionType.SUPPORT,
@@ -489,7 +484,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             resources=["https://nlihc.org/"],
         ),
     ],
-
     # === GUNS ===
     "guns": [
         ResistanceAction(
@@ -525,7 +519,6 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             how_to="1. Find local violence intervention programs\n2. Donate or volunteer\n3. Advocate for public funding\n4. Support survivors of gun violence",
         ),
     ],
-
     # === FOREIGN POLICY ===
     "foreign_policy": [
         ResistanceAction(
@@ -604,10 +597,7 @@ def get_actions_for_category(category_slug: str) -> list[ResistanceAction]:
     return category_actions + DEFAULT_ACTIONS
 
 
-def get_actions_by_type(
-    category_slug: str,
-    action_type: ActionType
-) -> list[ResistanceAction]:
+def get_actions_by_type(category_slug: str, action_type: ActionType) -> list[ResistanceAction]:
     """Get actions of a specific type for a category."""
     all_actions = get_actions_for_category(category_slug)
     return [a for a in all_actions if a.action_type == action_type]
@@ -621,11 +611,8 @@ def get_urgent_actions(category_slug: str) -> list[ResistanceAction]:
 
 def get_actions_for_jurisdiction(
     category_slug: str,
-    jurisdiction: str  # "federal", "state", "local"
+    jurisdiction: str,  # "federal", "state", "local"
 ) -> list[ResistanceAction]:
     """Get actions effective for a specific jurisdiction."""
     all_actions = get_actions_for_category(category_slug)
-    return [
-        a for a in all_actions
-        if not a.effective_for or jurisdiction in a.effective_for
-    ]
+    return [a for a in all_actions if not a.effective_for or jurisdiction in a.effective_for]

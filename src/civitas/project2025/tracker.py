@@ -103,11 +103,13 @@ class Project2025Tracker:
     ) -> int:
         """Calculate match score between legislation and keywords."""
         score = 0
-        search_text = " ".join([
-            legislation.title or "",
-            legislation.summary or "",
-            legislation.policy_area or "",
-        ]).lower()
+        search_text = " ".join(
+            [
+                legislation.title or "",
+                legislation.summary or "",
+                legislation.policy_area or "",
+            ]
+        ).lower()
 
         for keyword in keywords:
             if keyword.lower() in search_text:
@@ -122,10 +124,12 @@ class Project2025Tracker:
     ) -> int:
         """Calculate match score for executive orders."""
         score = 0
-        search_text = " ".join([
-            eo.title or "",
-            eo.abstract or "",
-        ]).lower()
+        search_text = " ".join(
+            [
+                eo.title or "",
+                eo.abstract or "",
+            ]
+        ).lower()
 
         for keyword in keywords:
             if keyword.lower() in search_text:
@@ -198,13 +202,16 @@ class Project2025Tracker:
                 eo_ids = json.loads(policy.matching_eo_ids or "[]")
 
                 if leg_ids or eo_ids:
-                    report["active_implementations"].append({
-                        "policy_id": policy.id,
-                        "agency": policy.agency,
-                        "proposal_summary": policy.proposal_summary or policy.proposal_text[:100],
-                        "legislation_count": len(leg_ids),
-                        "eo_count": len(eo_ids),
-                    })
+                    report["active_implementations"].append(
+                        {
+                            "policy_id": policy.id,
+                            "agency": policy.agency,
+                            "proposal_summary": policy.proposal_summary
+                            or policy.proposal_text[:100],
+                            "legislation_count": len(leg_ids),
+                            "eo_count": len(eo_ids),
+                        }
+                    )
 
         # Sort by implementation count
         report["active_implementations"].sort(
@@ -222,9 +229,9 @@ class Project2025Tracker:
         Returns:
             Dictionary with agency-specific tracking data
         """
-        policies = self.session.query(Project2025Policy).filter(
-            Project2025Policy.agency == agency
-        ).all()
+        policies = (
+            self.session.query(Project2025Policy).filter(Project2025Policy.agency == agency).all()
+        )
 
         report = {
             "agency": agency,
@@ -236,14 +243,16 @@ class Project2025Tracker:
             leg_ids = json.loads(policy.matching_legislation_ids or "[]")
             eo_ids = json.loads(policy.matching_eo_ids or "[]")
 
-            report["policies"].append({
-                "id": policy.id,
-                "status": policy.status,
-                "action_type": policy.proposal_text[:50] if policy.proposal_text else "",
-                "legislation_matches": len(leg_ids),
-                "eo_matches": len(eo_ids),
-                "page": policy.page_number,
-            })
+            report["policies"].append(
+                {
+                    "id": policy.id,
+                    "status": policy.status,
+                    "action_type": policy.proposal_text[:50] if policy.proposal_text else "",
+                    "legislation_matches": len(leg_ids),
+                    "eo_matches": len(eo_ids),
+                    "page": policy.page_number,
+                }
+            )
 
         return report
 
@@ -259,9 +268,13 @@ class Project2025Tracker:
         Returns:
             List of alert dictionaries
         """
-        policies = self.session.query(Project2025Policy).filter(
-            Project2025Policy.status == "active"
-        ).order_by(Project2025Policy.last_checked.desc()).limit(limit).all()
+        policies = (
+            self.session.query(Project2025Policy)
+            .filter(Project2025Policy.status == "active")
+            .order_by(Project2025Policy.last_checked.desc())
+            .limit(limit)
+            .all()
+        )
 
         alerts = []
         for policy in policies:
@@ -273,19 +286,25 @@ class Project2025Tracker:
             for leg_id in leg_ids[:3]:  # Limit to 3
                 leg = self.session.query(Legislation).get(leg_id)
                 if leg:
-                    matched_legislation.append({
-                        "id": leg.id,
-                        "citation": leg.citation,
-                        "title": leg.title[:100] if leg.title else "",
-                    })
+                    matched_legislation.append(
+                        {
+                            "id": leg.id,
+                            "citation": leg.citation,
+                            "title": leg.title[:100] if leg.title else "",
+                        }
+                    )
 
-            alerts.append({
-                "policy_id": policy.id,
-                "agency": policy.agency,
-                "proposal": policy.proposal_summary or policy.proposal_text[:200],
-                "matched_legislation": matched_legislation,
-                "eo_count": len(eo_ids),
-                "last_checked": policy.last_checked.isoformat() if policy.last_checked else None,
-            })
+            alerts.append(
+                {
+                    "policy_id": policy.id,
+                    "agency": policy.agency,
+                    "proposal": policy.proposal_summary or policy.proposal_text[:200],
+                    "matched_legislation": matched_legislation,
+                    "eo_count": len(eo_ids),
+                    "last_checked": policy.last_checked.isoformat()
+                    if policy.last_checked
+                    else None,
+                }
+            )
 
         return alerts

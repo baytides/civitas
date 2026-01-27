@@ -109,13 +109,15 @@ class SCOTUSClient:
             if not pdf_href.startswith("http"):
                 pdf_href = self.BASE_URL + pdf_href
 
-            opinions.append(SCOTUSListingItem(
-                case_name=case_name,
-                docket_number=docket,
-                decision_date=decision_date,
-                pdf_url=pdf_href,
-                term=term,
-            ))
+            opinions.append(
+                SCOTUSListingItem(
+                    case_name=case_name,
+                    docket_number=docket,
+                    decision_date=decision_date,
+                    pdf_url=pdf_href,
+                    term=term,
+                )
+            )
 
         return opinions
 

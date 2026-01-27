@@ -109,26 +109,33 @@ class ImplementationTracker:
         total = self.session.query(Project2025Policy).count()
 
         by_status = {}
-        for status in [self.STATUS_NOT_STARTED, self.STATUS_IN_PROGRESS,
-                       self.STATUS_COMPLETED, self.STATUS_BLOCKED, self.STATUS_REVERSED]:
-            count = self.session.query(Project2025Policy).filter(
-                Project2025Policy.status == status
-            ).count()
+        for status in [
+            self.STATUS_NOT_STARTED,
+            self.STATUS_IN_PROGRESS,
+            self.STATUS_COMPLETED,
+            self.STATUS_BLOCKED,
+            self.STATUS_REVERSED,
+        ]:
+            count = (
+                self.session.query(Project2025Policy)
+                .filter(Project2025Policy.status == status)
+                .count()
+            )
             by_status[status] = count
 
         # By agency
-        by_agency = self.session.query(
-            Project2025Policy.agency,
-            func.count(Project2025Policy.id)
-        ).group_by(Project2025Policy.agency).all()
+        by_agency = (
+            self.session.query(Project2025Policy.agency, func.count(Project2025Policy.id))
+            .group_by(Project2025Policy.agency)
+            .all()
+        )
 
         return {
             "total_objectives": total,
             "by_status": by_status,
             "by_agency": {agency: count for agency, count in by_agency},
             "completion_percentage": (
-                (by_status.get(self.STATUS_COMPLETED, 0) / total * 100)
-                if total > 0 else 0
+                (by_status.get(self.STATUS_COMPLETED, 0) / total * 100) if total > 0 else 0
             ),
             "as_of": datetime.now(UTC).isoformat(),
         }
@@ -158,12 +165,14 @@ class ImplementationTracker:
         for policy in policies:
             score = self._calculate_match_score(eo_text, policy)
             if score > 0.3:  # Threshold for relevance
-                matches.append({
-                    "policy_id": policy.id,
-                    "agency": policy.agency,
-                    "proposal": policy.proposal_text[:200],
-                    "confidence": score,
-                })
+                matches.append(
+                    {
+                        "policy_id": policy.id,
+                        "agency": policy.agency,
+                        "proposal": policy.proposal_text[:200],
+                        "confidence": score,
+                    }
+                )
 
         return sorted(matches, key=lambda x: x["confidence"], reverse=True)
 
@@ -178,28 +187,34 @@ class ImplementationTracker:
         """
         from civitas.db.models import FederalRegisterDocument, Project2025Policy
 
-        doc = self.session.query(FederalRegisterDocument).filter_by(
-            document_number=doc_number
-        ).first()
+        doc = (
+            self.session.query(FederalRegisterDocument)
+            .filter_by(document_number=doc_number)
+            .first()
+        )
 
         if not doc:
             return []
 
         doc_text = f"{doc.title} {doc.abstract or ''}"
-        policies = self.session.query(Project2025Policy).filter(
-            Project2025Policy.agency.ilike(f"%{doc.agencies[0] if doc.agencies else ''}%")
-        ).all()
+        policies = (
+            self.session.query(Project2025Policy)
+            .filter(Project2025Policy.agency.ilike(f"%{doc.agencies[0] if doc.agencies else ''}%"))
+            .all()
+        )
 
         matches = []
         for policy in policies:
             score = self._calculate_match_score(doc_text, policy)
             if score > 0.3:
-                matches.append({
-                    "policy_id": policy.id,
-                    "agency": policy.agency,
-                    "proposal": policy.proposal_text[:200],
-                    "confidence": score,
-                })
+                matches.append(
+                    {
+                        "policy_id": policy.id,
+                        "agency": policy.agency,
+                        "proposal": policy.proposal_text[:200],
+                        "confidence": score,
+                    }
+                )
 
         return sorted(matches, key=lambda x: x["confidence"], reverse=True)
 
@@ -312,28 +327,30 @@ class ImplementationTracker:
 
         since = date.today() - timedelta(days=days)
 
-        implementations = self.session.query(P2025Implementation).filter(
-            P2025Implementation.implementation_date >= since
-        ).order_by(
-            P2025Implementation.implementation_date.desc()
-        ).limit(limit).all()
+        implementations = (
+            self.session.query(P2025Implementation)
+            .filter(P2025Implementation.implementation_date >= since)
+            .order_by(P2025Implementation.implementation_date.desc())
+            .limit(limit)
+            .all()
+        )
 
         results = []
         for impl in implementations:
-            policy = self.session.query(Project2025Policy).filter_by(
-                id=impl.policy_id
-            ).first()
+            policy = self.session.query(Project2025Policy).filter_by(id=impl.policy_id).first()
 
-            results.append({
-                "id": impl.id,
-                "policy_id": impl.policy_id,
-                "agency": policy.agency if policy else "Unknown",
-                "proposal": policy.proposal_text[:200] if policy else "",
-                "action_type": impl.action_type,
-                "action_reference": impl.action_reference,
-                "date": impl.implementation_date.isoformat(),
-                "status": impl.status,
-            })
+            results.append(
+                {
+                    "id": impl.id,
+                    "policy_id": impl.policy_id,
+                    "agency": policy.agency if policy else "Unknown",
+                    "proposal": policy.proposal_text[:200] if policy else "",
+                    "action_type": impl.action_type,
+                    "action_reference": impl.action_reference,
+                    "date": impl.implementation_date.isoformat(),
+                    "status": impl.status,
+                }
+            )
 
         return results
 
@@ -345,32 +362,40 @@ class ImplementationTracker:
         """
         from civitas.db.models import LegalChallenge, Project2025Policy
 
-        policies = self.session.query(Project2025Policy).filter(
-            Project2025Policy.status == self.STATUS_BLOCKED
-        ).all()
+        policies = (
+            self.session.query(Project2025Policy)
+            .filter(Project2025Policy.status == self.STATUS_BLOCKED)
+            .all()
+        )
 
         results = []
         for policy in policies:
             # Get associated legal challenges
-            challenges = self.session.query(LegalChallenge).filter(
-                LegalChallenge.p2025_policy_id == policy.id,
-                LegalChallenge.status.in_(["won", "injunction_granted"])
-            ).all()
+            challenges = (
+                self.session.query(LegalChallenge)
+                .filter(
+                    LegalChallenge.p2025_policy_id == policy.id,
+                    LegalChallenge.status.in_(["won", "injunction_granted"]),
+                )
+                .all()
+            )
 
-            results.append({
-                "policy_id": policy.id,
-                "agency": policy.agency,
-                "proposal": policy.proposal_text[:200],
-                "challenges": [
-                    {
-                        "case": c.case_citation,
-                        "court": c.court_level,
-                        "status": c.status,
-                        "outcome": c.outcome_summary,
-                    }
-                    for c in challenges
-                ],
-            })
+            results.append(
+                {
+                    "policy_id": policy.id,
+                    "agency": policy.agency,
+                    "proposal": policy.proposal_text[:200],
+                    "challenges": [
+                        {
+                            "case": c.case_citation,
+                            "court": c.court_level,
+                            "status": c.status,
+                            "outcome": c.outcome_summary,
+                        }
+                        for c in challenges
+                    ],
+                }
+            )
 
         return results
 
@@ -385,13 +410,20 @@ class ImplementationTracker:
         """
         from civitas.db.models import Project2025Policy
 
-        policies = self.session.query(Project2025Policy).filter(
-            Project2025Policy.agency.ilike(f"%{agency}%")
-        ).all()
+        policies = (
+            self.session.query(Project2025Policy)
+            .filter(Project2025Policy.agency.ilike(f"%{agency}%"))
+            .all()
+        )
 
         by_status = {}
-        for status in [self.STATUS_NOT_STARTED, self.STATUS_IN_PROGRESS,
-                       self.STATUS_COMPLETED, self.STATUS_BLOCKED, self.STATUS_REVERSED]:
+        for status in [
+            self.STATUS_NOT_STARTED,
+            self.STATUS_IN_PROGRESS,
+            self.STATUS_COMPLETED,
+            self.STATUS_BLOCKED,
+            self.STATUS_REVERSED,
+        ]:
             by_status[status] = sum(1 for p in policies if p.status == status)
 
         return {
@@ -399,8 +431,7 @@ class ImplementationTracker:
             "total_objectives": len(policies),
             "by_status": by_status,
             "completion_percentage": (
-                (by_status.get(self.STATUS_COMPLETED, 0) / len(policies) * 100)
-                if policies else 0
+                (by_status.get(self.STATUS_COMPLETED, 0) / len(policies) * 100) if policies else 0
             ),
             "objectives": [
                 {
@@ -426,21 +457,21 @@ class ImplementationTracker:
 
         since = date.today() - timedelta(days=days)
 
-        eos = self.session.query(ExecutiveOrder).filter(
-            ExecutiveOrder.signing_date >= since
-        ).all()
+        eos = self.session.query(ExecutiveOrder).filter(ExecutiveOrder.signing_date >= since).all()
 
         results = []
         for eo in eos:
             matches = self.match_executive_order(eo.id)
             if matches:
-                results.append({
-                    "eo_id": eo.id,
-                    "eo_number": eo.executive_order_number,
-                    "title": eo.title,
-                    "date": eo.signing_date.isoformat() if eo.signing_date else None,
-                    "matches": matches[:5],  # Top 5 matches
-                })
+                results.append(
+                    {
+                        "eo_id": eo.id,
+                        "eo_number": eo.executive_order_number,
+                        "title": eo.title,
+                        "date": eo.signing_date.isoformat() if eo.signing_date else None,
+                        "matches": matches[:5],  # Top 5 matches
+                    }
+                )
 
         return results
 
@@ -488,10 +519,7 @@ class ImplementationTracker:
         # Get all policies grouped by agency
         policies = self.session.query(Project2025Policy).limit(100).all()
 
-        policy_summaries = [
-            f"ID {p.id} ({p.agency}): {p.proposal_text[:150]}"
-            for p in policies
-        ]
+        policy_summaries = [f"ID {p.id} ({p.agency}): {p.proposal_text[:150]}" for p in policies]
 
         system_prompt = """You are an expert at matching government actions to Project 2025 policy objectives.
 
@@ -553,10 +581,14 @@ Which P2025 objectives does this action implement or advance?"""
 
         for obj in observer_data:
             # Try to match by content
-            existing = self.session.query(Project2025Policy).filter(
-                Project2025Policy.agency.ilike(f"%{obj.get('agency', '')}%"),
-                Project2025Policy.proposal_text.ilike(f"%{obj.get('title', '')[:50]}%")
-            ).first()
+            existing = (
+                self.session.query(Project2025Policy)
+                .filter(
+                    Project2025Policy.agency.ilike(f"%{obj.get('agency', '')}%"),
+                    Project2025Policy.proposal_text.ilike(f"%{obj.get('title', '')[:50]}%"),
+                )
+                .first()
+            )
 
             if existing:
                 # Update status if observer has newer info

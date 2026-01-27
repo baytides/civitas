@@ -143,10 +143,10 @@ class ResistanceRecommender:
 
         system_prompt = f"""You are a legal and political strategist generating actionable recommendations for resisting a policy.
 
-TIER: {tier_info['name']}
-DESCRIPTION: {tier_info['description']}
-AVAILABLE TOOLS: {', '.join(tier_info['tools'])}
-ACTION TYPES: {', '.join(tier_info['action_types'])}
+TIER: {tier_info["name"]}
+DESCRIPTION: {tier_info["description"]}
+AVAILABLE TOOLS: {", ".join(tier_info["tools"])}
+ACTION TYPES: {", ".join(tier_info["action_types"])}
 
 Generate specific, actionable recommendations. For each recommendation include:
 - action_type: One of the allowed action types
@@ -162,7 +162,7 @@ Generate specific, actionable recommendations. For each recommendation include:
 
 Respond in JSON format with an array of recommendations."""
 
-        user_prompt = f"""Generate {tier_info['name']} recommendations for this P2025 policy:
+        user_prompt = f"""Generate {tier_info["name"]} recommendations for this P2025 policy:
 
 AGENCY: {policy.agency}
 SECTION: {policy.section}
@@ -217,8 +217,12 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
             time_sensitivity=rec.get("time_sensitivity", "soon"),
             resources_required=rec.get("resources_required", "medium"),
             action_steps=json.dumps(rec.get("action_steps", [])),
-            model_complaint=rec.get("model_text") if "challenge" in rec.get("action_type", "") else None,
-            model_legislation=rec.get("model_text") if "legislation" in rec.get("action_type", "") else None,
+            model_complaint=rec.get("model_text")
+            if "challenge" in rec.get("action_type", "")
+            else None,
+            model_legislation=rec.get("model_text")
+            if "legislation" in rec.get("action_type", "")
+            else None,
             ai_model_version=self.ollama_model,
             ai_confidence_score=rec.get("confidence", 0.7),
         )
@@ -246,9 +250,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
                 Project2025Policy.agency.ilike(f"%{category}%")
             )
 
-        recs = query.order_by(
-            ResistanceRecommendation.likelihood_of_success.desc()
-        ).limit(20).all()
+        recs = query.order_by(ResistanceRecommendation.likelihood_of_success.desc()).limit(20).all()
 
         return [
             {
@@ -274,11 +276,16 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
         """
         from civitas.db.models import ResistanceRecommendation
 
-        recs = self.session.query(ResistanceRecommendation).filter(
-            ResistanceRecommendation.action_type == action_type,
-            ResistanceRecommendation.model_complaint.isnot(None) |
-            ResistanceRecommendation.model_legislation.isnot(None),
-        ).limit(20).all()
+        recs = (
+            self.session.query(ResistanceRecommendation)
+            .filter(
+                ResistanceRecommendation.action_type == action_type,
+                ResistanceRecommendation.model_complaint.isnot(None)
+                | ResistanceRecommendation.model_legislation.isnot(None),
+            )
+            .limit(20)
+            .all()
+        )
 
         return [
             {
@@ -326,9 +333,15 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
                 results = self.generate_recommendations(policy.id)
 
                 if "recommendations" in results:
-                    stats["tier_1_count"] += len(results["recommendations"].get("tier_1_immediate", []))
-                    stats["tier_2_count"] += len(results["recommendations"].get("tier_2_congressional", []))
-                    stats["tier_3_count"] += len(results["recommendations"].get("tier_3_presidential", []))
+                    stats["tier_1_count"] += len(
+                        results["recommendations"].get("tier_1_immediate", [])
+                    )
+                    stats["tier_2_count"] += len(
+                        results["recommendations"].get("tier_2_congressional", [])
+                    )
+                    stats["tier_3_count"] += len(
+                        results["recommendations"].get("tier_3_presidential", [])
+                    )
 
                 stats["processed"] += 1
 

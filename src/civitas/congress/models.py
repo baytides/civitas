@@ -151,9 +151,7 @@ class MemberDetail(BaseModel):
     birth_year: int | None = Field(default=None, alias="birthYear")
     party_history: list[dict[str, Any]] | None = Field(default=None, alias="partyHistory")
     terms: list[MemberTerm] | None = None
-    sponsored_legislation: dict[str, Any] | None = Field(
-        default=None, alias="sponsoredLegislation"
-    )
+    sponsored_legislation: dict[str, Any] | None = Field(default=None, alias="sponsoredLegislation")
     model_config = ConfigDict(populate_by_name=True)
 
     @property

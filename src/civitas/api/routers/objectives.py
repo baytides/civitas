@@ -125,6 +125,32 @@ async def get_objective_stats(
     )
     by_category = {cat: count for cat, count in category_counts}
 
+    # By category and status
+    category_status_counts = (
+        db.query(
+            Project2025Policy.category,
+            Project2025Policy.status,
+            func.count(Project2025Policy.id),
+        )
+        .group_by(Project2025Policy.category, Project2025Policy.status)
+        .all()
+    )
+    by_category_status: dict[str, dict[str, int]] = {}
+    for category, status, count in category_status_counts:
+        normalized = normalize_status(status)
+        category_key = category or "unknown"
+        if category_key not in by_category_status:
+            by_category_status[category_key] = {}
+        by_category_status[category_key][normalized] = (
+            by_category_status[category_key].get(normalized, 0) + count
+        )
+
+    for category_key, status_counts in by_category_status.items():
+        if "completed" in status_counts and "enacted" not in status_counts:
+            status_counts["enacted"] = status_counts["completed"]
+        if "enacted" in status_counts and "completed" not in status_counts:
+            status_counts["completed"] = status_counts["enacted"]
+
     # By priority
     priority_counts = (
         db.query(Project2025Policy.priority, func.count(Project2025Policy.id))
@@ -153,6 +179,7 @@ async def get_objective_stats(
         total=total,
         by_status=by_status,
         by_category=by_category,
+        by_category_status=by_category_status,
         by_priority=by_priority,
         by_timeline=by_timeline,
         completion_percentage=round(completion_percentage, 1),

@@ -443,10 +443,10 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
                 </Badge>
               </div>
 
-              <h3 className="text-lg font-semibold mb-2">
+              <h3 className="text-lg font-semibold mb-2 break-words">
                 {objective.agency}: {snakeToTitle(objective.action_type)}
               </h3>
-              <p className="text-sm text-muted-foreground line-clamp-2">
+              <p className="text-sm text-muted-foreground whitespace-normal break-words">
                 {objective.proposal_summary || objective.proposal_text}
               </p>
 

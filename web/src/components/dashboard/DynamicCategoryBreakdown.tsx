@@ -22,6 +22,7 @@ interface ObjectiveStats {
   total: number;
   by_status: Record<string, number>;
   by_category: Record<string, number>;
+  by_category_status?: Record<string, Record<string, number>>;
   by_priority: Record<string, number>;
   by_timeline: Record<string, number>;
   completion_percentage: number;
@@ -88,16 +89,31 @@ export function DynamicCategoryBreakdown() {
 
           // Convert by_category to array format
           // Note: We only have totals per category, not status breakdown per category
-          const categoryList: CategoryData[] = Object.entries(stats.by_category).map(([slug, total]) => ({
-            name: categoryDisplayNames[slug] || slug.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
-            slug,
-            total: total as number,
-            // We don't have per-category status breakdown from API, so set to 0
-            proposed: total as number, // All are proposed currently
-            enacted: 0,
-            inProgress: 0,
-            blocked: 0,
-          }));
+          const categoryList: CategoryData[] = Object.entries(stats.by_category).map(
+            ([slug, total]) => {
+              const statusCounts = stats.by_category_status?.[slug] || {};
+              const enacted = statusCounts.enacted || statusCounts.completed || 0;
+              const inProgress = statusCounts.in_progress || 0;
+              const blocked = statusCounts.blocked || 0;
+              const proposed =
+                statusCounts.proposed || Math.max((total as number) - enacted - inProgress - blocked, 0);
+
+              return {
+                name:
+                  categoryDisplayNames[slug] ||
+                  slug
+                    .split("_")
+                    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(" "),
+                slug,
+                total: total as number,
+                proposed,
+                enacted,
+                inProgress,
+                blocked,
+              };
+            }
+          );
 
           // Sort by total descending
           categoryList.sort((a, b) => b.total - a.total);
@@ -172,9 +188,10 @@ export function DynamicCategoryBreakdown() {
       </CardHeader>
       <CardContent className="space-y-4">
         {categories.map((category) => {
-          const implementedPercent = category.total > 0
-            ? Math.round((category.enacted / category.total) * 100)
-            : 0;
+          const implementedPercent =
+            category.total > 0
+              ? Math.round(((category.enacted + category.inProgress * 0.5) / category.total) * 100)
+              : 0;
 
           return (
             <Link

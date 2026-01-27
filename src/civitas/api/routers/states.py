@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -27,6 +29,33 @@ def get_db(request: Request) -> Session:
 # State name mapping
 STATE_NAMES = OpenStatesClient.STATES
 
+STATE_NAME_ALIASES: dict[str, str] = {}
+for code, name in STATE_NAMES.items():
+    lowered = name.lower()
+    STATE_NAME_ALIASES[lowered] = code
+    STATE_NAME_ALIASES[lowered.replace(" ", "_")] = code
+    STATE_NAME_ALIASES[lowered.replace(" ", "-")] = code
+
+
+def normalize_jurisdiction(value: str | None) -> str | None:
+    if not value:
+        return None
+    normalized = value.strip().lower()
+    if normalized in STATE_NAMES:
+        return normalized
+    return STATE_NAME_ALIASES.get(normalized)
+
+
+def jurisdiction_aliases(code: str) -> list[str]:
+    aliases = {code}
+    name = STATE_NAMES.get(code)
+    if name:
+        lowered = name.lower()
+        aliases.add(lowered)
+        aliases.add(lowered.replace(" ", "_"))
+        aliases.add(lowered.replace(" ", "-"))
+    return list(aliases)
+
 
 @router.get("/states", response_model=StateList)
 async def list_states(
@@ -39,7 +68,11 @@ async def list_states(
         .group_by(Legislation.jurisdiction)
         .all()
     )
-    bill_count_map = {j: c for j, c in bill_counts}
+    bill_count_map: dict[str, int] = defaultdict(int)
+    for jurisdiction, count in bill_counts:
+        code = normalize_jurisdiction(jurisdiction)
+        if code:
+            bill_count_map[code] += count
 
     # Get legislator counts by state
     legislator_counts = (
@@ -47,7 +80,11 @@ async def list_states(
         .group_by(Legislator.jurisdiction)
         .all()
     )
-    legislator_count_map = {j: c for j, c in legislator_counts}
+    legislator_count_map: dict[str, int] = defaultdict(int)
+    for jurisdiction, count in legislator_counts:
+        code = normalize_jurisdiction(jurisdiction)
+        if code:
+            legislator_count_map[code] += count
 
     # Get resistance action counts by state
     resistance_counts = (
@@ -55,7 +92,11 @@ async def list_states(
         .group_by(StateResistanceAction.state_code)
         .all()
     )
-    resistance_count_map = {code: count for code, count in resistance_counts}
+    resistance_count_map: dict[str, int] = defaultdict(int)
+    for code, count in resistance_counts:
+        if not code:
+            continue
+        resistance_count_map[code.lower()] += count
 
     # Build state list
     items = []
@@ -88,8 +129,9 @@ async def get_state(
         raise HTTPException(status_code=404, detail="State not found")
 
     # Get counts
-    bill_count = db.query(Legislation).filter(Legislation.jurisdiction == code).count()
-    legislator_count = db.query(Legislator).filter(Legislator.jurisdiction == code).count()
+    aliases = jurisdiction_aliases(code)
+    bill_count = db.query(Legislation).filter(Legislation.jurisdiction.in_(aliases)).count()
+    legislator_count = db.query(Legislator).filter(Legislator.jurisdiction.in_(aliases)).count()
     resistance_action_count = (
         db.query(StateResistanceAction).filter(StateResistanceAction.state_code == code).count()
     )
@@ -97,7 +139,7 @@ async def get_state(
     # Get recent bills
     recent_bills = (
         db.query(Legislation)
-        .filter(Legislation.jurisdiction == code)
+        .filter(Legislation.jurisdiction.in_(aliases))
         .order_by(Legislation.introduced_date.desc().nullslast())
         .limit(10)
         .all()
@@ -106,7 +148,7 @@ async def get_state(
     # Get legislators
     legislators = (
         db.query(Legislator)
-        .filter(Legislator.jurisdiction == code)
+        .filter(Legislator.jurisdiction.in_(aliases))
         .order_by(Legislator.full_name)
         .limit(100)
         .all()
@@ -136,7 +178,7 @@ async def get_state(
             StateLegislatorBase(
                 id=legislator.id,
                 full_name=legislator.full_name,
-                chamber=legislator.chamber,
+                chamber=legislator.chamber or "unknown",
                 district=legislator.district,
                 party=legislator.party or "Unknown",
                 state=legislator.state or code.upper(),
@@ -161,7 +203,8 @@ async def get_state_bills(
     if code not in STATE_NAMES:
         raise HTTPException(status_code=404, detail="State not found")
 
-    query = db.query(Legislation).filter(Legislation.jurisdiction == code)
+    aliases = jurisdiction_aliases(code)
+    query = db.query(Legislation).filter(Legislation.jurisdiction.in_(aliases))
 
     if session:
         query = query.filter(Legislation.session == session)
@@ -213,7 +256,8 @@ async def get_state_legislators(
     if code not in STATE_NAMES:
         raise HTTPException(status_code=404, detail="State not found")
 
-    query = db.query(Legislator).filter(Legislator.jurisdiction == code)
+    aliases = jurisdiction_aliases(code)
+    query = db.query(Legislator).filter(Legislator.jurisdiction.in_(aliases))
 
     if chamber:
         query = query.filter(Legislator.chamber == chamber)
@@ -228,7 +272,7 @@ async def get_state_legislators(
             StateLegislatorBase(
                 id=legislator.id,
                 full_name=legislator.full_name,
-                chamber=legislator.chamber,
+                chamber=legislator.chamber or "unknown",
                 district=legislator.district,
                 party=legislator.party or "Unknown",
                 state=legislator.state or code.upper(),

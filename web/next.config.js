@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Required for Payload CMS
-    serverComponentsExternalPackages: ["payload"],
-  },
+  // Required for Payload CMS in Next.js 15
+  serverExternalPackages: ["payload"],
   images: {
     remotePatterns: [
       {

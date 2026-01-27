@@ -73,7 +73,7 @@ class AGLitigationScraper:
         "lower_court_amicus": "/amicus-briefs-lower-courts-2/amicus-briefs-lower-courts/",
         "settlements": "/settlements-and-enforcement-actions/searchable-list-of-settlements-1980-present/",
         "letters": "/letters-and-formal-comments/searchable-list-of-multistate-letters-and-formal-comments-2017-present/",
-        "ag_info": "/attorneys-general-by-state/",
+        "ag_info": "/ag-office-information/information-on-current-ags/",
     }
 
     # State name to code mapping
@@ -285,49 +285,65 @@ class AGLitigationScraper:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         counts = {}
+        errors = []
 
         # Federal lawsuits
-        lawsuits = list(self.get_federal_lawsuits())
-        counts["federal_lawsuits"] = len(lawsuits)
-        with open(output_dir / "federal_lawsuits.json", "w") as f:
-            json.dump(
-                [
-                    {
-                        "id": l.id,
-                        "title": l.title,
-                        "states": l.states_involved,
-                        "filing_date": l.filing_date.isoformat() if l.filing_date else None,
-                        "description": l.description,
-                    }
-                    for l in lawsuits
-                ],
-                f,
-                indent=2,
-            )
+        try:
+            lawsuits = list(self.get_federal_lawsuits())
+            counts["federal_lawsuits"] = len(lawsuits)
+            with open(output_dir / "federal_lawsuits.json", "w") as f:
+                json.dump(
+                    [
+                        {
+                            "id": l.id,
+                            "title": l.title,
+                            "states": l.states_involved,
+                            "filing_date": l.filing_date.isoformat() if l.filing_date else None,
+                            "description": l.description,
+                        }
+                        for l in lawsuits
+                    ],
+                    f,
+                    indent=2,
+                )
+        except Exception as e:
+            errors.append(f"Federal lawsuits: {e}")
+            counts["federal_lawsuits"] = 0
 
         # SCOTUS amicus
-        briefs = list(self.get_scotus_amicus())
-        counts["scotus_amicus"] = len(briefs)
-        with open(output_dir / "scotus_amicus.json", "w") as f:
-            json.dump(
-                [
-                    {
-                        "id": b.id,
-                        "case_name": b.case_name,
-                        "court": b.court,
-                        "states": b.states_involved,
-                        "filing_date": b.filing_date.isoformat() if b.filing_date else None,
-                    }
-                    for b in briefs
-                ],
-                f,
-                indent=2,
-            )
+        try:
+            briefs = list(self.get_scotus_amicus())
+            counts["scotus_amicus"] = len(briefs)
+            with open(output_dir / "scotus_amicus.json", "w") as f:
+                json.dump(
+                    [
+                        {
+                            "id": b.id,
+                            "case_name": b.case_name,
+                            "court": b.court,
+                            "states": b.states_involved,
+                            "filing_date": b.filing_date.isoformat() if b.filing_date else None,
+                        }
+                        for b in briefs
+                    ],
+                    f,
+                    indent=2,
+                )
+        except Exception as e:
+            errors.append(f"SCOTUS amicus: {e}")
+            counts["scotus_amicus"] = 0
 
         # Current AGs
-        ags = self.get_current_ags()
-        counts["attorneys_general"] = len(ags)
-        with open(output_dir / "current_ags.json", "w") as f:
-            json.dump(ags, f, indent=2)
+        try:
+            ags = self.get_current_ags()
+            counts["attorneys_general"] = len(ags)
+            with open(output_dir / "current_ags.json", "w") as f:
+                json.dump(ags, f, indent=2)
+        except Exception as e:
+            errors.append(f"Current AGs: {e}")
+            counts["attorneys_general"] = 0
+
+        if errors:
+            counts["errors"] = errors
 
         return counts

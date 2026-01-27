@@ -1,92 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn, formatDate, snakeToTitle } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn, formatDate } from "@/lib/utils";
 
-// Mock data
-const mockTimelineEvents = [
-  {
-    id: "1",
-    date: "2025-01-26",
-    eventType: "executive_order",
-    title: "Executive Order on Federal Workforce Restructuring",
-    description:
-      "President signs executive order directing review of all federal agencies for potential consolidation and workforce reduction.",
-    relatedObjectives: ["gov-1", "ed-1"],
-    threatLevel: "critical",
-    sourceUrl: "#",
-  },
-  {
-    id: "2",
-    date: "2025-01-25",
-    eventType: "court_case",
-    title: "Ninth Circuit Grants Emergency Stay",
-    description:
-      "Appeals court blocks implementation of immigration enforcement expansion pending full review.",
-    relatedObjectives: ["imm-1"],
-    threatLevel: "moderate",
-    sourceUrl: "#",
-  },
-  {
-    id: "3",
-    date: "2025-01-24",
-    eventType: "legislation",
-    title: "H.R. 1234 Passes Committee",
-    description:
-      "Federal Agency Accountability Act advances to full House floor vote, would eliminate key oversight requirements.",
-    relatedObjectives: ["gov-1"],
-    threatLevel: "high",
-    sourceUrl: "#",
-  },
-  {
-    id: "4",
-    date: "2025-01-23",
-    eventType: "executive_order",
-    title: "DEI Programs Elimination Order",
-    description:
-      "Executive order requires termination of all federal diversity, equity, and inclusion programs within 60 days.",
-    relatedObjectives: ["cr-1"],
-    threatLevel: "critical",
-    sourceUrl: "#",
-  },
-  {
-    id: "5",
-    date: "2025-01-22",
-    eventType: "state_action",
-    title: "California Passes Sanctuary Protection Act",
-    description:
-      "State legislature passes comprehensive protection bill limiting state cooperation with federal immigration enforcement.",
-    relatedObjectives: ["imm-1"],
-    threatLevel: "moderate",
-    sourceUrl: "#",
-  },
-  {
-    id: "6",
-    date: "2025-01-21",
-    eventType: "appointment",
-    title: "New EPA Administrator Confirmed",
-    description:
-      "Senate confirms new EPA administrator who has pledged to 'streamline' environmental regulations.",
-    relatedObjectives: ["env-1"],
-    threatLevel: "high",
-    sourceUrl: "#",
-  },
-  {
-    id: "7",
-    date: "2025-01-20",
-    eventType: "executive_order",
-    title: "Day One Executive Orders",
-    description:
-      "Multiple executive orders signed on inauguration day affecting immigration, environment, and federal workforce.",
-    relatedObjectives: ["imm-1", "env-1", "gov-1"],
-    threatLevel: "critical",
-    sourceUrl: "#",
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+interface APIExecutiveOrder {
+  id: number;
+  document_number: string;
+  executive_order_number: number | null;
+  title: string;
+  signing_date: string | null;
+  publication_date: string;
+  president: string | null;
+  abstract: string | null;
+}
+
+interface TimelineEvent {
+  id: string;
+  date: string;
+  eventType: string;
+  title: string;
+  description: string;
+  sourceUrl?: string;
+}
 
 const eventTypeConfig = {
   executive_order: {
@@ -116,20 +58,38 @@ const eventTypeConfig = {
   },
 };
 
-const threatLevelColors = {
-  critical: "border-l-red-500",
-  high: "border-l-orange-500",
-  elevated: "border-l-yellow-500",
-  moderate: "border-l-green-500",
-};
-
 export default function TimelinePage() {
+  const [events, setEvents] = useState<TimelineEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("all");
-  const [filterThreat, setFilterThreat] = useState<string>("all");
 
-  const filteredEvents = mockTimelineEvents.filter((event) => {
+  useEffect(() => {
+    async function fetchTimeline() {
+      try {
+        // Fetch executive orders as the primary timeline source
+        const eoResponse = await fetch(`${API_BASE}/executive-orders?limit=50`);
+        if (eoResponse.ok) {
+          const eoData = await eoResponse.json();
+          const eoEvents: TimelineEvent[] = eoData.items.map((eo: APIExecutiveOrder) => ({
+            id: `eo-${eo.id}`,
+            date: eo.publication_date,
+            eventType: "executive_order",
+            title: eo.title,
+            description: eo.abstract || `Executive order published on ${eo.publication_date}`,
+            sourceUrl: `/executive-orders/${eo.id}`,
+          }));
+          setEvents(eoEvents);
+        }
+      } catch (error) {
+        console.error("Error fetching timeline:", error);
+      }
+      setLoading(false);
+    }
+    fetchTimeline();
+  }, []);
+
+  const filteredEvents = events.filter((event) => {
     if (filterType !== "all" && event.eventType !== filterType) return false;
-    if (filterThreat !== "all" && event.threatLevel !== filterThreat) return false;
     return true;
   });
 
@@ -144,13 +104,31 @@ export default function TimelinePage() {
     {} as Record<string, typeof filteredEvents>
   );
 
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Timeline</h1>
+          <p className="text-muted-foreground">
+            Track the chronological progression of policy changes
+          </p>
+        </div>
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Timeline</h1>
         <p className="text-muted-foreground">
-          Track the chronological progression of Project 2025 implementation
+          Track the chronological progression of executive actions and policy changes
         </p>
       </div>
 
@@ -158,7 +136,6 @@ export default function TimelinePage() {
       <Card className="mb-8">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Event Type Filter */}
             <fieldset className="min-w-0 border-0 p-0 m-0">
               <legend className="text-sm font-medium mb-2 block">
                 Event Type
@@ -185,50 +162,6 @@ export default function TimelinePage() {
                 ))}
               </div>
             </fieldset>
-
-            {/* Threat Level Filter */}
-            <fieldset className="min-w-0 border-0 p-0 m-0">
-              <legend className="text-sm font-medium mb-2 block">
-                Threat Level
-              </legend>
-              <div className="flex flex-wrap gap-2" role="group" aria-label="Threat level">
-                <Button
-                  variant={filterThreat === "all" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterThreat("all")}
-                  aria-pressed={filterThreat === "all"}
-                >
-                  All
-                </Button>
-                <Button
-                  variant={filterThreat === "critical" ? "default" : "outline"}
-                  size="sm"
-                  className={filterThreat === "critical" ? "bg-red-500 hover:bg-red-600" : ""}
-                  onClick={() => setFilterThreat("critical")}
-                  aria-pressed={filterThreat === "critical"}
-                >
-                  Critical
-                </Button>
-                <Button
-                  variant={filterThreat === "high" ? "default" : "outline"}
-                  size="sm"
-                  className={filterThreat === "high" ? "bg-orange-500 hover:bg-orange-600" : ""}
-                  onClick={() => setFilterThreat("high")}
-                  aria-pressed={filterThreat === "high"}
-                >
-                  High
-                </Button>
-                <Button
-                  variant={filterThreat === "moderate" ? "default" : "outline"}
-                  size="sm"
-                  className={filterThreat === "moderate" ? "bg-green-500 hover:bg-green-600" : ""}
-                  onClick={() => setFilterThreat("moderate")}
-                  aria-pressed={filterThreat === "moderate"}
-                >
-                  Moderate
-                </Button>
-              </div>
-            </fieldset>
           </div>
         </CardContent>
       </Card>
@@ -240,7 +173,9 @@ export default function TimelinePage() {
 
         {/* Events grouped by date */}
         <div className="space-y-8">
-          {Object.entries(groupedEvents).map(([date, events]) => (
+          {Object.entries(groupedEvents)
+            .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
+            .map(([date, dateEvents]) => (
             <div key={date}>
               {/* Date header */}
               <div className="relative flex items-center justify-center mb-4">
@@ -252,8 +187,8 @@ export default function TimelinePage() {
 
               {/* Events for this date */}
               <div className="space-y-4">
-                {events.map((event, index) => {
-                  const config = eventTypeConfig[event.eventType as keyof typeof eventTypeConfig];
+                {dateEvents.map((event, index) => {
+                  const config = eventTypeConfig[event.eventType as keyof typeof eventTypeConfig] || eventTypeConfig.executive_order;
                   const isEven = index % 2 === 0;
 
                   return (
@@ -271,12 +206,7 @@ export default function TimelinePage() {
                           isEven ? "md:col-start-1 md:pr-8" : "md:col-start-2 md:pl-8"
                         )}
                       >
-                        <Card
-                          className={cn(
-                            "border-l-4",
-                            threatLevelColors[event.threatLevel as keyof typeof threatLevelColors]
-                          )}
-                        >
+                        <Card className="border-l-4 border-l-purple-500">
                           <CardContent className="pt-4">
                             <div className="flex items-start gap-3">
                               <div className={cn("p-2 rounded-lg", config.color)}>
@@ -287,42 +217,19 @@ export default function TimelinePage() {
                                   <Badge variant="outline" className="text-xs">
                                     {config.label}
                                   </Badge>
-                                  <Badge
-                                    variant={event.threatLevel as "critical" | "high" | "elevated" | "moderate"}
-                                    className="text-xs"
-                                  >
-                                    {event.threatLevel.toUpperCase()}
-                                  </Badge>
                                 </div>
-                                <h3 className="font-semibold mb-1">{event.title}</h3>
-                                <p className="text-sm text-muted-foreground mb-3">
+                                <h3 className="font-semibold mb-1 line-clamp-2">{event.title}</h3>
+                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                                   {event.description}
                                 </p>
 
-                                {/* Related objectives */}
-                                {event.relatedObjectives.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mb-3">
-                                    {event.relatedObjectives.map((objId) => (
-                                      <Link
-                                        key={objId}
-                                        href={`/tracker/${objId}`}
-                                        className="text-xs text-primary hover:underline"
-                                      >
-                                        {objId}
-                                      </Link>
-                                    ))}
-                                  </div>
-                                )}
-
                                 {event.sourceUrl && (
-                                  <a
+                                  <Link
                                     href={event.sourceUrl}
-                                    className="text-xs text-muted-foreground hover:text-primary"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary hover:underline"
                                   >
-                                    View source →
-                                  </a>
+                                    View details →
+                                  </Link>
                                 )}
                               </div>
                             </div>
@@ -337,18 +244,15 @@ export default function TimelinePage() {
           ))}
         </div>
 
-        {filteredEvents.length === 0 && (
+        {filteredEvents.length === 0 && !loading && (
           <Card>
             <CardContent className="py-12 text-center">
               <p className="text-muted-foreground">
-                No events match your filters.
+                No events found.
               </p>
               <Button
                 variant="link"
-                onClick={() => {
-                  setFilterType("all");
-                  setFilterThreat("all");
-                }}
+                onClick={() => setFilterType("all")}
               >
                 Clear filters
               </Button>

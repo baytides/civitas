@@ -180,7 +180,12 @@ class CourtListenerClient:
         remaining = limit if limit is not None else None
         url = "/opinions/"
         while True:
-            response = self._get(url, params=params if url.startswith("/") else None)
+            try:
+                response = self._get(url, params=params if url.startswith("/") else None)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 404:
+                    break
+                raise
             payload = response.json()
 
             for item in payload.get("results", []):

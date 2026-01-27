@@ -24,6 +24,7 @@ from civitas.resistance.content import RESISTANCE_ORG_SECTIONS, RESISTANCE_TIERS
 router = APIRouter()
 _ANALYSIS_CACHE: dict[int, tuple[float, dict]] = {}
 _ANALYSIS_TTL_SECONDS = 60 * 60
+_ANALYSIS_DB_MAX_AGE_DAYS = 30
 
 
 def get_db(request: Request) -> Session:
@@ -162,7 +163,10 @@ async def get_analysis(
         analysis = cached[1]
     else:
         analyzer = ResistanceAnalyzer(db)
-        analysis = analyzer.analyze_policy(objective_id)
+        analysis = analyzer.analyze_or_load(
+            objective_id,
+            max_age_days=_ANALYSIS_DB_MAX_AGE_DAYS,
+        )
         _ANALYSIS_CACHE[objective_id] = (now, analysis)
 
     if analysis.get("error"):

@@ -1639,6 +1639,32 @@ def resistance_analyze(
         console.print("[dim](Higher = more vulnerable to legal challenge)[/dim]")
 
 
+@resistance_app.command("analyze-batch")
+def resistance_analyze_batch(
+    limit: int = typer.Option(100, "--limit", help="Max policies to analyze"),
+    refresh_days: int = typer.Option(30, "--refresh-days", help="Re-analyze if older than N days"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Generate cached expert-mode analysis for missing or stale policies."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.resistance import ResistanceAnalyzer
+
+    engine = get_engine(db_path)
+
+    console.print(
+        f"[bold blue]Generating expert analyses (limit={limit}, refresh_days={refresh_days})...[/bold blue]"
+    )
+    console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
+
+    with Session(engine) as session:
+        analyzer = ResistanceAnalyzer(session)
+        processed = analyzer.batch_analyze_cached(limit=limit, refresh_days=refresh_days)
+
+    console.print(f"[green]Cached analyses generated: {processed}[/green]")
+
+
 @resistance_app.command("recommend")
 def resistance_recommend(
     policy_id: int = typer.Argument(..., help="P2025 policy ID"),
@@ -1723,6 +1749,66 @@ def resistance_recommend(
                 console.print(f"      Type: {rec.get('action_type', 'unknown')}")
                 console.print(f"      {rec.get('description', '')[:100]}...")
                 console.print()
+
+
+@resistance_app.command("recommend-batch")
+def resistance_recommend_batch(
+    limit: int = typer.Option(100, "--limit", help="Max policies to process"),
+    tier: str | None = typer.Option(
+        None,
+        "-t",
+        "--tier",
+        help="Tier (tier_1_immediate, tier_2_congressional, tier_3_presidential)",
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Regenerate even if recommendations already exist"
+    ),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Generate resistance recommendations for policies missing recommendations."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Project2025Policy, ResistanceRecommendation, get_engine
+    from civitas.resistance import ResistanceRecommender
+
+    engine = get_engine(db_path)
+
+    console.print("[bold blue]Generating resistance recommendations in batch...[/bold blue]")
+    console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
+
+    with Session(engine) as session:
+        recommender = ResistanceRecommender(session)
+
+        if force:
+            policies = (
+                session.query(Project2025Policy)
+                .order_by(Project2025Policy.id)
+                .limit(limit)
+                .all()
+            )
+        else:
+            has_recs = (
+                session.query(ResistanceRecommendation.id)
+                .filter(ResistanceRecommendation.p2025_policy_id == Project2025Policy.id)
+                .exists()
+            )
+            policies = (
+                session.query(Project2025Policy)
+                .filter(~has_recs)
+                .order_by(Project2025Policy.id)
+                .limit(limit)
+                .all()
+            )
+
+        tiers = [tier] if tier else None
+        processed = 0
+        for policy in policies:
+            results = recommender.generate_recommendations(policy.id, include_tiers=tiers)
+            if results.get("error"):
+                continue
+            processed += 1
+
+    console.print(f"[green]Policies processed: {processed}[/green]")
 
 
 @resistance_app.command("scan")

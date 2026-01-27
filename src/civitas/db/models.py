@@ -717,6 +717,31 @@ class ResistanceRecommendation(Base):
 
 
 # =============================================================================
+# Resistance Analysis Cache
+# =============================================================================
+
+
+class ResistanceAnalysis(Base):
+    """Cached AI analysis for resistance expert mode."""
+
+    __tablename__ = "resistance_analyses"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    p2025_policy_id: Mapped[int] = mapped_column(
+        ForeignKey("project2025_policies.id"), index=True, unique=True
+    )
+
+    analysis_json: Mapped[str] = mapped_column(Text)
+    ai_model_version: Mapped[str] = mapped_column(String(50))
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (Index("ix_resistance_analysis_policy", "p2025_policy_id"),)
+
+
+# =============================================================================
 # Executive Actions (Executive Orders, Agency Rules)
 # =============================================================================
 

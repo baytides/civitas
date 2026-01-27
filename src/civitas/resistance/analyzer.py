@@ -7,7 +7,7 @@ counter-strategies.
 
 import json
 import os
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -147,6 +147,57 @@ class ResistanceAnalyzer:
         self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
         self.ollama_model = ollama_model or os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
 
+    def get_cached_analysis(
+        self,
+        policy_id: int,
+        max_age_days: int | None = None,
+    ) -> dict | None:
+        """Return cached analysis if available and not stale."""
+        from civitas.db.models import ResistanceAnalysis
+
+        analysis = (
+            self.session.query(ResistanceAnalysis)
+            .filter(ResistanceAnalysis.p2025_policy_id == policy_id)
+            .first()
+        )
+        if not analysis:
+            return None
+
+        if max_age_days is not None:
+            cutoff = datetime.now(UTC) - timedelta(days=max_age_days)
+            if analysis.generated_at and analysis.generated_at < cutoff:
+                return None
+
+        try:
+            return json.loads(analysis.analysis_json)
+        except json.JSONDecodeError:
+            return None
+
+    def store_analysis(self, policy_id: int, analysis: dict) -> None:
+        """Persist analysis for expert mode."""
+        from civitas.db.models import ResistanceAnalysis
+
+        serialized = json.dumps(analysis, ensure_ascii=True)
+        existing = (
+            self.session.query(ResistanceAnalysis)
+            .filter(ResistanceAnalysis.p2025_policy_id == policy_id)
+            .first()
+        )
+        if existing:
+            existing.analysis_json = serialized
+            existing.ai_model_version = analysis.get("model", self.ollama_model)
+            existing.generated_at = datetime.now(UTC)
+        else:
+            self.session.add(
+                ResistanceAnalysis(
+                    p2025_policy_id=policy_id,
+                    analysis_json=serialized,
+                    ai_model_version=analysis.get("model", self.ollama_model),
+                    generated_at=datetime.now(UTC),
+                )
+            )
+        self.session.commit()
+
     def _get_ollama_client(self):
         """Get Ollama client."""
         try:
@@ -155,11 +206,12 @@ class ResistanceAnalyzer:
             raise ImportError("Install ollama: pip install ollama")
         return ollama.Client(host=self.ollama_host)
 
-    def analyze_policy(self, policy_id: int) -> dict:
+    def analyze_policy(self, policy_id: int, persist: bool = False) -> dict:
         """Analyze a P2025 policy for legal vulnerabilities.
 
         Args:
             policy_id: Database ID of the P2025 policy
+            persist: Store analysis for expert mode cache
 
         Returns:
             Analysis dict with constitutional issues, precedents, and strategies
@@ -177,7 +229,51 @@ class ResistanceAnalyzer:
         # Use AI to analyze
         analysis = self._ai_analyze(policy, context)
 
+        if persist and not analysis.get("error"):
+            self.store_analysis(policy_id, analysis)
+
         return analysis
+
+    def analyze_or_load(self, policy_id: int, max_age_days: int | None = None) -> dict:
+        """Load cached analysis or generate a new one."""
+        cached = self.get_cached_analysis(policy_id, max_age_days=max_age_days)
+        if cached:
+            return cached
+        return self.analyze_policy(policy_id, persist=True)
+
+    def batch_analyze_cached(
+        self,
+        limit: int = 100,
+        refresh_days: int = 30,
+    ) -> int:
+        """Generate cached analysis for policies missing or stale."""
+        from civitas.db.models import Project2025Policy, ResistanceAnalysis
+
+        cutoff = datetime.now(UTC) - timedelta(days=refresh_days)
+
+        policies = (
+            self.session.query(Project2025Policy)
+            .outerjoin(
+                ResistanceAnalysis,
+                ResistanceAnalysis.p2025_policy_id == Project2025Policy.id,
+            )
+            .filter(
+                (ResistanceAnalysis.id.is_(None))
+                | (ResistanceAnalysis.generated_at.is_(None))
+                | (ResistanceAnalysis.generated_at < cutoff)
+            )
+            .order_by(Project2025Policy.id)
+            .limit(limit)
+            .all()
+        )
+
+        processed = 0
+        for policy in policies:
+            analysis = self.analyze_policy(policy.id, persist=True)
+            if analysis.get("error"):
+                continue
+            processed += 1
+        return processed
 
     def _gather_legal_context(self, policy) -> dict:
         """Gather relevant legal context for a policy."""

@@ -1,11 +1,15 @@
 const path = require("path");
 
+const defaultApiBase = "https://api.projectcivitas.com";
+const publicApiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+const fastApiUrl =
+  process.env.FASTAPI_URL ||
+  (publicApiUrl ? publicApiUrl.replace(/\/api\/v1\/?$/, "") : defaultApiBase);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: __dirname,
-  // Static export for Cloudflare Pages
-  output: "export",
-  // Required for Payload CMS in Next.js 15 (when not using static export)
+  // Required for Payload CMS in Next.js 15
   serverExternalPackages: ["payload"],
   webpack: (config) => {
     config.resolve.alias["@payload-config"] = path.resolve(
@@ -14,6 +18,7 @@ const nextConfig = {
     );
     return config;
   },
+  turbopack: {},
   // Skip trailing slash issues
   trailingSlash: true,
   images: {
@@ -29,7 +34,7 @@ const nextConfig = {
     return [
       {
         source: "/api/v1/:path*",
-        destination: `${process.env.FASTAPI_URL || "http://localhost:8000"}/api/v1/:path*`,
+        destination: `${fastApiUrl}/api/v1/:path*`,
       },
     ];
   },

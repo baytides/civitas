@@ -1,18 +1,14 @@
 # Deployment Guide for Project Civitas
 
-## Cloudflare Pages Deployment
+## Cloudflare Workers Deployment (OpenNext)
 
-The site deploys to Cloudflare Pages via GitHub Actions.
+The site deploys to Cloudflare Workers using the OpenNext adapter via GitHub Actions.
 
 ### Setup (One-Time)
 
-1. **Create Cloudflare Pages Project:**
-   - Go to Cloudflare Dashboard > Pages
-   - Create a new project named `civitas`
-   - Or use Wrangler CLI:
-     ```bash
-     npx wrangler pages project create civitas
-     ```
+1. **Create Cloudflare Worker:**
+   - Go to Cloudflare Dashboard > Workers & Pages
+   - Create a new Worker named `civitas`
 
 2. **Add GitHub Secrets:**
    Go to `github.com/baytides/civitas/settings/secrets/actions` and add:
@@ -20,7 +16,7 @@ The site deploys to Cloudflare Pages via GitHub Actions.
    - `CLOUDFLARE_ACCOUNT_ID` - Found in Cloudflare Dashboard URL or Overview page
 
 3. **Configure Custom Domain:**
-   - Go to Cloudflare Pages > civitas > Custom domains
+   - Go to Cloudflare Workers & Pages > civitas > Custom domains
    - Add `projectcivitas.com`
    - DNS will auto-configure since domain is on Cloudflare
 
@@ -32,21 +28,27 @@ Deployments happen automatically:
 
 ### Environment Variables
 
-Set these in Cloudflare Pages > civitas > Settings > Environment variables:
+Set these in Cloudflare Workers > civitas > Settings > Variables:
 
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `DATABASE_URI` | PostgreSQL connection string | Yes |
 | `PAYLOAD_SECRET` | Random secret for Payload CMS | Yes |
-| `NEXT_PUBLIC_API_URL` | Backend API URL | Optional |
+| `NEXT_PUBLIC_API_URL` | Backend API URL (browser) | Optional (defaults to `https://api.projectcivitas.com/api/v1`) |
+| `FASTAPI_URL` | Backend API URL (build-time rewrites) | Optional (defaults to `https://api.projectcivitas.com`) |
 | `OLLAMA_HOST` | Ollama API endpoint | Optional |
+
+### KV Cache (Recommended)
+
+OpenNext uses KV for incremental cache. Create a KV namespace and set the ID in
+`web/wrangler.jsonc` under `NEXT_CACHE_KV`.
 
 ### Manual Deploy
 
 ```bash
 cd web
-npm run build
-npx wrangler pages deploy .next --project-name=civitas
+npm run build:cloudflare
+npx wrangler deploy --config wrangler.jsonc
 ```
 
 ---
@@ -55,7 +57,7 @@ npx wrangler pages deploy .next --project-name=civitas
 
 - ✅ Code is on GitHub at `baytides/civitas`
 - ✅ Next.js app builds successfully
-- ✅ GitHub Actions workflow configured for Cloudflare Pages
+- ✅ GitHub Actions workflow configured for Cloudflare Workers
 - ⏳ Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` to GitHub Secrets
-- ⏳ Create Cloudflare Pages project
+- ⏳ Create Cloudflare Worker
 - ⏳ Configure custom domain

@@ -9,6 +9,7 @@ from civitas.db.models import (
     Base,
     CourtCase,
     LegalChallenge,
+    P2025Implementation,
     Project2025Policy,
     StateResistanceAction,
 )
@@ -62,8 +63,17 @@ def _setup_db(db_url: str) -> None:
         session.add(case)
         session.flush()
 
+        implementation = P2025Implementation(
+            policy_id=policy.id,
+            action_type="executive_order",
+            action_reference="EO 14001",
+            status="announced",
+        )
+        session.add(implementation)
+        session.flush()
+
         challenge = LegalChallenge(
-            p2025_policy_id=policy.id,
+            implementation_id=implementation.id,
             challenge_type="constitutional",
             legal_basis="First Amendment",
             court_level="scotus",

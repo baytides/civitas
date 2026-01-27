@@ -11,7 +11,12 @@ from civitas.api.schemas import (
     CourtCaseList,
     ObjectiveBase,
 )
-from civitas.db.models import CourtCase, LegalChallenge, Project2025Policy
+from civitas.db.models import (
+    CourtCase,
+    LegalChallenge,
+    P2025Implementation,
+    Project2025Policy,
+)
 
 router = APIRouter()
 
@@ -73,11 +78,39 @@ async def get_case(
     if not case:
         raise HTTPException(status_code=404, detail="Court case not found")
 
+    policy_id_rows = (
+        db.query(LegalChallenge.p2025_policy_id)
+        .filter(
+            LegalChallenge.court_case_id == case_id,
+            LegalChallenge.p2025_policy_id.isnot(None),
+        )
+        .all()
+    )
+    policy_ids = {row[0] for row in policy_id_rows if row[0]}
+
+    implementation_rows = (
+        db.query(LegalChallenge.implementation_id)
+        .filter(
+            LegalChallenge.court_case_id == case_id,
+            LegalChallenge.implementation_id.isnot(None),
+        )
+        .all()
+    )
+    implementation_ids = [row[0] for row in implementation_rows if row[0]]
+    if implementation_ids:
+        linked_policy_rows = (
+            db.query(P2025Implementation.policy_id)
+            .filter(P2025Implementation.id.in_(implementation_ids))
+            .all()
+        )
+        policy_ids.update({row[0] for row in linked_policy_rows if row[0]})
+
     linked_objectives = (
         db.query(Project2025Policy)
-        .join(LegalChallenge, LegalChallenge.p2025_policy_id == Project2025Policy.id)
-        .filter(LegalChallenge.court_case_id == case_id)
+        .filter(Project2025Policy.id.in_(policy_ids))
         .all()
+        if policy_ids
+        else []
     )
 
     return CourtCaseDetail(

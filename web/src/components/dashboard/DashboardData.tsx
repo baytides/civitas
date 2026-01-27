@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { StatsGrid } from "./StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 interface DashboardStats {
   totalPolicies: number;

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 
+from time import time
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -18,6 +20,8 @@ from civitas.api.schemas import (
 from civitas.db.models import Project2025Policy
 
 router = APIRouter()
+_METADATA_CACHE: tuple[float, ObjectiveMetadata] | None = None
+_METADATA_TTL_SECONDS = 60.0
 
 
 def get_db(request: Request) -> Session:
@@ -126,6 +130,11 @@ async def get_objective_metadata(
     db: Session = Depends(get_db),
 ) -> ObjectiveMetadata:
     """Get distinct metadata values for objective filters."""
+    global _METADATA_CACHE
+    now = time()
+    if _METADATA_CACHE and now - _METADATA_CACHE[0] < _METADATA_TTL_SECONDS:
+        return _METADATA_CACHE[1]
+
     categories = (
         db.query(Project2025Policy.category)
         .distinct()
@@ -151,12 +160,14 @@ async def get_objective_metadata(
         .all()
     )
 
-    return ObjectiveMetadata(
+    metadata = ObjectiveMetadata(
         categories=[c[0] for c in categories if c[0]],
         statuses=[s[0] for s in statuses if s[0]],
         priorities=[p[0] for p in priorities if p[0]],
         timelines=[t[0] for t in timelines if t[0]],
     )
+    _METADATA_CACHE = (now, metadata)
+    return metadata
 
 
 @router.get("/objectives/{objective_id}", response_model=ObjectiveDetail)

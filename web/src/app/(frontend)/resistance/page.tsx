@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, snakeToTitle } from "@/lib/utils";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 // =============================================================================
 // Types
@@ -138,7 +138,16 @@ const tierColors = {
     text: "text-blue-600",
     light: "bg-blue-50 dark:bg-blue-950/20",
   },
+  gray: {
+    border: "border-l-gray-400",
+    bg: "bg-gray-500",
+    text: "text-gray-600",
+    light: "bg-gray-50 dark:bg-gray-950/20",
+  },
 };
+
+const getTierColors = (color: string) =>
+  tierColors[color as keyof typeof tierColors] ?? tierColors.gray;
 
 // =============================================================================
 // Components
@@ -559,7 +568,7 @@ function ResistanceContent() {
           {hasTierData ? (
             <div className="grid md:grid-cols-3 gap-6">
               {tiers.map((tier) => {
-                const colors = tierColors[tier.color as keyof typeof tierColors];
+                const colors = getTierColors(tier.color);
                 const tierRecs = recommendationsByTier[tier.id] || [];
                 const hasPersonalized = tierRecs.length > 0;
 
@@ -625,7 +634,7 @@ function ResistanceContent() {
       {/* Tier Details */}
       <div className="space-y-8">
         {hasTierData ? tiers.map((tier) => {
-          const colors = tierColors[tier.color as keyof typeof tierColors];
+          const colors = getTierColors(tier.color);
           const tierRecs = recommendationsByTier[tier.id] || [];
           const filteredGeneralActions = selectedUrgency === "all"
             ? tier.general_actions

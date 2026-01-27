@@ -52,6 +52,15 @@ htmlcov/
 *.pem
 secrets.json
 
+# Cloudflare/OpenNext build output
+.open-next/
+web/.open-next/
+web/.wrangler/
+
+# Playwright artifacts
+web/test-results/
+web/playwright-report/
+
 # Jupyter
 .ipynb_checkpoints/
 data/

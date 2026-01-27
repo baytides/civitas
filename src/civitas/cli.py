@@ -273,6 +273,11 @@ def ingest_project2025(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
     enhanced: bool = typer.Option(True, "--enhanced/--basic", help="Use AI-enhanced extraction"),
     batch_size: int = typer.Option(10, "--batch-size", help="AI batch size (for enhanced mode)"),
+    update_statuses: bool = typer.Option(
+        True,
+        "--update-statuses/--no-update-statuses",
+        help="Update proposal statuses after ingestion based on matches",
+    ),
 ):
     """Parse and ingest Project 2025 Mandate for Leadership document.
 
@@ -351,6 +356,29 @@ def ingest_project2025(
     console.print(f"  Total proposals: {counts['proposals']}")
     console.print(f"  High priority: {counts['high_priority']}")
     console.print(f"  Day-one actions: {counts['day_one']}")
+
+    if update_statuses:
+        console.print("\n[dim]Updating proposal statuses based on matches...[/dim]")
+        from civitas.project2025 import Project2025Tracker
+
+        updated = 0
+        with Session(engine) as session:
+            tracker = Project2025Tracker(session)
+            policy_ids = [row[0] for row in session.query(Project2025Policy.id).all()]
+            for policy_id in policy_ids:
+                result = tracker.update_policy_matches(policy_id)
+                if "error" in result:
+                    continue
+                policy = session.get(Project2025Policy, policy_id)
+                if not policy:
+                    continue
+                leg_ids = json.loads(policy.matching_legislation_ids or "[]")
+                eo_ids = json.loads(policy.matching_eo_ids or "[]")
+                if (leg_ids or eo_ids) and policy.status != "in_progress":
+                    policy.status = "in_progress"
+                    updated += 1
+            session.commit()
+        console.print(f"  Updated to in_progress: {updated}")
 
 
 @ingest_app.command("uscode")

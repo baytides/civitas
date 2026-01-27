@@ -44,9 +44,39 @@ analysis = [
     "pandas>=2.0",
     "networkx>=3.0",
 ]
+# AI via Ollama (Llama on Azure)
 ai = [
-    "openai>=1.0",
-    "anthropic>=0.18",
+    "ollama>=0.4",
+]
+# Free Law Project tools (BSD-licensed)
+courts = [
+    "pdfplumber>=0.10",
+    "eyecite>=2.6",
+    "courts-db>=0.10",
+]
+# Azure cloud storage
+azure = [
+    "azure-storage-blob>=12.0",
+]
+# US state metadata
+civic = [
+    "us>=3.0",
+]
+# Open Civic Data tools
+openstates = [
+    "pyopenstates>=2.0",
+]
+# All optional dependencies
+all = [
+    "ollama>=0.4",
+    "pdfplumber>=0.10",
+    "eyecite>=2.6",
+    "courts-db>=0.10",
+    "azure-storage-blob>=12.0",
+    "us>=3.0",
+    "pandas>=2.0",
+    "networkx>=3.0",
+    "pyopenstates>=2.0",
 ]
 
 [project.scripts]

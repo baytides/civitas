@@ -1,4 +1,10 @@
-"""AI-powered natural language query interface for the Civitas database."""
+"""AI-powered natural language query interface for the Civitas database.
+
+Supports multiple AI backends:
+- Ollama (self-hosted Llama) - default, runs on Azure
+- Anthropic Claude (API-based)
+- OpenAI (API-based)
+"""
 
 from __future__ import annotations
 
@@ -18,6 +24,10 @@ from civitas.db.models import (
     LawCode,
     LawSection,
 )
+
+# Default Ollama configuration (Carl AI VM on Azure)
+DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_MODEL = "llama3.2"
 
 
 # SQL query templates for common operations
@@ -72,20 +82,30 @@ class CivitasAI:
         db_path: str = "civitas.db",
         ai_provider: Optional[str] = None,
         api_key: Optional[str] = None,
+        ollama_host: Optional[str] = None,
+        ollama_model: Optional[str] = None,
     ):
         """Initialize the AI query interface.
 
         Args:
             db_path: Path to the SQLite database
-            ai_provider: AI provider ("anthropic" or "openai")
+            ai_provider: AI provider ("ollama", "anthropic", or "openai")
             api_key: API key for AI provider (or from env)
+            ollama_host: Ollama server URL (default: Azure Carl VM)
+            ollama_model: Ollama model name (default: llama3.2)
         """
         self.db_path = db_path
         self.engine = create_engine(f"sqlite:///{db_path}")
         self.SessionLocal = sessionmaker(bind=self.engine)
 
-        self.ai_provider = ai_provider
+        # AI provider configuration
+        self.ai_provider = ai_provider or os.getenv("CIVITAS_AI_PROVIDER", "ollama")
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY")
+
+        # Ollama configuration (default to Carl AI VM on Azure)
+        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
+        self.ollama_model = ollama_model or os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
+
         self._ai_client = None
 
     def get_session(self) -> Session:
@@ -346,22 +366,21 @@ class CivitasAI:
         """Ask a natural language question about legislation.
 
         This method uses AI to interpret the question and query the database.
+        Default provider is Ollama (Llama on Azure), but will fall back to
+        keyword search if AI is unavailable.
 
         Args:
             question: Natural language question
 
         Returns:
             Natural language response
-
-        Raises:
-            ValueError: If no AI provider is configured
         """
-        if not self.ai_provider:
-            # Fall back to keyword search
-            return self._keyword_search_response(question)
-
-        # Use AI to generate response
-        return self._ai_query(question)
+        # Always try AI query first (defaults to Ollama)
+        try:
+            return self._ai_query(question)
+        except Exception as e:
+            # Fall back to keyword search if AI fails
+            return f"AI unavailable: {str(e)}\n\n{self._keyword_search_response(question)}"
 
     def _keyword_search_response(self, question: str) -> str:
         """Generate response using keyword search (no AI)."""
@@ -405,12 +424,111 @@ Try asking about specific topics like 'water', 'climate', 'housing', etc."""
 
     def _ai_query(self, question: str) -> str:
         """Use AI to answer the question."""
-        if self.ai_provider == "anthropic":
+        if self.ai_provider == "ollama":
+            return self._ollama_query(question)
+        elif self.ai_provider == "anthropic":
             return self._anthropic_query(question)
         elif self.ai_provider == "openai":
             return self._openai_query(question)
         else:
             raise ValueError(f"Unknown AI provider: {self.ai_provider}")
+
+    def _ollama_query(self, question: str) -> str:
+        """Query using Ollama with Llama model (self-hosted on Azure).
+
+        Uses the Ollama API running on Carl AI VM (20.98.70.48).
+        """
+        try:
+            import ollama
+        except ImportError:
+            raise ImportError("Install ollama package: pip install ollama")
+
+        # Create client with configured host
+        client = ollama.Client(host=self.ollama_host)
+
+        # Get database context
+        stats = self.get_statistics()
+        recent_laws = self.get_recent_laws(limit=5)
+
+        # Build system prompt with database context
+        system_prompt = f"""You are a helpful assistant for the Civitas legislative database, a civic empowerment platform that tracks legislation, court cases, and executive actions.
+
+Database contains:
+- {stats['total_legislation']:,} pieces of legislation
+- {stats['enacted_laws']:,} enacted laws
+- {stats['total_legislators']:,} legislators
+- {stats.get('law_codes', 0)} law codes
+- Jurisdictions: {', '.join(stats['by_jurisdiction'].keys()) if stats['by_jurisdiction'] else 'None yet'}
+
+When answering questions about legislation:
+1. Use the context provided from database searches
+2. Be concise and factual
+3. If data isn't available, say so clearly
+4. Cite specific legislation by citation (e.g., HR 1, AB 123)
+
+Recent laws in database:
+{json.dumps(recent_laws, indent=2)}
+"""
+
+        # Extract search terms and query database for context
+        search_results = self._extract_and_search(question)
+
+        # Build user message with database context
+        user_message = f"""Question: {question}
+
+Relevant data from database search:
+{json.dumps(search_results, indent=2, default=str)}
+
+Please answer the question based on this data. If the data doesn't contain relevant information, say so and provide general guidance on how to find the information."""
+
+        try:
+            response = client.chat(
+                model=self.ollama_model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+            )
+            return response["message"]["content"]
+        except Exception as e:
+            # Fall back to keyword search if Ollama is unavailable
+            return f"AI service unavailable ({str(e)}). Falling back to keyword search.\n\n{self._keyword_search_response(question)}"
+
+    def _extract_and_search(self, question: str) -> dict:
+        """Extract search terms from question and query database for context."""
+        # Extract keywords from question
+        words = question.lower().split()
+        skip_words = {
+            "what", "which", "who", "how", "many", "is", "are", "the", "a", "an",
+            "about", "find", "search", "show", "me", "list", "get", "legislation",
+            "bill", "bills", "law", "laws", "on", "for", "in", "related", "to",
+            "case", "cases", "court", "executive", "order", "orders", "recent",
+            "latest", "new", "any", "all", "does", "do", "have", "has", "been",
+            "was", "were", "will", "would", "could", "should", "can", "may",
+            "might", "must", "shall", "there", "their", "they", "them", "this",
+            "that", "these", "those", "with", "from", "into", "through", "during",
+            "before", "after", "above", "below", "between", "under", "again",
+        }
+
+        search_terms = [w for w in words if w not in skip_words and len(w) > 2]
+        query = " ".join(search_terms)
+
+        results = {
+            "statistics": self.get_statistics(),
+            "legislation": [],
+            "legislators": [],
+        }
+
+        if query:
+            # Search legislation
+            results["legislation"] = self.search(query, limit=10)
+
+            # Search legislators if relevant terms present
+            legislator_terms = {"senator", "representative", "congressman", "congresswoman", "member", "sponsor"}
+            if any(term in question.lower() for term in legislator_terms):
+                results["legislators"] = self.get_legislator(name=query, limit=5)
+
+        return results
 
     def _anthropic_query(self, question: str) -> str:
         """Query using Anthropic's Claude."""

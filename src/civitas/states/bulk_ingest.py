@@ -158,6 +158,71 @@ class OpenStatesBulkIngester:
         except (subprocess.CalledProcessError, FileNotFoundError):
             return False
 
+    def _dump_has_schema(self) -> bool:
+        """Return True if the dump includes schema (table definitions)."""
+        try:
+            result = subprocess.run(
+                ["pg_restore", "-l", str(self.dump_path)],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError:
+            return False
+
+        for line in result.stdout.splitlines():
+            if " TABLE " in line and "TABLE DATA" not in line:
+                return True
+        return False
+
+    def _create_minimal_schema(self) -> None:
+        """Create minimal tables needed for Civitas ingestion."""
+        sql = """
+        CREATE TABLE IF NOT EXISTS opencivicdata_bill (
+            created_at TEXT,
+            updated_at TEXT,
+            extras TEXT,
+            id TEXT,
+            identifier TEXT,
+            title TEXT,
+            jurisdiction_id TEXT,
+            classification TEXT,
+            subject TEXT,
+            from_organization_id TEXT,
+            legislative_session_id TEXT,
+            first_action_date TEXT,
+            latest_action_date TEXT,
+            latest_action_description TEXT,
+            latest_passage_date TEXT,
+            citations TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS opencivicdata_person (
+            created_at TEXT,
+            updated_at TEXT,
+            extras TEXT,
+            id TEXT,
+            name TEXT,
+            family_name TEXT,
+            given_name TEXT,
+            image TEXT,
+            gender TEXT,
+            biography TEXT,
+            birth_date TEXT,
+            death_date TEXT,
+            primary_party TEXT,
+            current_jurisdiction_id TEXT,
+            "current_role" TEXT,
+            email TEXT
+        );
+        """
+        subprocess.run(
+            ["psql", "-d", self.temp_db_name, "-v", "ON_ERROR_STOP=1", "-c", sql],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
     def _restore_to_temp_db(self) -> None:
         """Restore the dump to a temporary PostgreSQL database."""
         if self._db_restored:
@@ -177,6 +242,12 @@ class OpenStatesBulkIngester:
             check=True,
         )
 
+        has_schema = self._dump_has_schema()
+
+        if not has_schema:
+            console.print("[yellow]Dump appears data-only; creating minimal schema[/yellow]")
+            self._create_minimal_schema()
+
         # Restore the dump
         with Progress(
             SpinnerColumn(),
@@ -185,18 +256,36 @@ class OpenStatesBulkIngester:
         ) as progress:
             progress.add_task("Restoring PostgreSQL dump...", total=None)
 
-            result = subprocess.run(
-                [
-                    "pg_restore",
-                    "-d",
-                    self.temp_db_name,
-                    "--no-owner",
-                    "--no-privileges",
-                    str(self.dump_path),
-                ],
-                capture_output=True,
-                text=True,
-            )
+            if has_schema:
+                result = subprocess.run(
+                    [
+                        "pg_restore",
+                        "-d",
+                        self.temp_db_name,
+                        "--no-owner",
+                        "--no-privileges",
+                        str(self.dump_path),
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+            else:
+                result = subprocess.run(
+                    [
+                        "pg_restore",
+                        "-d",
+                        self.temp_db_name,
+                        "--data-only",
+                        "--schema=public",
+                        "--no-owner",
+                        "--no-privileges",
+                        "--table=opencivicdata_bill",
+                        "--table=opencivicdata_person",
+                        str(self.dump_path),
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
 
             # pg_restore may return non-zero for warnings, check stderr
             if result.returncode != 0 and "error" in result.stderr.lower():

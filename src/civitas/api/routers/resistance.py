@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from time import time
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -12,11 +14,16 @@ from civitas.api.schemas import (
     ResistanceMeta,
     ResistanceRecommendation,
 )
-from civitas.db.models import Project2025Policy
+from civitas.db.models import (
+    Project2025Policy,
+    ResistanceRecommendation as DBResistanceRecommendation,
+)
 from civitas.resistance import ImplementationTracker, ResistanceAnalyzer, ResistanceRecommender
 from civitas.resistance.content import RESISTANCE_ORG_SECTIONS, RESISTANCE_TIERS
 
 router = APIRouter()
+_ANALYSIS_CACHE: dict[int, tuple[float, dict]] = {}
+_ANALYSIS_TTL_SECONDS = 60 * 60
 
 
 def get_db(request: Request) -> Session:
@@ -87,13 +94,38 @@ async def get_recommendations(
     if not obj:
         raise HTTPException(status_code=404, detail="Objective not found")
 
+    existing = (
+        db.query(DBResistanceRecommendation)
+        .filter(DBResistanceRecommendation.p2025_policy_id == objective_id)
+        .order_by(DBResistanceRecommendation.tier, DBResistanceRecommendation.created_at)
+        .all()
+    )
+
+    recommendations: list[ResistanceRecommendation] = []
+    if existing:
+        import json
+
+        for rec in existing:
+            prerequisites = json.loads(rec.prerequisites) if rec.prerequisites else []
+            recommendations.append(
+                ResistanceRecommendation(
+                    tier=rec.tier,
+                    action_type=rec.action_type,
+                    title=rec.title,
+                    description=rec.description,
+                    legal_basis=rec.legal_basis,
+                    likelihood=rec.likelihood_of_success,
+                    prerequisites=prerequisites,
+                )
+            )
+        return recommendations
+
     recommender = ResistanceRecommender(db)
     results = recommender.generate_recommendations(objective_id)
 
     if results.get("error"):
         raise HTTPException(status_code=500, detail=results["error"])
 
-    recommendations = []
     for tier, recs in results.get("recommendations", {}).items():
         for rec in recs:
             if rec.get("error"):
@@ -105,7 +137,7 @@ async def get_recommendations(
                     title=rec.get("title", "Untitled"),
                     description=rec.get("description", ""),
                     legal_basis=rec.get("legal_basis"),
-                    likelihood=rec.get("likelihood", "medium"),
+                    likelihood=rec.get("likelihood_of_success", rec.get("likelihood", "medium")),
                     prerequisites=rec.get("prerequisites", []),
                 )
             )
@@ -124,16 +156,60 @@ async def get_analysis(
     if not obj:
         raise HTTPException(status_code=404, detail="Objective not found")
 
-    analyzer = ResistanceAnalyzer(db)
-    analysis = analyzer.analyze_policy(objective_id)
+    now = time()
+    cached = _ANALYSIS_CACHE.get(objective_id)
+    if cached and now - cached[0] < _ANALYSIS_TTL_SECONDS:
+        analysis = cached[1]
+    else:
+        analyzer = ResistanceAnalyzer(db)
+        analysis = analyzer.analyze_policy(objective_id)
+        _ANALYSIS_CACHE[objective_id] = (now, analysis)
 
     if analysis.get("error"):
         raise HTTPException(status_code=500, detail=analysis["error"])
 
+    constitutional_issues = []
+    for item in analysis.get("constitutional_issues", []):
+        if not isinstance(item, dict):
+            continue
+        constitutional_issues.append(
+            {
+                "issue": item.get("issue") or item.get("provision") or item.get("problem"),
+                "amendment": item.get("amendment") or item.get("provision"),
+                "precedent": item.get("precedent") or item.get("case") or item.get("citation"),
+                "strength": item.get("strength") or item.get("severity"),
+            }
+        )
+
+    challenge_strategies = []
+    for item in analysis.get("challenge_strategies", []):
+        if not isinstance(item, dict):
+            continue
+        challenge_strategies.append(
+            {
+                "strategy": item.get("strategy") or item.get("type") or item.get("basis"),
+                "description": item.get("description") or item.get("explanation"),
+                "likelihood": item.get("likelihood") or item.get("likelihood_of_success"),
+                "timeframe": item.get("timeframe") or item.get("time_sensitivity"),
+            }
+        )
+
+    state_resistance_options = []
+    for item in analysis.get("state_resistance_options", []):
+        if not isinstance(item, dict):
+            continue
+        state_resistance_options.append(
+            {
+                "option": item.get("option") or item.get("action"),
+                "description": item.get("description") or item.get("explanation"),
+                "states_likely": item.get("states_likely") or item.get("states"),
+            }
+        )
+
     return ResistanceAnalysis(
         objective_id=objective_id,
-        constitutional_issues=analysis.get("constitutional_issues", []),
-        challenge_strategies=analysis.get("challenge_strategies", []),
-        state_resistance_options=analysis.get("state_resistance_options", []),
+        constitutional_issues=constitutional_issues,
+        challenge_strategies=challenge_strategies,
+        state_resistance_options=state_resistance_options,
         overall_vulnerability_score=analysis.get("overall_vulnerability_score", 0),
     )

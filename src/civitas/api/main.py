@@ -9,7 +9,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from civitas.db.models import get_engine
+from civitas.db.models import get_database_url, get_engine
 
 
 def create_app(
@@ -29,8 +29,8 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         """Application lifespan handler."""
-        # Startup
-        url = db_url or os.getenv("DATABASE_URL", "sqlite:///civitas.db")
+        # Startup - use flexible database URL getter
+        url = get_database_url(db_url)
         app.state.engine = get_engine(url)
         yield
         # Shutdown

@@ -741,16 +741,53 @@ class ExecutiveOrder(Base):
 # Database Initialization
 # =============================================================================
 
-def create_database(db_path: str = "civitas.db") -> None:
-    """Create all database tables."""
-    engine = create_engine(f"sqlite:///{db_path}")
+def get_database_url(db_url: str | None = None) -> str:
+    """Get database URL from parameter, environment, or default.
+
+    Priority:
+    1. Explicit db_url parameter
+    2. DATABASE_URL environment variable
+    3. Default SQLite file
+
+    Supports both SQLite and PostgreSQL:
+    - SQLite: sqlite:///civitas.db
+    - PostgreSQL: postgresql://user:pass@host:5432/civitas
+    """
+    import os
+
+    if db_url:
+        return db_url
+
+    env_url = os.getenv("DATABASE_URL")
+    if env_url:
+        # Handle Heroku-style postgres:// URLs
+        if env_url.startswith("postgres://"):
+            env_url = env_url.replace("postgres://", "postgresql://", 1)
+        return env_url
+
+    return "sqlite:///civitas.db"
+
+
+def create_database(db_url: str | None = None) -> None:
+    """Create all database tables.
+
+    Args:
+        db_url: Database URL. If None, uses DATABASE_URL env var or sqlite:///civitas.db
+    """
+    url = get_database_url(db_url)
+    engine = create_engine(url)
     Base.metadata.create_all(engine)
     return engine
 
 
-def get_engine(db_path: str = "civitas.db"):
-    """Get database engine."""
-    return create_engine(f"sqlite:///{db_path}")
+def get_engine(db_url: str | None = None):
+    """Get database engine.
+
+    Args:
+        db_url: Database URL. If None, uses DATABASE_URL env var or sqlite:///civitas.db
+    """
+    url = get_database_url(db_url)
+    return create_engine(url)
 
 
 # =============================================================================

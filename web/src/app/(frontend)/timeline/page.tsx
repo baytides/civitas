@@ -159,15 +159,16 @@ export default function TimelinePage() {
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Event Type Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">
+            <fieldset className="min-w-0 border-0 p-0 m-0">
+              <legend className="text-sm font-medium mb-2 block">
                 Event Type
-              </label>
-              <div className="flex flex-wrap gap-2">
+              </legend>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Event type">
                 <Button
                   variant={filterType === "all" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilterType("all")}
+                  aria-pressed={filterType === "all"}
                 >
                   All
                 </Button>
@@ -177,23 +178,25 @@ export default function TimelinePage() {
                     variant={filterType === key ? "default" : "outline"}
                     size="sm"
                     onClick={() => setFilterType(key)}
+                    aria-pressed={filterType === key}
                   >
                     {config.label}
                   </Button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {/* Threat Level Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">
+            <fieldset className="min-w-0 border-0 p-0 m-0">
+              <legend className="text-sm font-medium mb-2 block">
                 Threat Level
-              </label>
-              <div className="flex flex-wrap gap-2">
+              </legend>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Threat level">
                 <Button
                   variant={filterThreat === "all" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilterThreat("all")}
+                  aria-pressed={filterThreat === "all"}
                 >
                   All
                 </Button>
@@ -202,6 +205,7 @@ export default function TimelinePage() {
                   size="sm"
                   className={filterThreat === "critical" ? "bg-red-500 hover:bg-red-600" : ""}
                   onClick={() => setFilterThreat("critical")}
+                  aria-pressed={filterThreat === "critical"}
                 >
                   Critical
                 </Button>
@@ -210,6 +214,7 @@ export default function TimelinePage() {
                   size="sm"
                   className={filterThreat === "high" ? "bg-orange-500 hover:bg-orange-600" : ""}
                   onClick={() => setFilterThreat("high")}
+                  aria-pressed={filterThreat === "high"}
                 >
                   High
                 </Button>
@@ -218,11 +223,12 @@ export default function TimelinePage() {
                   size="sm"
                   className={filterThreat === "moderate" ? "bg-green-500 hover:bg-green-600" : ""}
                   onClick={() => setFilterThreat("moderate")}
+                  aria-pressed={filterThreat === "moderate"}
                 >
                   Moderate
                 </Button>
               </div>
-            </div>
+            </fieldset>
           </div>
         </CardContent>
       </Card>

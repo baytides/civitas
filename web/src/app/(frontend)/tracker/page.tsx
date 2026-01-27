@@ -138,8 +138,11 @@ function TrackerContent() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Search */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Search</label>
+              <label htmlFor="tracker-search" className="text-sm font-medium mb-2 block">
+                Search
+              </label>
               <input
+                id="tracker-search"
                 type="text"
                 placeholder="Search objectives..."
                 value={searchQuery}
@@ -150,8 +153,11 @@ function TrackerContent() {
 
             {/* Category */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Category</label>
+              <label htmlFor="tracker-category" className="text-sm font-medium mb-2 block">
+                Category
+              </label>
               <select
+                id="tracker-category"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md bg-background"
@@ -166,8 +172,11 @@ function TrackerContent() {
 
             {/* Status */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Status</label>
+              <label htmlFor="tracker-status" className="text-sm font-medium mb-2 block">
+                Status
+              </label>
               <select
+                id="tracker-status"
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md bg-background"
@@ -182,8 +191,11 @@ function TrackerContent() {
 
             {/* Threat Level */}
             <div>
-              <label className="text-sm font-medium mb-2 block">Threat Level</label>
+              <label htmlFor="tracker-threat" className="text-sm font-medium mb-2 block">
+                Threat Level
+              </label>
               <select
+                id="tracker-threat"
                 value={selectedThreat}
                 onChange={(e) => setSelectedThreat(e.target.value)}
                 className="w-full px-3 py-2 border rounded-md bg-background"

@@ -190,16 +190,18 @@ export default function ResistancePage() {
             {resistanceTiers.map((tier) => {
               const colors = tierColors[tier.color as keyof typeof tierColors];
               return (
-                <div
+                <button
                   key={tier.tier}
                   className={cn(
-                    "p-4 rounded-lg border-l-4 cursor-pointer transition-colors",
+                    "w-full p-4 rounded-lg border-l-4 text-left transition-colors",
                     colors.border,
                     expandedTier === tier.tier ? colors.light : "hover:bg-muted/50"
                   )}
                   onClick={() =>
                     setExpandedTier(expandedTier === tier.tier ? null : tier.tier)
                   }
+                  type="button"
+                  aria-pressed={expandedTier === tier.tier}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <span
@@ -220,7 +222,7 @@ export default function ResistancePage() {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {tier.description}
                   </p>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -228,12 +230,15 @@ export default function ResistancePage() {
       </Card>
 
       {/* Urgency Filter */}
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-sm text-muted-foreground">Filter by urgency:</span>
+      <fieldset className="flex items-center gap-2 mb-6 border-0 p-0 m-0">
+        <legend className="text-sm text-muted-foreground">
+          Filter by urgency:
+        </legend>
         <Button
           variant={selectedUrgency === "all" ? "default" : "outline"}
           size="sm"
           onClick={() => setSelectedUrgency("all")}
+          aria-pressed={selectedUrgency === "all"}
         >
           All
         </Button>
@@ -242,6 +247,7 @@ export default function ResistancePage() {
           size="sm"
           className={selectedUrgency === "critical" ? "bg-red-500 hover:bg-red-600" : ""}
           onClick={() => setSelectedUrgency("critical")}
+          aria-pressed={selectedUrgency === "critical"}
         >
           Critical
         </Button>
@@ -250,6 +256,7 @@ export default function ResistancePage() {
           size="sm"
           className={selectedUrgency === "high" ? "bg-orange-500 hover:bg-orange-600" : ""}
           onClick={() => setSelectedUrgency("high")}
+          aria-pressed={selectedUrgency === "high"}
         >
           High
         </Button>
@@ -258,10 +265,11 @@ export default function ResistancePage() {
           size="sm"
           className={selectedUrgency === "medium" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
           onClick={() => setSelectedUrgency("medium")}
+          aria-pressed={selectedUrgency === "medium"}
         >
           Medium
         </Button>
-      </div>
+      </fieldset>
 
       {/* Tier Details */}
       <div className="space-y-8">

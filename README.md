@@ -78,6 +78,55 @@ civitas/
 └── scripts/                # Utility scripts
 ```
 
+## Development
+
+### Backend
+
+- Create/activate the Python venv and install deps as needed.
+- Run tests:
+
+```
+./venv/bin/python -m pytest -q
+```
+
+### Web App
+
+```
+cd web
+npm ci
+npm run dev
+```
+
+## Deployment (Cloudflare Pages)
+
+This project deploys the Next.js app to Cloudflare Pages via GitHub Actions:
+
+- Workflow: `.github/workflows/deploy.yml`
+- Build: `npm run build` in `web/`
+- Cache cleanup: `.next/cache` removed before deploy to avoid the 25 MiB file limit
+- Deploy command: `wrangler pages deploy web/.next --project-name=civitas`
+
+Required secrets/vars:
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `NEXT_PUBLIC_API_URL`
+
+## Accessibility
+
+Target: WCAG 2.2 AA.
+
+Implemented practices include:
+- Skip link to main content
+- Programmatic labels for form inputs
+- Button groups with `aria-pressed` state
+- Decorative icons marked `aria-hidden`
+- Reduced motion support for animated UI elements
+
+Recommended checks:
+- Keyboard-only navigation and focus visibility
+- Screen reader smoke test (NVDA/VoiceOver)
+- Color contrast review on badge/status colors
+
 ## License
 
 TBD

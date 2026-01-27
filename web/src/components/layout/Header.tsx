@@ -27,7 +27,10 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="ml-8 hidden md:flex items-center space-x-6">
+        <nav
+          className="ml-8 hidden md:flex items-center space-x-6"
+          aria-label="Primary"
+        >
           {navigation.map((item) => (
             <Link
               key={item.name}
@@ -38,6 +41,7 @@ export function Header() {
                   ? "text-primary"
                   : "text-muted-foreground"
               )}
+              aria-current={pathname === item.href ? "page" : undefined}
             >
               {item.name}
             </Link>
@@ -47,8 +51,8 @@ export function Header() {
         {/* Right side */}
         <div className="ml-auto flex items-center space-x-4">
           {/* Search */}
-          <Button variant="outline" size="sm" className="hidden md:flex">
-            <SearchIcon className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm" className="hidden md:flex" type="button">
+            <SearchIcon className="mr-2 h-4 w-4" aria-hidden="true" />
             Search...
             <kbd className="pointer-events-none ml-2 hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
               <span className="text-xs">⌘</span>K
@@ -68,12 +72,16 @@ export function Header() {
             variant="ghost"
             size="icon"
             className="md:hidden"
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
           >
             {mobileMenuOpen ? (
-              <XIcon className="h-6 w-6" />
+              <XIcon className="h-6 w-6" aria-hidden="true" />
             ) : (
-              <MenuIcon className="h-6 w-6" />
+              <MenuIcon className="h-6 w-6" aria-hidden="true" />
             )}
           </Button>
         </div>
@@ -82,7 +90,11 @@ export function Header() {
       {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t">
-          <nav className="container py-4 space-y-2">
+          <nav
+            id="mobile-navigation"
+            className="container py-4 space-y-2"
+            aria-label="Primary"
+          >
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -94,6 +106,7 @@ export function Header() {
                     : "text-muted-foreground hover:bg-muted"
                 )}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={pathname === item.href ? "page" : undefined}
               >
                 {item.name}
               </Link>
@@ -106,13 +119,17 @@ export function Header() {
 }
 
 // Simple icons
-function SearchIcon({ className }: { className?: string }) {
+type IconProps = React.SVGProps<SVGSVGElement> & { className?: string };
+
+function SearchIcon({ className, ...props }: IconProps) {
   return (
     <svg
       className={className}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
     >
       <path
         strokeLinecap="round"
@@ -124,13 +141,15 @@ function SearchIcon({ className }: { className?: string }) {
   );
 }
 
-function MenuIcon({ className }: { className?: string }) {
+function MenuIcon({ className, ...props }: IconProps) {
   return (
     <svg
       className={className}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
     >
       <path
         strokeLinecap="round"
@@ -142,13 +161,15 @@ function MenuIcon({ className }: { className?: string }) {
   );
 }
 
-function XIcon({ className }: { className?: string }) {
+function XIcon({ className, ...props }: IconProps) {
   return (
     <svg
       className={className}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
     >
       <path
         strokeLinecap="round"

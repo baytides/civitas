@@ -148,6 +148,13 @@ body {
   animation: pulse-threat 2s ease-in-out infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-pulse-threat {
+    animation: none;
+  }
+}
+
 /* Print styles */
 @media print {
   .no-print {

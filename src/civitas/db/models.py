@@ -9,7 +9,7 @@ This schema consolidates data from multiple sources:
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Optional
 
 from sqlalchemy import (
@@ -34,6 +34,11 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 class Base(DeclarativeBase):
     """Base class for all models."""
     pass
+
+
+def utcnow() -> datetime:
+    """Return timezone-aware UTC now for consistent timestamps."""
+    return datetime.now(UTC)
 
 
 # =============================================================================
@@ -122,8 +127,8 @@ class Legislation(Base):
 
     # Metadata
     source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     # Relationships
     versions: Mapped[list["LegislationVersion"]] = relationship(back_populates="legislation")
@@ -388,8 +393,8 @@ class CourtCase(Base):
     source_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # External ID (Court Listener)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     __table_args__ = (
         UniqueConstraint("court", "docket_number", name="uq_court_case_docket"),
@@ -470,8 +475,8 @@ class Project2025Policy(Base):
     last_checked: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     __table_args__ = (
         Index("ix_p2025_agency_status", "agency", "status"),
@@ -509,8 +514,8 @@ class P2025Implementation(Base):
     # AI analysis
     ai_confidence_score: Mapped[Optional[float]] = mapped_column(nullable=True)  # 0.0-1.0
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
 
 class LegalChallenge(Base):
@@ -561,8 +566,8 @@ class LegalChallenge(Base):
     complaint_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     ruling_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     __table_args__ = (
         Index("ix_legal_challenge_status_type", "status", "challenge_type"),
@@ -612,8 +617,8 @@ class StateResistanceAction(Base):
     source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     full_text_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     __table_args__ = (
         Index("ix_state_resistance_state_category", "state_code", "category"),
@@ -672,15 +677,15 @@ class ResistanceRecommendation(Base):
     # AI metadata
     ai_model_version: Mapped[str] = mapped_column(String(50))
     ai_confidence_score: Mapped[float] = mapped_column(default=0.0)
-    generated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     # Human review
     reviewed: Mapped[bool] = mapped_column(Boolean, default=False)
     reviewed_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
     __table_args__ = (
         Index("ix_resistance_rec_tier_type", "tier", "action_type"),
@@ -733,8 +738,8 @@ class ExecutiveOrder(Base):
     challenged_in_court: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
 
 # =============================================================================

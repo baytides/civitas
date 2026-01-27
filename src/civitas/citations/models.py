@@ -12,7 +12,7 @@ from typing import Optional
 from sqlalchemy import ForeignKey, Index, Integer, String, Text, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
-from civitas.db.models import Base
+from civitas.db.models import Base, utcnow
 
 
 class Citation(Base):
@@ -57,7 +57,7 @@ class Citation(Base):
     # Resolution status
     is_resolved: Mapped[bool] = mapped_column(default=False)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     __table_args__ = (
         Index("ix_citation_source", "source_type", "source_id"),

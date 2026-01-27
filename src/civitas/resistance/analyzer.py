@@ -7,7 +7,7 @@ counter-strategies.
 
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -303,7 +303,7 @@ Focus on realistic, actionable legal strategies."""
 
             # Add metadata
             analysis["policy_id"] = policy.id
-            analysis["analyzed_at"] = datetime.utcnow().isoformat()
+            analysis["analyzed_at"] = datetime.now(UTC).isoformat()
             analysis["model"] = self.ollama_model
 
             return analysis
@@ -337,7 +337,7 @@ Focus on realistic, actionable legal strategies."""
             results.append(analysis)
 
             # Update last_checked
-            policy.last_checked = datetime.utcnow()
+            policy.last_checked = datetime.now(UTC)
 
         self.session.commit()
         return results

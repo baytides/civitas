@@ -11,7 +11,7 @@ Cross-references with project2025.observer data structure.
 
 import json
 import os
-from datetime import datetime, date, timedelta
+from datetime import UTC, datetime, date, timedelta
 from typing import Optional
 
 from sqlalchemy import func
@@ -131,7 +131,7 @@ class ImplementationTracker:
                 (by_status.get(self.STATUS_COMPLETED, 0) / total * 100)
                 if total > 0 else 0
             ),
-            "as_of": datetime.utcnow().isoformat(),
+            "as_of": datetime.now(UTC).isoformat(),
         }
 
     def match_executive_order(self, eo_id: int) -> list[dict]:
@@ -254,7 +254,7 @@ class ImplementationTracker:
             return False
 
         policy.status = status
-        policy.last_checked = datetime.utcnow()
+        policy.last_checked = datetime.now(UTC)
 
         if evidence_urls:
             existing = json.loads(policy.evidence_urls) if policy.evidence_urls else []
@@ -470,7 +470,7 @@ class ImplementationTracker:
             "by_agency": agency_progress,
             "recent_activity": recent,
             "blocked_policies": blocked,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
         }
 
     def ai_classify_action(self, action_text: str, action_type: str) -> list[dict]:
@@ -565,7 +565,7 @@ Which P2025 objectives does this action implement or advance?"""
                 observer_status = obj.get("status", "").lower()
                 if observer_status and observer_status != existing.status:
                     existing.status = self._normalize_status(observer_status)
-                    existing.last_checked = datetime.utcnow()
+                    existing.last_checked = datetime.now(UTC)
                     stats["updated"] += 1
                 else:
                     stats["unchanged"] += 1

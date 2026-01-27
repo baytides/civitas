@@ -4,7 +4,7 @@ This is the core counter-initiative component of Civitas.
 """
 
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -154,7 +154,7 @@ class Project2025Tracker:
         # Update policy record
         policy.matching_legislation_ids = json.dumps([l.id for l in legislation])
         policy.matching_eo_ids = json.dumps([e.id for e in eos])
-        policy.last_checked = datetime.utcnow()
+        policy.last_checked = datetime.now(UTC)
 
         # Update status based on matches
         if legislation or eos:

@@ -8,7 +8,7 @@ Generates actionable recommendations based on:
 
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 
 from sqlalchemy.orm import Session
@@ -130,7 +130,7 @@ class ResistanceRecommender:
         return {
             "policy_id": policy_id,
             "policy_summary": policy.proposal_text[:200],
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "recommendations": results,
         }
 

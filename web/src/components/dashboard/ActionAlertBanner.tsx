@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SVGProps } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -27,19 +27,19 @@ const urgencyStyles = {
     bg: "bg-red-600",
     hover: "hover:bg-red-700",
     text: "text-white",
-    icon: <AlertCircleIcon className="h-5 w-5" />,
+    icon: <AlertCircleIcon className="h-5 w-5" aria-hidden="true" />,
   },
   high: {
     bg: "bg-orange-500",
     hover: "hover:bg-orange-600",
     text: "text-white",
-    icon: <AlertTriangleIcon className="h-5 w-5" />,
+    icon: <AlertTriangleIcon className="h-5 w-5" aria-hidden="true" />,
   },
   medium: {
     bg: "bg-yellow-500",
     hover: "hover:bg-yellow-600",
     text: "text-black",
-    icon: <InfoIcon className="h-5 w-5" />,
+    icon: <InfoIcon className="h-5 w-5" aria-hidden="true" />,
   },
 };
 
@@ -60,15 +60,16 @@ export function ActionAlertBanner({ alert, onDismiss }: ActionAlertBannerProps) 
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Link href={alert.callToAction.url}>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="font-semibold whitespace-nowrap"
-            >
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="font-semibold whitespace-nowrap"
+          >
+            <Link href={alert.callToAction.url}>
               {alert.callToAction.text}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           {onDismiss && (
             <button
               onClick={() => {
@@ -78,7 +79,7 @@ export function ActionAlertBanner({ alert, onDismiss }: ActionAlertBannerProps) 
               className="p-1 rounded hover:bg-white/20 transition-colors"
               aria-label="Dismiss"
             >
-              <XIcon className="h-4 w-4" />
+              <XIcon className="h-4 w-4" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -122,9 +123,18 @@ export function ActionAlertStack({
 }
 
 // Icons
-function AlertCircleIcon({ className }: { className?: string }) {
+type IconProps = SVGProps<SVGSVGElement> & { className?: string };
+
+function AlertCircleIcon({ className, ...props }: IconProps) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -135,9 +145,16 @@ function AlertCircleIcon({ className }: { className?: string }) {
   );
 }
 
-function AlertTriangleIcon({ className }: { className?: string }) {
+function AlertTriangleIcon({ className, ...props }: IconProps) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -148,9 +165,16 @@ function AlertTriangleIcon({ className }: { className?: string }) {
   );
 }
 
-function InfoIcon({ className }: { className?: string }) {
+function InfoIcon({ className, ...props }: IconProps) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -161,9 +185,16 @@ function InfoIcon({ className }: { className?: string }) {
   );
 }
 
-function XIcon({ className }: { className?: string }) {
+function XIcon({ className, ...props }: IconProps) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

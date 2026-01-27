@@ -32,9 +32,13 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
 
+      - name: Remove Next.js build cache
+        working-directory: web
+        run: rm -rf .next/cache
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy web/.next --project-name=civitas
+          command: pages deploy web/.next --project-name=civitas --commit-dirty=true

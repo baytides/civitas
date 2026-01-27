@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LatestAction(BaseModel):
@@ -35,9 +35,7 @@ class BillSummary(BaseModel):
     update_date: datetime = Field(alias="updateDate")
     url: str
     laws: Optional[list[LawReference]] = None
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class PolicyArea(BaseModel):
@@ -67,9 +65,7 @@ class Sponsor(BaseModel):
     state: Optional[str] = None
     district: Optional[int] = None
     is_by_request: Optional[str] = Field(default=None, alias="isByRequest")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class TextVersion(BaseModel):
@@ -78,9 +74,7 @@ class TextVersion(BaseModel):
     date: Optional[date] = None
     type: str
     url: Optional[str] = None
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class BillDetail(BaseModel):
@@ -99,9 +93,7 @@ class BillDetail(BaseModel):
     sponsors: Optional[list[Sponsor]] = None
     summaries: Optional[list[CRSSummary]] = None
     laws: Optional[list[LawReference]] = None
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @property
     def citation(self) -> str:
@@ -136,9 +128,7 @@ class MemberTerm(BaseModel):
     congress: Optional[int] = None
     start_year: Optional[int] = Field(default=None, alias="startYear")
     end_year: Optional[int] = Field(default=None, alias="endYear")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class MemberSummary(BaseModel):
@@ -151,9 +141,7 @@ class MemberSummary(BaseModel):
     district: Optional[int] = None
     terms: Optional[list[MemberTerm]] = None
     url: Optional[str] = None
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class MemberDetail(BaseModel):
@@ -168,9 +156,7 @@ class MemberDetail(BaseModel):
     sponsored_legislation: Optional[dict[str, Any]] = Field(
         default=None, alias="sponsoredLegislation"
     )
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     @property
     def full_name(self) -> str:

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SVGProps } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -156,9 +156,11 @@ export default function StatesPage() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4 mb-8">
-        <Card
-          className="cursor-pointer hover:border-green-500 transition-colors"
+        <button
+          type="button"
+          className="w-full rounded-lg border bg-card text-card-foreground shadow-sm hover:border-green-500 transition-colors text-left"
           onClick={() => setFilterLevel(filterLevel === "strong" ? "all" : "strong")}
+          aria-pressed={filterLevel === "strong"}
         >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -171,11 +173,13 @@ export default function StatesPage() {
               <div className="w-3 h-3 rounded-full bg-green-500" />
             </div>
           </CardContent>
-        </Card>
+        </button>
 
-        <Card
-          className="cursor-pointer hover:border-yellow-500 transition-colors"
+        <button
+          type="button"
+          className="w-full rounded-lg border bg-card text-card-foreground shadow-sm hover:border-yellow-500 transition-colors text-left"
           onClick={() => setFilterLevel(filterLevel === "moderate" ? "all" : "moderate")}
+          aria-pressed={filterLevel === "moderate"}
         >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -188,11 +192,13 @@ export default function StatesPage() {
               <div className="w-3 h-3 rounded-full bg-yellow-500" />
             </div>
           </CardContent>
-        </Card>
+        </button>
 
-        <Card
-          className="cursor-pointer hover:border-orange-500 transition-colors"
+        <button
+          type="button"
+          className="w-full rounded-lg border bg-card text-card-foreground shadow-sm hover:border-orange-500 transition-colors text-left"
           onClick={() => setFilterLevel(filterLevel === "weak" ? "all" : "weak")}
+          aria-pressed={filterLevel === "weak"}
         >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -205,11 +211,13 @@ export default function StatesPage() {
               <div className="w-3 h-3 rounded-full bg-orange-500" />
             </div>
           </CardContent>
-        </Card>
+        </button>
 
-        <Card
-          className="cursor-pointer hover:border-red-500 transition-colors"
+        <button
+          type="button"
+          className="w-full rounded-lg border bg-card text-card-foreground shadow-sm hover:border-red-500 transition-colors text-left"
           onClick={() => setFilterLevel(filterLevel === "hostile" ? "all" : "hostile")}
+          aria-pressed={filterLevel === "hostile"}
         >
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -222,7 +230,7 @@ export default function StatesPage() {
               <div className="w-3 h-3 rounded-full bg-red-500" />
             </div>
           </CardContent>
-        </Card>
+        </button>
       </div>
 
       {/* Map Placeholder */}
@@ -230,7 +238,10 @@ export default function StatesPage() {
         <CardContent className="py-12">
           <div className="flex items-center justify-center">
             <div className="text-center">
-              <MapIcon className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
+              <MapIcon
+                className="h-24 w-24 mx-auto text-muted-foreground mb-4"
+                aria-hidden="true"
+              />
               <h3 className="text-lg font-semibold mb-2">
                 Interactive State Map
               </h3>
@@ -246,12 +257,13 @@ export default function StatesPage() {
 
       {/* Filters & Sort */}
       <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filter:</span>
+        <fieldset className="flex items-center gap-2 border-0 p-0 m-0">
+          <legend className="text-sm text-muted-foreground">Filter:</legend>
           <Button
             variant={filterLevel === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilterLevel("all")}
+            aria-pressed={filterLevel === "all"}
           >
             All
           </Button>
@@ -259,6 +271,7 @@ export default function StatesPage() {
             variant={filterLevel === "strong" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilterLevel("strong")}
+            aria-pressed={filterLevel === "strong"}
           >
             Strong
           </Button>
@@ -266,6 +279,7 @@ export default function StatesPage() {
             variant={filterLevel === "moderate" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilterLevel("moderate")}
+            aria-pressed={filterLevel === "moderate"}
           >
             Moderate
           </Button>
@@ -273,6 +287,7 @@ export default function StatesPage() {
             variant={filterLevel === "weak" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilterLevel("weak")}
+            aria-pressed={filterLevel === "weak"}
           >
             Weak
           </Button>
@@ -280,17 +295,19 @@ export default function StatesPage() {
             variant={filterLevel === "hostile" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilterLevel("hostile")}
+            aria-pressed={filterLevel === "hostile"}
           >
             Hostile
           </Button>
-        </div>
+        </fieldset>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Sort by:</span>
+        <fieldset className="flex items-center gap-2 border-0 p-0 m-0">
+          <legend className="text-sm text-muted-foreground">Sort by:</legend>
           <Button
             variant={sortBy === "score" ? "default" : "outline"}
             size="sm"
             onClick={() => setSortBy("score")}
+            aria-pressed={sortBy === "score"}
           >
             Score
           </Button>
@@ -298,10 +315,11 @@ export default function StatesPage() {
             variant={sortBy === "name" ? "default" : "outline"}
             size="sm"
             onClick={() => setSortBy("name")}
+            aria-pressed={sortBy === "name"}
           >
             Name
           </Button>
-        </div>
+        </fieldset>
       </div>
 
       {/* State List */}
@@ -417,13 +435,17 @@ function StateCard({ state }: StateCardProps) {
   );
 }
 
-function MapIcon({ className }: { className?: string }) {
+type IconProps = SVGProps<SVGSVGElement> & { className?: string };
+
+function MapIcon({ className, ...props }: IconProps) {
   return (
     <svg
       className={className}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
+      focusable="false"
+      {...props}
     >
       <path
         strokeLinecap="round"

@@ -13,6 +13,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 interface APIObjective {
   id: number;
+  title: string;
   section: string;
   chapter: string | null;
   agency: string;
@@ -121,6 +122,7 @@ function TrackerContent() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
+        obj.title.toLowerCase().includes(query) ||
         obj.proposal_text.toLowerCase().includes(query) ||
         obj.agency.toLowerCase().includes(query) ||
         (obj.proposal_summary?.toLowerCase().includes(query) ?? false)
@@ -444,7 +446,7 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
               </div>
 
               <h3 className="text-lg font-semibold mb-2 break-words">
-                {objective.proposal_summary || objective.proposal_text}
+                {objective.title || objective.proposal_summary || objective.proposal_text}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-normal break-words">
                 {objective.agency} · {snakeToTitle(objective.action_type)}

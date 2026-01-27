@@ -9,22 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Mock data - will be replaced with API calls
+// Note: 320 objectives based on Project 2025 Mandate for Leadership analysis
+// (similar methodology to project2025.observer)
 const mockStats = {
-  totalObjectives: 887,
-  enacted: 45,
-  inProgress: 123,
-  blocked: 34,
-  executiveOrders: 89,
-  courtCases: 156,
+  totalObjectives: 320,
+  enacted: 129,
+  inProgress: 68,
+  blocked: 12,
+  executiveOrders: 47,
+  courtCases: 23,
 };
 
 const mockCategories = [
-  { name: "Immigration", slug: "immigration", total: 78, enacted: 12, inProgress: 23, blocked: 5 },
-  { name: "Environment", slug: "environment", total: 65, enacted: 8, inProgress: 18, blocked: 7 },
-  { name: "Healthcare", slug: "healthcare", total: 92, enacted: 6, inProgress: 15, blocked: 8 },
-  { name: "Education", slug: "education", total: 54, enacted: 4, inProgress: 12, blocked: 3 },
-  { name: "Civil Rights", slug: "civil_rights", total: 87, enacted: 9, inProgress: 19, blocked: 6 },
-  { name: "Government", slug: "government", total: 103, enacted: 6, inProgress: 21, blocked: 5 },
+  { name: "Immigration", slug: "immigration", total: 42, enacted: 18, inProgress: 12, blocked: 2 },
+  { name: "Environment", slug: "environment", total: 38, enacted: 14, inProgress: 8, blocked: 3 },
+  { name: "Healthcare", slug: "healthcare", total: 45, enacted: 16, inProgress: 10, blocked: 2 },
+  { name: "Education", slug: "education", total: 28, enacted: 12, inProgress: 6, blocked: 1 },
+  { name: "Civil Rights", slug: "civil_rights", total: 52, enacted: 22, inProgress: 11, blocked: 2 },
+  { name: "Government", slug: "government", total: 61, enacted: 28, inProgress: 14, blocked: 1 },
+  { name: "Economy", slug: "economy", total: 34, enacted: 12, inProgress: 5, blocked: 1 },
+  { name: "Foreign Policy", slug: "foreign_policy", total: 20, enacted: 7, inProgress: 2, blocked: 0 },
 ];
 
 const mockActivity = [

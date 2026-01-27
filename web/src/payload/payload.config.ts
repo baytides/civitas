@@ -45,6 +45,7 @@ export default buildConfig({
       allowContainerCreate: true,
       connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING || "",
       containerName: process.env.AZURE_STORAGE_CONTAINER || "civitas",
+      baseURL: `https://${process.env.AZURE_STORAGE_ACCOUNT || "baytidesstorage"}.blob.core.windows.net/${process.env.AZURE_STORAGE_CONTAINER || "civitas"}`,
     }),
   ],
 });

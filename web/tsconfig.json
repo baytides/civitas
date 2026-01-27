@@ -33,6 +33,9 @@
       ],
       "@/payload/*": [
         "./src/payload/*"
+      ],
+      "@payload-config": [
+        "./src/payload/payload.config.ts"
       ]
     },
     "target": "ES2017"

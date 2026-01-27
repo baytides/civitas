@@ -1,7 +1,16 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Required for Payload CMS in Next.js 15
   serverExternalPackages: ["payload"],
+  webpack: (config) => {
+    config.resolve.alias["@payload-config"] = path.resolve(
+      __dirname,
+      "src/payload/payload.config.ts"
+    );
+    return config;
+  },
   images: {
     remotePatterns: [
       {

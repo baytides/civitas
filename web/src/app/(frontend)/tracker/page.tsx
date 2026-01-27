@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,7 +105,7 @@ const threatLevels = [
   { slug: "moderate", name: "Moderate" },
 ];
 
-export default function TrackerPage() {
+function TrackerContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "all";
 
@@ -239,6 +239,37 @@ export default function TrackerPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function TrackerLoading() {
+  return (
+    <div className="container py-8">
+      <div className="mb-8">
+        <div className="h-9 w-64 bg-muted rounded animate-pulse mb-2" />
+        <div className="h-5 w-96 bg-muted rounded animate-pulse" />
+      </div>
+      <Card className="mb-8">
+        <CardContent className="pt-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i}>
+                <div className="h-4 w-16 bg-muted rounded animate-pulse mb-2" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function TrackerPage() {
+  return (
+    <Suspense fallback={<TrackerLoading />}>
+      <TrackerContent />
+    </Suspense>
   );
 }
 

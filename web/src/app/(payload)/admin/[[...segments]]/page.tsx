@@ -19,22 +19,18 @@ export const generateMetadata = async ({
   params,
   searchParams,
 }: Args): Promise<Metadata> => {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
   return generatePageMetadata({
     config,
-    params: resolvedParams,
-    searchParams: resolvedSearchParams,
+    params: params as any,
+    searchParams: searchParams as any,
   });
 };
 
 const Page = async ({ params, searchParams }: Args) => {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
   return RootPage({
     config,
-    params: resolvedParams,
-    searchParams: resolvedSearchParams,
+    params: params as any,
+    searchParams: searchParams as any,
     importMap,
   });
 };

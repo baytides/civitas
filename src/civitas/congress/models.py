@@ -1,8 +1,6 @@
 """Pydantic models for Congress.gov API responses."""
 
-from __future__ import annotations
-
-from datetime import date, datetime
+from datetime import date as date_type, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class LatestAction(BaseModel):
     """Latest action taken on a bill."""
 
-    action_date: date = Field(alias="actionDate")
+    action_date: date_type = Field(alias="actionDate")
     text: str
 
 
@@ -47,7 +45,7 @@ class PolicyArea(BaseModel):
 class CRSSummary(BaseModel):
     """Congressional Research Service summary."""
 
-    action_date: date = Field(alias="actionDate")
+    action_date: date_type = Field(alias="actionDate")
     action_desc: str = Field(alias="actionDesc")
     text: str
     update_date: datetime = Field(alias="updateDate")
@@ -71,7 +69,7 @@ class Sponsor(BaseModel):
 class TextVersion(BaseModel):
     """Bill text version."""
 
-    date: date | None = None
+    date: date_type | None = None
     type: str
     url: str | None = None
     model_config = ConfigDict(populate_by_name=True)
@@ -86,7 +84,7 @@ class BillDetail(BaseModel):
     title: str
     origin_chamber: str = Field(alias="originChamber")
     origin_chamber_code: str = Field(alias="originChamberCode")
-    introduced_date: date | None = Field(default=None, alias="introducedDate")
+    introduced_date: date_type | None = Field(default=None, alias="introducedDate")
     latest_action: LatestAction = Field(alias="latestAction")
     update_date: datetime = Field(alias="updateDate")
     policy_area: PolicyArea | None = Field(default=None, alias="policyArea")

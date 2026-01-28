@@ -13,6 +13,7 @@ from civitas.db.models import CourtCase, Justice, JusticeOpinion, JusticeProfile
 
 DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
+DEFAULT_JUSTICE_NUM_PREDICT = 1200
 
 DISCLAIMER_TEXT = (
     "We do not have any insight into the respective justice's opinion on any current or "
@@ -199,7 +200,14 @@ class JusticeProfileGenerator:
 
         client = self._get_ollama_client()
         messages = self._build_prompt(payload)
-        response = client.chat(model=self.ollama_model, messages=messages)
+        num_predict = int(
+            os.getenv("JUSTICE_PROFILE_NUM_PREDICT", str(DEFAULT_JUSTICE_NUM_PREDICT))
+        )
+        response = client.chat(
+            model=self.ollama_model,
+            messages=messages,
+            options={"num_predict": num_predict},
+        )
         content = response.get("message", {}).get("content", "")
         parsed = self._parse_response(content)
         if not parsed:

@@ -238,6 +238,7 @@ class JusticeBase(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     official_photo_url: str | None = None
+    circuit_assignments: list[str] = []
 
 
 class JusticeDetail(JusticeBase):
@@ -246,6 +247,7 @@ class JusticeDetail(JusticeBase):
     appointed_by: str | None = None
     official_bio_url: str | None = None
     wikipedia_url: str | None = None
+    assignments_updated_at: datetime | None = None
 
     opinion_counts: dict[str, int] = {}
     profile_summary: str | None = None

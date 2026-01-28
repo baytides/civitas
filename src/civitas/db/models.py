@@ -433,6 +433,8 @@ class Justice(Base):
     official_bio_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     official_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     wikipedia_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    circuit_assignments: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    assignments_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)

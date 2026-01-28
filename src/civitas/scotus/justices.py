@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -13,6 +14,7 @@ from civitas.db.models import Justice, JusticeOpinion
 
 SCOTUS_BIO_URL = "https://www.supremecourt.gov/about/biographies.aspx"
 SCOTUS_ABOUT_BASE = "https://www.supremecourt.gov/about/"
+SCOTUS_ASSIGNMENTS_URL = "https://www.supremecourt.gov/about/circuitAssignments.aspx"
 
 ACTIVE_JUSTICES = {
     "John G. Roberts",
@@ -51,6 +53,7 @@ class JusticeMetadata:
     official_bio_url: str
     wikipedia_url: str | None
     is_active: bool
+    circuit_assignments: list[str]
 
 
 def _guess_extension(url: str) -> str:
@@ -118,10 +121,44 @@ def fetch_justice_metadata() -> list[JusticeMetadata]:
                 official_bio_url=SCOTUS_BIO_URL,
                 wikipedia_url=WIKIPEDIA_URLS.get(name),
                 is_active=is_active,
+                circuit_assignments=[],
             )
         )
 
     return items
+
+
+def fetch_circuit_assignments() -> dict[str, list[str]]:
+    """Fetch circuit assignments from supremecourt.gov."""
+    response = httpx.get(
+        SCOTUS_ASSIGNMENTS_URL,
+        timeout=20.0,
+        headers={"User-Agent": "Civitas/1.0 (civic data project)"},
+        follow_redirects=True,
+    )
+    response.raise_for_status()
+    html = response.text
+
+    assignments: dict[str, list[str]] = {}
+
+    # Split by headings containing justice names
+    blocks = re.split(r"<h3[^>]*>", html, flags=re.IGNORECASE)
+    for block in blocks[1:]:
+        name_match = re.search(r"([^<]+)</h3>", block, flags=re.IGNORECASE)
+        if not name_match:
+            continue
+        name = name_match.group(1).strip()
+
+        circuits = re.findall(r">([^<]*Circuit[^<]*)<", block, flags=re.IGNORECASE)
+        cleaned = []
+        for circuit in circuits:
+            text = " ".join(circuit.split())
+            if "Circuit" in text:
+                cleaned.append(text)
+        if cleaned:
+            assignments[name] = cleaned
+
+    return assignments
 
 
 def _parse_alt_text(alt_text: str) -> tuple[str | None, str]:
@@ -140,6 +177,7 @@ def sync_justices(
 ) -> int:
     """Sync justice metadata into the database."""
     items = fetch_justice_metadata()
+    assignments = fetch_circuit_assignments()
     updated = 0
 
     for item in items:
@@ -147,6 +185,7 @@ def sync_justices(
         justice = session.query(Justice).filter(Justice.slug == slug).first()
         last = _last_name(item.name)
         photo_url = item.photo_url
+        circuits = assignments.get(item.name, [])
 
         if download_photos and azure_client and item.photo_url:
             try:
@@ -178,6 +217,8 @@ def sync_justices(
                 official_bio_url=item.official_bio_url,
                 official_photo_url=photo_url,
                 wikipedia_url=item.wikipedia_url,
+                circuit_assignments=json.dumps(circuits, ensure_ascii=True),
+                assignments_updated_at=datetime.now(UTC),
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
             )
@@ -197,6 +238,12 @@ def sync_justices(
         ):
             if getattr(justice, field) != value:
                 setattr(justice, field, value)
+                changed = True
+        if circuits:
+            new_assignments = json.dumps(circuits, ensure_ascii=True)
+            if justice.circuit_assignments != new_assignments:
+                justice.circuit_assignments = new_assignments
+                justice.assignments_updated_at = datetime.now(UTC)
                 changed = True
         if changed:
             justice.updated_at = datetime.now(UTC)

@@ -105,6 +105,7 @@ async def list_justices(
         base = JusticeBase.model_validate(item)
         payload = base.model_dump()
         payload["official_photo_url"] = _photo_url(request, item.slug)
+        payload["circuit_assignments"] = _parse_json_list(item.circuit_assignments)
         items_out.append(JusticeBase(**payload))
 
     return JusticeList(
@@ -160,6 +161,8 @@ async def get_justice(
         appointed_by=justice.appointed_by,
         official_bio_url=justice.official_bio_url,
         wikipedia_url=justice.wikipedia_url,
+        circuit_assignments=_parse_json_list(justice.circuit_assignments),
+        assignments_updated_at=justice.assignments_updated_at,
         opinion_counts=counts,
         profile_summary=profile.profile_summary if profile else None,
         judicial_philosophy=profile.judicial_philosophy if profile else None,

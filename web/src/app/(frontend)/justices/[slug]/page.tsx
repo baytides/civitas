@@ -26,6 +26,8 @@ interface JusticeDetail {
   methodology?: string | null;
   disclaimer?: string | null;
   generated_at?: string | null;
+  circuit_assignments?: string[];
+  assignments_updated_at?: string | null;
 }
 
 export default async function JusticeDetailPage({
@@ -92,11 +94,11 @@ export default async function JusticeDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4 mt-8">
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-semibold">{counts.total || 0}</div>
-            <div className="text-sm text-muted-foreground">Opinions Logged</div>
+        <div className="grid gap-4 md:grid-cols-4 mt-8">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <div className="text-2xl font-semibold">{counts.total || 0}</div>
+              <div className="text-sm text-muted-foreground">Opinions Logged</div>
           </CardContent>
         </Card>
         <Card>
@@ -117,7 +119,27 @@ export default async function JusticeDetailPage({
             <div className="text-sm text-muted-foreground">Concurrence</div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+
+      {justice.circuit_assignments && justice.circuit_assignments.length > 0 && (
+        <Card className="mt-8">
+          <CardContent className="pt-6">
+            <h2 className="text-lg font-semibold mb-2">Circuit Assignments</h2>
+            <div className="flex flex-wrap gap-2">
+              {justice.circuit_assignments.map((circuit) => (
+                <Badge key={circuit} variant="secondary">
+                  {circuit}
+                </Badge>
+              ))}
+            </div>
+            {justice.assignments_updated_at && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Updated {new Date(justice.assignments_updated_at).toLocaleDateString()}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 mt-8">
         <Card>

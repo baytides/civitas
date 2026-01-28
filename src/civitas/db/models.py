@@ -848,7 +848,10 @@ def get_engine(db_url: str | None = None):
         db_url: Database URL. If None, uses DATABASE_URL env var or sqlite:///civitas.db
     """
     url = get_database_url(db_url)
-    return create_engine(url)
+    kwargs = {}
+    if url.startswith("sqlite"):
+        kwargs["connect_args"] = {"check_same_thread": False}
+    return create_engine(url, pool_pre_ping=True, **kwargs)
 
 
 # =============================================================================

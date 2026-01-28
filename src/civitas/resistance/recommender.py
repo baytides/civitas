@@ -140,6 +140,8 @@ class ResistanceRecommender:
     ) -> list[dict]:
         """Generate recommendations for a specific tier."""
         client = self._get_ollama_client()
+        num_predict = int(os.getenv("RESISTANCE_RECOMMEND_NUM_PREDICT", "400"))
+        temperature = float(os.getenv("RESISTANCE_RECOMMEND_TEMPERATURE", "0.3"))
 
         system_prompt = f"""You are a legal and political strategist generating actionable recommendations for resisting a policy.
 
@@ -148,7 +150,8 @@ DESCRIPTION: {tier_info["description"]}
 AVAILABLE TOOLS: {", ".join(tier_info["tools"])}
 ACTION TYPES: {", ".join(tier_info["action_types"])}
 
-Generate specific, actionable recommendations. For each recommendation include:
+Return ONLY JSON. Do not include any markdown or prose.
+Output must be a JSON array of objects. Each object must contain:
 - action_type: One of the allowed action types
 - title: Brief title
 - description: Detailed description of the action
@@ -181,6 +184,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
                     {"role": "user", "content": user_prompt},
                 ],
                 format="json",
+                options={"temperature": temperature, "num_predict": num_predict},
             )
 
             content = response["message"]["content"]
@@ -191,7 +195,20 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
                 elif not isinstance(recs, list):
                     recs = [recs]
             except json.JSONDecodeError:
-                recs = [{"raw_response": content, "parse_error": True}]
+                # Fallback to a single, minimally structured recommendation
+                recs = [
+                    {
+                        "action_type": "unknown",
+                        "title": "AI-generated recommendation (unstructured)",
+                        "description": content.strip()[:2000],
+                        "rationale": "",
+                        "legal_basis": None,
+                        "likelihood_of_success": "medium",
+                        "time_sensitivity": "soon",
+                        "resources_required": "medium",
+                        "action_steps": [],
+                    }
+                ]
 
             return recs
 

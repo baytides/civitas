@@ -65,3 +65,6 @@ web/playwright-report/
 .ipynb_checkpoints/
 data/
 /docs/plans
+
+# Local AI coordination log
+ai-tasks.md

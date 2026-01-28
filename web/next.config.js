@@ -19,8 +19,9 @@ const nextConfig = {
     return config;
   },
   turbopack: {},
-  // Skip trailing slash issues
+  // Trailing slashes for page routes only; API routes skip this via skipTrailingSlashRedirect + middleware
   trailingSlash: true,
+  skipTrailingSlashRedirect: true,
   images: {
     remotePatterns: [
       {
@@ -30,13 +31,21 @@ const nextConfig = {
     ],
   },
   // Rewrite API calls to FastAPI backend
+  // Both with and without trailing slash to avoid redirect loops
+  // (trailingSlash: true adds slashes, but FastAPI routes don't have them)
   async rewrites() {
-    return [
-      {
-        source: "/api/v1/:path*",
-        destination: `${fastApiUrl}/api/v1/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [
+        {
+          source: "/api/v1/:path*/",
+          destination: `${fastApiUrl}/api/v1/:path*`,
+        },
+        {
+          source: "/api/v1/:path*",
+          destination: `${fastApiUrl}/api/v1/:path*`,
+        },
+      ],
+    };
   },
 };
 

@@ -344,6 +344,8 @@ class ResistanceAnalyzer:
     def _ai_analyze(self, policy, context: dict) -> dict:
         """Use AI to analyze the policy and generate resistance strategies."""
         client = self._get_ollama_client()
+        num_predict = int(os.getenv("RESISTANCE_ANALYSIS_NUM_PREDICT", "400"))
+        temperature = float(os.getenv("RESISTANCE_ANALYSIS_TEMPERATURE", "0.2"))
 
         system_prompt = """You are a constitutional law expert analyzing government policies for legal vulnerabilities. Your role is to:
 
@@ -391,7 +393,7 @@ Focus on realistic, actionable legal strategies."""
                     {"role": "user", "content": user_prompt},
                 ],
                 format="json",
-                options={"temperature": 0.2, "num_predict": 800},
+                options={"temperature": temperature, "num_predict": num_predict},
             )
 
             content = response["message"]["content"]

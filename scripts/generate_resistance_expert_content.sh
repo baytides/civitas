@@ -18,6 +18,7 @@ ANALYZE_REFRESH_DAYS=${ANALYZE_REFRESH_DAYS:-30}
 RECOMMEND_LIMIT=${RECOMMEND_LIMIT:-100}
 RECOMMEND_TIER=${RECOMMEND_TIER:-}
 FORCE_RECOMMEND=${FORCE_RECOMMEND:-false}
+PYTHON_BIN=${PYTHON_BIN:-/opt/civitas/.venv/bin/python}
 
 DB_ARG=()
 if [[ -n "${DATABASE_URL:-}" ]]; then
@@ -35,13 +36,13 @@ if [[ "$FORCE_RECOMMEND" == "true" ]]; then
 fi
 
 echo "[1/2] Generating expert analyses (limit=${ANALYZE_LIMIT}, refresh_days=${ANALYZE_REFRESH_DAYS})"
-python -m civitas.cli resist analyze-batch \
+${PYTHON_BIN} -m civitas.cli resist analyze-batch \
   --limit "$ANALYZE_LIMIT" \
   --refresh-days "$ANALYZE_REFRESH_DAYS" \
   "${DB_ARG[@]}"
 
 echo "[2/2] Generating resistance recommendations (limit=${RECOMMEND_LIMIT})"
-python -m civitas.cli resist recommend-batch \
+${PYTHON_BIN} -m civitas.cli resist recommend-batch \
   --limit "$RECOMMEND_LIMIT" \
   "${TIER_ARG[@]}" \
   "${FORCE_ARG[@]}" \

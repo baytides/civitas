@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,14 +31,24 @@ interface JusticeDetail {
   generated_at?: string | null;
 }
 
-export default function JusticeDetailPage({ params }: { params: { slug: string } }) {
+export default function JusticeDetailPage() {
+  const params = useParams();
+  const slug = useMemo(() => {
+    if (!params) return null;
+    const value = params.slug;
+    if (Array.isArray(value)) return value[0];
+    return value ? String(value) : null;
+  }, [params]);
   const [justice, setJustice] = useState<JusticeDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchJustice() {
+      if (!slug) {
+        return;
+      }
       try {
-        const response = await fetch(`${API_BASE}/justices/${params.slug}`);
+        const response = await fetch(`${API_BASE}/justices/${slug}`);
         if (response.ok) {
           const data = await response.json();
           setJustice(data);
@@ -48,7 +59,7 @@ export default function JusticeDetailPage({ params }: { params: { slug: string }
       setLoading(false);
     }
     fetchJustice();
-  }, [params.slug]);
+  }, [slug]);
 
   if (loading) {
     return (

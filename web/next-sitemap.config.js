@@ -1,3 +1,5 @@
+/* global process, module, fetch */
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://projectcivitas.com/api/v1";
 
@@ -17,7 +19,7 @@ module.exports = {
       },
     ],
   },
-  additionalPaths: async (config) => {
+  additionalPaths: async () => {
     const paths = [];
 
     // Fetch all objective IDs for /tracker/[id]

@@ -1,6 +1,6 @@
 """API routers."""
 
-from . import cases, executive_orders, justices, objectives, resistance, search, states
+from . import cases, executive_orders, justices, objectives, resistance, search, states, status
 
 __all__ = [
     "cases",
@@ -10,4 +10,5 @@ __all__ = [
     "resistance",
     "search",
     "states",
+    "status",
 ]

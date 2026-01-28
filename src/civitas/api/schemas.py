@@ -93,6 +93,34 @@ class ObjectiveMetadata(BaseModel):
 
 
 # =============================================================================
+# Site Status
+# =============================================================================
+
+
+class SiteGenerationStatus(BaseModel):
+    """Site generation progress and last-run timestamps."""
+
+    generated_at: datetime
+    objectives_total: int
+    objectives_titled: int
+    objectives_title_pct: float
+    objectives_with_insights: int
+    objectives_insight_pct: float
+    expert_analyses: int
+    expert_analyses_pct: float
+    expert_last_generated_at: datetime | None = None
+    insights_last_generated_at: datetime | None = None
+    justices_total: int
+    justices_active: int
+    justice_profiles: int
+    justice_profiles_pct: float
+    justice_profiles_last_generated_at: datetime | None = None
+    executive_orders_total: int
+    cases_total: int
+    legislation_total: int
+
+
+# =============================================================================
 # Legislation
 # =============================================================================
 

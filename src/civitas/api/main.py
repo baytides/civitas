@@ -73,6 +73,7 @@ def create_app(
         resistance,
         search,
         states,
+        status,
     )
 
     app.include_router(objectives.router, prefix="/api/v1", tags=["objectives"])
@@ -83,6 +84,7 @@ def create_app(
     app.include_router(states.router, prefix="/api/v1", tags=["states"])
     app.include_router(resistance.router, prefix="/api/v1", tags=["resistance"])
     app.include_router(search.router, prefix="/api/v1", tags=["search"])
+    app.include_router(status.router, prefix="/api/v1", tags=["status"])
 
     @app.get("/api/health")
     async def health_check() -> dict:

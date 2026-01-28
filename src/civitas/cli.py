@@ -788,7 +788,6 @@ def ingest_scrape_state(
         console.print(f"[red]No scraper available for state: {state.upper()}[/red]")
         console.print(f"Available states: {', '.join(s.upper() for s in scrapers.keys())}")
         console.print("\nAlternatives:")
-        console.print("  - civitas ingest state-bills  (uses OpenStates API, limited)")
         console.print("  - civitas ingest openstates-bulk  (uses monthly dump, unlimited)")
         return
 
@@ -883,103 +882,12 @@ def ingest_state_bills(
     limit: int = typer.Option(500, "-n", "--limit", help="Max bills to fetch"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
-    """Ingest state bills from Open States API.
-
-    Requires OPENSTATES_API_KEY environment variable.
-    Get a key at: https://openstates.org/accounts/login/
-    """
-    from sqlalchemy.orm import Session
-
-    from civitas.db.models import Legislation, get_engine
-    from civitas.states import OpenStatesClient
-
-    api_key = os.getenv("OPENSTATES_API_KEY")
-    if not api_key:
-        console.print("[red]Error: OPENSTATES_API_KEY environment variable not set[/red]")
-        console.print("Get a free API key at: https://openstates.org/accounts/login/")
-        return
-
-    console.print(f"[bold blue]Ingesting {state.upper()} bills from Open States...[/bold blue]")
-
-    engine = get_engine(db_path)
-    counts = {"bills": 0, "skipped": 0}
-
-    try:
-        with OpenStatesClient(api_key=api_key) as client:
-            # Get sessions if not specified
-            if not session:
-                sessions = client.get_sessions(state)
-                if sessions:
-                    session = sessions[0].identifier  # Most recent session
-                    console.print(f"  [cyan]Using session: {session}[/cyan]")
-                else:
-                    console.print("[red]No sessions found for state[/red]")
-                    return
-
-            for bill in client.get_bills(state=state, session=session, limit=limit):
-                with Session(engine) as db_session:
-                    # Check if already exists
-                    existing = (
-                        db_session.query(Legislation)
-                        .filter(
-                            Legislation.jurisdiction == state.lower(),
-                            Legislation.source_id == bill.id,
-                        )
-                        .first()
-                    )
-
-                    if existing:
-                        counts["skipped"] += 1
-                        continue
-
-                    # Determine chamber
-                    chamber = "assembly" if bill.chamber == "lower" else "senate"
-
-                    # Parse bill number
-                    number = 0
-                    for part in bill.identifier.split():
-                        if part.isdigit():
-                            number = int(part)
-                            break
-
-                    # Determine bill type
-                    bill_type = "bill"
-                    for cls in bill.classification:
-                        if "resolution" in cls.lower():
-                            bill_type = "resolution"
-                            break
-
-                    legislation = Legislation(
-                        jurisdiction=state.lower(),
-                        source_id=bill.id,
-                        legislation_type=bill_type,
-                        chamber=chamber,
-                        number=number,
-                        session=bill.session,
-                        title=bill.title[:1000] if bill.title else None,
-                        summary=bill.abstracts[0].get("abstract") if bill.abstracts else None,
-                        introduced_date=bill.first_action_date,
-                        last_action_date=bill.latest_action_date,
-                        is_enacted="became-law" in str(bill.classification).lower(),
-                        source_url=bill.sources[0].get("url") if bill.sources else None,
-                    )
-                    db_session.add(legislation)
-                    db_session.commit()
-                    counts["bills"] += 1
-
-                    if counts["bills"] % 100 == 0:
-                        console.print(f"  Processed {counts['bills']} bills...")
-
-    except ValueError as e:
-        console.print(f"[red]{e}[/red]")
-        return
-    except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
-        return
-
-    console.print("\n[bold green]State bill ingestion complete![/bold green]")
-    console.print(f"  Bills added: {counts['bills']}")
-    console.print(f"  Skipped (existing): {counts['skipped']}")
+    """Ingest state bills from Open States API (disabled)."""
+    console.print("[yellow]OpenStates API ingestion is disabled.[/yellow]")
+    console.print("Use one of these instead:")
+    console.print("  - civitas ingest scrape-state  (direct scrape)")
+    console.print("  - civitas ingest openstates-bulk  (monthly dump)")
+    return
 
 
 @ingest_app.command("state-legislators")
@@ -987,79 +895,12 @@ def ingest_state_legislators(
     state: str = typer.Argument(..., help="Two-letter state code (e.g., 'ca', 'ny')"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
-    """Ingest state legislators from Open States API.
-
-    Requires OPENSTATES_API_KEY environment variable.
-    """
-    from sqlalchemy.orm import Session
-
-    from civitas.db.models import Legislator, get_engine
-    from civitas.states import OpenStatesClient
-
-    api_key = os.getenv("OPENSTATES_API_KEY")
-    if not api_key:
-        console.print("[red]Error: OPENSTATES_API_KEY environment variable not set[/red]")
-        console.print("Get a free API key at: https://openstates.org/accounts/login/")
-        return
-
-    console.print(
-        f"[bold blue]Ingesting {state.upper()} legislators from Open States...[/bold blue]"
-    )
-
-    engine = get_engine(db_path)
-    counts = {"legislators": 0, "skipped": 0}
-
-    try:
-        with OpenStatesClient(api_key=api_key) as client:
-            for legislator in client.get_legislators(state=state, limit=500):
-                with Session(engine) as db_session:
-                    # Check if already exists
-                    existing = (
-                        db_session.query(Legislator)
-                        .filter(
-                            Legislator.jurisdiction == state.lower(),
-                            Legislator.source_id == legislator.id,
-                        )
-                        .first()
-                    )
-
-                    if existing:
-                        counts["skipped"] += 1
-                        continue
-
-                    # Determine chamber
-                    chamber = "assembly" if legislator.chamber == "lower" else "senate"
-
-                    # Map party
-                    party = (
-                        "D"
-                        if "democrat" in legislator.party.lower()
-                        else ("R" if "republican" in legislator.party.lower() else "I")
-                    )
-
-                    db_legislator = Legislator(
-                        jurisdiction=state.lower(),
-                        source_id=legislator.id,
-                        full_name=legislator.name,
-                        chamber=chamber,
-                        district=legislator.district,
-                        party=party,
-                        state=state.upper(),
-                    )
-                    db_session.add(db_legislator)
-                    db_session.commit()
-                    counts["legislators"] += 1
-
-    except ValueError as e:
-        console.print(f"[red]{e}[/red]")
-        return
-    except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
-        return
-
-    console.print("\n[bold green]State legislator ingestion complete![/bold green]")
-    console.print(f"  Legislators added: {counts['legislators']}")
-    console.print(f"  Skipped (existing): {counts['skipped']}")
+    """Ingest state legislators from Open States API (disabled)."""
+    console.print("[yellow]OpenStates API ingestion is disabled.[/yellow]")
+    console.print("Use one of these instead:")
+    console.print("  - civitas ingest scrape-state  (direct scrape)")
+    console.print("  - civitas ingest openstates-bulk  (monthly dump)")
+    return
 
 
 @ingest_app.command("openstates-bulk")
@@ -1343,27 +1184,12 @@ def ingest_openstates_scheduler(
         "data/openstates_scheduler.json", "--state-file", help="Scheduler state file"
     ),
 ):
-    """Smart OpenStates ingestion within 500/day API limit."""
-    from civitas.states import SchedulerConfig, run_scheduler
-
-    config = SchedulerConfig(
-        db_url=db_path,
-        state_file=Path(state_file),
-        limit_per_state=limit_per_state,
-        lookback_days=lookback_days,
-        max_states=max_states,
-    )
-
-    try:
-        counts = run_scheduler(config)
-    except Exception as exc:
-        console.print(f"[red]OpenStates scheduler failed: {exc}[/red]")
-        return
-
-    console.print("[bold green]OpenStates scheduler complete![/bold green]")
-    console.print(f"  States processed: {counts['states']}")
-    console.print(f"  Bills added: {counts['bills_added']}")
-    console.print(f"  Bills skipped: {counts['bills_skipped']}")
+    """Smart OpenStates ingestion (disabled)."""
+    console.print("[yellow]OpenStates scheduler is disabled.[/yellow]")
+    console.print("Use one of these instead:")
+    console.print("  - civitas ingest scrape-state  (direct scrape)")
+    console.print("  - civitas ingest openstates-bulk  (monthly dump)")
+    return
 
 
 @ingest_app.command("all-states")

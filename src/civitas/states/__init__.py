@@ -10,10 +10,6 @@ Three approaches available for accessing state legislative data:
    - Good for initial database population
    - Uses `civitas.states.bulk_ingest` module
 
-3. **OpenStates API** (500 requests/day limit): For quick lookups
-   - Limited to 500 requests/day
-   - Uses `civitas.states.openstates` module
-
 Credits:
 - Open States Project (GPL-3.0 / CC0-1.0)
 - Open Civic Data (BSD-3-Clause)
@@ -28,8 +24,6 @@ from .bulk_ingest import (
     OpenStatesBulkIngester,
     download_bulk_data,
 )
-from .openstates import OpenStatesClient, StateBill, StateLegislator
-from .scheduler import SchedulerConfig, run_scheduler
 
 # Direct scrapers (preferred approach)
 from .scrapers import (
@@ -50,10 +44,4 @@ __all__ = [
     "BulkStateBill",
     "BulkStateLegislator",
     "download_bulk_data",
-    # API client (rate limited)
-    "OpenStatesClient",
-    "StateBill",
-    "StateLegislator",
-    "SchedulerConfig",
-    "run_scheduler",
 ]

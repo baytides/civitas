@@ -98,12 +98,16 @@ def backfill_p2025_metadata(
         "--pdf",
         help="Path to Mandate for Leadership PDF (used for parser init)",
     ),
+    use_ai: bool = typer.Option(False, "--ai", help="Use AI to infer timeline/priority"),
+    limit: int | None = typer.Option(None, "--limit", help="Limit number of policies to update"),
     force: bool = typer.Option(
         False, "--force", help="Recompute timeline/priority for all records"
     ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes without saving"),
 ):
     """Backfill timeline/priority for Project 2025 objectives."""
+    import json
+
     from sqlalchemy.orm import Session
 
     from civitas.db.models import Project2025Policy, get_engine
@@ -113,12 +117,24 @@ def backfill_p2025_metadata(
 
     engine = get_engine(db_path)
     parser = EnhancedProject2025Parser(pdf_path)
+    ollama_client = None
+    ollama_model = None
+    if use_ai:
+        try:
+            import ollama
+        except ImportError as exc:
+            raise ImportError("Install ollama: pip install ollama") from exc
+        ollama_client = ollama.Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
+        ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
 
     updated = 0
     checked = 0
 
     with Session(engine) as session:
-        policies = session.query(Project2025Policy).all()
+        query = session.query(Project2025Policy)
+        if limit:
+            query = query.limit(limit)
+        policies = query.all()
         for policy in policies:
             checked += 1
             if (
@@ -130,6 +146,43 @@ def backfill_p2025_metadata(
 
             timeline = parser._detect_timeline(policy.proposal_text)
             priority = parser._detect_priority(policy.proposal_text, policy.action_type)
+
+            if use_ai and ollama_client and ollama_model:
+                system_prompt = (
+                    "Classify Project 2025 proposals. "
+                    "Return JSON with keys: timeline, priority. "
+                    "timeline: day_one, first_100_days, first_year, long_term, unknown. "
+                    "priority: high, medium, low."
+                )
+                user_prompt = (
+                    f"Agency: {policy.agency}\n"
+                    f"Action type: {policy.action_type}\n"
+                    f"Text: {policy.proposal_text[:1200]}"
+                )
+                try:
+                    response = ollama_client.chat(
+                        model=ollama_model,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt},
+                        ],
+                        format="json",
+                    )
+                    payload = json.loads(response["message"]["content"])
+                    ai_timeline = payload.get("timeline")
+                    ai_priority = payload.get("priority")
+                    if ai_timeline in {
+                        "day_one",
+                        "first_100_days",
+                        "first_year",
+                        "long_term",
+                        "unknown",
+                    }:
+                        timeline = ai_timeline
+                    if ai_priority in {"high", "medium", "low"}:
+                        priority = ai_priority
+                except Exception:
+                    pass
 
             if timeline != policy.implementation_timeline or priority != policy.priority:
                 if dry_run:

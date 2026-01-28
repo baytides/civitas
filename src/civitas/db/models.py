@@ -409,6 +409,85 @@ class CourtCase(Base):
 
 
 # =============================================================================
+# Supreme Court Justices
+# =============================================================================
+
+
+class Justice(Base):
+    """Supreme Court justice profile metadata."""
+
+    __tablename__ = "justices"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    name: Mapped[str] = mapped_column(String(200), index=True)
+    last_name: Mapped[str] = mapped_column(String(100), index=True)
+    slug: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    role: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+
+    appointed_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
+    official_bio_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    official_photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    wikipedia_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (Index("ix_justice_active_name", "is_active", "last_name"),)
+
+
+class JusticeOpinion(Base):
+    """Authorship links between justices and court cases."""
+
+    __tablename__ = "justice_opinions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    justice_id: Mapped[int | None] = mapped_column(ForeignKey("justices.id"), nullable=True)
+    court_case_id: Mapped[int] = mapped_column(ForeignKey("court_cases.id"), index=True)
+    author_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    opinion_type: Mapped[str] = mapped_column(String(20), index=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "justice_id",
+            "court_case_id",
+            "opinion_type",
+            name="uq_justice_opinion_type",
+        ),
+        Index("ix_justice_opinion_justice_type", "justice_id", "opinion_type"),
+    )
+
+
+class JusticeProfile(Base):
+    """AI-generated justice profile analysis."""
+
+    __tablename__ = "justice_profiles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    justice_id: Mapped[int] = mapped_column(ForeignKey("justices.id"), unique=True, index=True)
+
+    profile_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    judicial_philosophy: Mapped[str | None] = mapped_column(Text, nullable=True)
+    voting_tendencies: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    notable_opinions: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    statistical_profile: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON object
+    methodology: Mapped[str | None] = mapped_column(Text, nullable=True)
+    disclaimer: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    ai_model_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+
+# =============================================================================
 # Project 2025 Tracking
 # =============================================================================
 

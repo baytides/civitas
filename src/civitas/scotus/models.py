@@ -20,6 +20,9 @@ class SCOTUSOpinion(BaseModel):
 
     # Authors
     majority_author: str | None = None
+    majority_authors: list[str] = []
+    dissent_authors: list[str] = []
+    concurrence_authors: list[str] = []
 
     # Content
     holding: str | None = None

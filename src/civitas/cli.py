@@ -211,8 +211,8 @@ def ingest_scotus(
     """Ingest Supreme Court slip opinions."""
     from sqlalchemy.orm import Session
 
-    from civitas.db.models import CourtCase, get_engine
-    from civitas.scotus import SCOTUSClient
+    from civitas.db.models import CourtCase, Justice, JusticeOpinion, get_engine
+    from civitas.scotus import SCOTUSClient, link_opinions_to_justices
     from civitas.storage import AzureStorageClient
 
     azure_client = AzureStorageClient() if azure else None
@@ -227,12 +227,14 @@ def ingest_scotus(
 
         for t in terms:
             console.print(f"  [cyan]Term {t}...[/cyan]")
-            opinions = client.list_opinions(t)
+            opinions = client.get_opinions_for_term(t)
 
             for opinion in opinions:
-                pdf_path, azure_url = client.download_opinion(opinion)
-
                 with Session(engine) as session:
+                    last_name_map = {
+                        justice.last_name.lower(): justice.id
+                        for justice in session.query(Justice).all()
+                    }
                     # Check if already exists
                     existing = (
                         session.query(CourtCase)
@@ -253,15 +255,52 @@ def ingest_scotus(
                             term=opinion.term,
                             decision_date=opinion.decision_date,
                             source_url=opinion.pdf_url,
-                            azure_url=azure_url,
+                            azure_url=opinion.azure_url,
                             status="decided",
+                            majority_author=opinion.majority_author,
+                            holding=opinion.holding,
+                            syllabus=opinion.syllabus,
+                            majority_opinion=opinion.majority_opinion,
                         )
                         session.add(case)
                         session.commit()
                         counts["cases"] += 1
 
-                        if azure_url:
+                        if opinion.azure_url:
                             counts["stored_in_azure"] += 1
+
+                        for author in opinion.majority_authors:
+                            session.add(
+                                JusticeOpinion(
+                                    justice_id=last_name_map.get(author.lower()),
+                                    court_case_id=case.id,
+                                    author_name=author,
+                                    opinion_type="majority",
+                                )
+                            )
+                        for author in opinion.dissent_authors:
+                            session.add(
+                                JusticeOpinion(
+                                    justice_id=last_name_map.get(author.lower()),
+                                    court_case_id=case.id,
+                                    author_name=author,
+                                    opinion_type="dissent",
+                                )
+                            )
+                        for author in opinion.concurrence_authors:
+                            session.add(
+                                JusticeOpinion(
+                                    justice_id=last_name_map.get(author.lower()),
+                                    court_case_id=case.id,
+                                    author_name=author,
+                                    opinion_type="concurrence",
+                                )
+                            )
+                        session.commit()
+
+        with Session(engine) as session:
+            link_opinions_to_justices(session)
+            session.commit()
 
     console.print("\n[bold green]SCOTUS ingestion complete![/bold green]")
     console.print(f"  Cases: {counts['cases']}")
@@ -343,6 +382,65 @@ def ingest_courts(
 
     console.print("\n[bold green]Court Listener ingestion complete![/bold green]")
     console.print(f"  Cases: {counts['cases']}")
+
+
+# =============================================================================
+# SCOTUS Justice Profile Commands
+# =============================================================================
+
+scotus_app = typer.Typer(help="Supreme Court justice profile commands")
+app.add_typer(scotus_app, name="scotus")
+
+
+@scotus_app.command("sync-justices")
+def sync_scotus_justices(
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Sync justice metadata and link opinions to justices."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Base, get_engine
+    from civitas.scotus import link_opinions_to_justices, sync_justices
+
+    engine = get_engine(db_path)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        updated = sync_justices(session)
+        linked = link_opinions_to_justices(session)
+        session.commit()
+
+    console.print(
+        f"[bold green]Synced {updated} justices, linked {linked} opinions.[/bold green]"
+    )
+
+
+@scotus_app.command("generate-profiles")
+def generate_scotus_profiles(
+    limit: int = typer.Option(20, "--limit", help="Number of justices to process"),
+    force: bool = typer.Option(False, "--force", help="Regenerate existing profiles"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+    ollama_host: str | None = typer.Option(None, "--ollama-host", help="Ollama host URL"),
+    ollama_model: str | None = typer.Option(None, "--ollama-model", help="Ollama model name"),
+):
+    """Generate AI justice profiles."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Base, get_engine
+    from civitas.scotus.profiles import JusticeProfileGenerator
+
+    engine = get_engine(db_path)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        generator = JusticeProfileGenerator(
+            session=session,
+            ollama_host=ollama_host,
+            ollama_model=ollama_model,
+        )
+        created = generator.generate_batch(limit=limit, force=force)
+
+    console.print(f"[bold green]Generated {created} justice profiles.[/bold green]")
 
 
 @ingest_app.command("executive-orders")

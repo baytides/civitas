@@ -60,6 +60,23 @@ interface ResistanceAnalysis {
     states_likely?: string[];
   }>;
   overall_vulnerability_score: number;
+  justice_outlook?: Array<{
+    justice?: string;
+    historical_signals?: string;
+    speculative_outlook?: string;
+    confidence?: string;
+  }>;
+  justice_outlook_disclaimer?: string | null;
+  case_outcome_meter?: number | null;
+  case_outcome_rationale?: string | null;
+  persuasion_strategies?: Array<{
+    strategy?: string;
+    rationale?: string;
+    scope_narrowing?: string;
+    target_justices?: string[];
+    confidence?: string;
+  }>;
+  persuasion_disclaimer?: string | null;
 }
 
 interface ProgressSummary {
@@ -458,6 +475,122 @@ function ResistanceContent() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Speculative Court Outcome Meter */}
+          {analysis.case_outcome_meter !== null && analysis.case_outcome_meter !== undefined && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Speculative Court Outcome Meter</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Based on historical opinion patterns and judicial philosophy. Not a prediction.
+                    </p>
+                    {analysis.case_outcome_rationale && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {analysis.case_outcome_rationale}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className={cn(
+                      "text-4xl font-bold",
+                      analysis.case_outcome_meter >= 70 ? "text-green-600" :
+                      analysis.case_outcome_meter >= 40 ? "text-yellow-600" : "text-red-600"
+                    )}>
+                      {analysis.case_outcome_meter}%
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      Speculative likelihood of successful challenge
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Justice Outlook */}
+          {analysis.justice_outlook && analysis.justice_outlook.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Justice Outlook (Speculative)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analysis.justice_outlook.map((item, idx) => (
+                    <div key={`${item.justice || idx}`} className="p-3 border rounded-lg">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium">{item.justice || "Justice"}</h4>
+                        {item.confidence && (
+                          <Badge variant="outline">{item.confidence}</Badge>
+                        )}
+                      </div>
+                      {item.historical_signals && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {item.historical_signals}
+                        </p>
+                      )}
+                      {item.speculative_outlook && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {item.speculative_outlook}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {analysis.justice_outlook_disclaimer && (
+                  <p className="text-xs text-muted-foreground mt-4">
+                    {analysis.justice_outlook_disclaimer}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Persuasion/Positioning Strategies */}
+          {analysis.persuasion_strategies && analysis.persuasion_strategies.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Plausible Positioning Strategies (Speculative)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {analysis.persuasion_strategies.map((item, idx) => (
+                    <div key={`${item.strategy || idx}`} className="p-3 border rounded-lg">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-medium">{item.strategy || "Strategy"}</h4>
+                        {item.confidence && <Badge variant="outline">{item.confidence}</Badge>}
+                      </div>
+                      {item.rationale && (
+                        <p className="text-sm text-muted-foreground mt-1">{item.rationale}</p>
+                      )}
+                      {item.scope_narrowing && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Scope narrowing: {item.scope_narrowing}
+                        </p>
+                      )}
+                      {item.target_justices && item.target_justices.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {item.target_justices.map((justice) => (
+                            <Badge key={justice} variant="secondary" className="text-xs">
+                              {justice}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {analysis.persuasion_disclaimer && (
+                  <p className="text-xs text-muted-foreground mt-4">
+                    {analysis.persuasion_disclaimer}
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

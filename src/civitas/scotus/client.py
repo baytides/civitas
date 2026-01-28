@@ -241,6 +241,8 @@ class SCOTUSClient:
         # Extract syllabus
         syllabus = self._extract_syllabus(full_text)
 
+        authors = self._extract_authors(full_text)
+
         return SCOTUSOpinion(
             citation=citation,
             case_name=item.case_name,
@@ -250,6 +252,10 @@ class SCOTUSClient:
             holding=holding,
             syllabus=syllabus,
             majority_opinion=full_text,  # Store full text for now
+            majority_author=authors.get("majority_author"),
+            majority_authors=authors.get("majority_authors", []),
+            dissent_authors=authors.get("dissent_authors", []),
+            concurrence_authors=authors.get("concurrence_authors", []),
             pdf_url=item.pdf_url,
             azure_url=azure_url,
         )
@@ -302,6 +308,55 @@ class SCOTUSClient:
             return syllabus
 
         return None
+
+    def _extract_authors(self, text: str) -> dict:
+        """Extract opinion author names from text."""
+        authors: dict[str, list[str] | str | None] = {
+            "majority_authors": [],
+            "dissent_authors": [],
+            "concurrence_authors": [],
+            "majority_author": None,
+        }
+
+        majority_patterns = [
+            r"(CHIEF JUSTICE|JUSTICE)\s+([A-Z][A-Z'\.\-]+)\s+delivered the opinion of the Court",
+            r"(CHIEF JUSTICE|JUSTICE)\s+([A-Z][A-Z'\.\-]+)\s+delivered the opinion",
+        ]
+        dissent_patterns = [
+            r"(JUSTICE|CHIEF JUSTICE)\s+([A-Z][A-Z'\.\-]+)\s+filed a dissenting opinion",
+            r"(JUSTICE|CHIEF JUSTICE)\s+([A-Z][A-Z'\.\-]+)\s+dissenting",
+        ]
+        concurrence_patterns = [
+            r"(JUSTICE|CHIEF JUSTICE)\s+([A-Z][A-Z'\.\-]+)\s+filed a concurring opinion",
+            r"(JUSTICE|CHIEF JUSTICE)\s+([A-Z][A-Z'\.\-]+)\s+concurring",
+        ]
+
+        def extract_first(patterns: list[str]) -> list[str]:
+            found: list[str] = []
+            for pattern in patterns:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    found.append(match.group(2).title())
+                    break
+            return found
+
+        def extract_all(patterns: list[str]) -> list[str]:
+            found: list[str] = []
+            for pattern in patterns:
+                for match in re.finditer(pattern, text, re.IGNORECASE):
+                    found.append(match.group(2).title())
+            return list(dict.fromkeys(found))
+
+        majority = extract_first(majority_patterns)
+        dissent = extract_all(dissent_patterns)
+        concurrence = extract_all(concurrence_patterns)
+
+        authors["majority_authors"] = majority
+        authors["dissent_authors"] = dissent
+        authors["concurrence_authors"] = concurrence
+        authors["majority_author"] = majority[0] if majority else None
+
+        return authors
 
     def get_recent_opinions(
         self,

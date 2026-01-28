@@ -7,6 +7,13 @@ Provides:
 """
 
 from .client import SCOTUSClient
+from .justices import link_opinions_to_justices, sync_justices
 from .models import SCOTUSListingItem, SCOTUSOpinion
 
-__all__ = ["SCOTUSClient", "SCOTUSOpinion", "SCOTUSListingItem"]
+__all__ = [
+    "SCOTUSClient",
+    "SCOTUSOpinion",
+    "SCOTUSListingItem",
+    "sync_justices",
+    "link_opinions_to_justices",
+]

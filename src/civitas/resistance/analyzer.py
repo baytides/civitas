@@ -284,7 +284,7 @@ class ResistanceAnalyzer:
 
     def _gather_legal_context(self, policy) -> dict:
         """Gather relevant legal context for a policy."""
-        from civitas.db.models import CourtCase
+        from civitas.db.models import CourtCase, Justice, JusticeProfile
 
         context = {
             "policy": {
@@ -298,6 +298,7 @@ class ResistanceAnalyzer:
             "relevant_legislation": [],
             "relevant_statutes": [],
             "constitutional_provisions": [],
+            "justice_profiles": [],
         }
 
         # Identify potentially relevant constitutional provisions
@@ -346,6 +347,41 @@ class ResistanceAnalyzer:
                     }
                 )
 
+        justice_profiles = []
+        profiles = (
+            self.session.query(Justice, JusticeProfile)
+            .outerjoin(JusticeProfile, JusticeProfile.justice_id == Justice.id)
+            .filter(Justice.is_active.is_(True))
+            .order_by(Justice.last_name.asc())
+            .all()
+        )
+
+        for justice, profile in profiles:
+            voting_tendencies = []
+            stats = {}
+            if profile and profile.voting_tendencies:
+                try:
+                    voting_tendencies = json.loads(profile.voting_tendencies)
+                except json.JSONDecodeError:
+                    voting_tendencies = []
+            if profile and profile.statistical_profile:
+                try:
+                    stats = json.loads(profile.statistical_profile)
+                except json.JSONDecodeError:
+                    stats = {}
+            justice_profiles.append(
+                {
+                    "name": justice.name,
+                    "role": justice.role,
+                    "summary": profile.profile_summary if profile else None,
+                    "judicial_philosophy": profile.judicial_philosophy if profile else None,
+                    "voting_tendencies": voting_tendencies,
+                    "statistical_profile": stats,
+                }
+            )
+
+        context["justice_profiles"] = justice_profiles
+
         return context
 
     def _ai_analyze(self, policy, context: dict) -> dict:
@@ -360,6 +396,8 @@ class ResistanceAnalyzer:
 2. Find relevant legal precedents that could challenge it
 3. Suggest legal strategies for resistance
 4. Assess likelihood of success for different approaches
+5. Provide a speculative, non-predictive outlook on how current justices historically approach similar issues
+6. Provide a speculative meter for case outcome if reviewed by the current Court
 
 Be specific and cite actual constitutional provisions and case law.
 Focus on actionable legal strategies, not political commentary.
@@ -371,6 +409,12 @@ Respond in JSON format with these fields:
 - state_resistance_options: Array of {action, legal_basis, explanation}
 - immediate_actions: Array of {action, who, explanation}
 - overall_vulnerability_score: Number 0-100 (100 = most vulnerable to challenge)
+- justice_outlook: Array of {justice, historical_signals, speculative_outlook, confidence}
+- justice_outlook_disclaimer: String (must reiterate that this is speculative and non-predictive)
+- case_outcome_meter: Number 0-100 (speculative likelihood of successful challenge if reviewed by current Court)
+- case_outcome_rationale: String (2-3 sentences explaining the meter)
+- persuasion_strategies: Array of {strategy, rationale, scope_narrowing, target_justices, confidence}
+- persuasion_disclaimer: String (must reiterate speculative, non-predictive guidance)
 """
         system_prompt = load_prompt(
             path_env="CARL_RESISTANCE_ANALYSIS_PROMPT_PATH",
@@ -394,8 +438,12 @@ Related Court Cases in Database:
 KEY PRECEDENTS TO CONSIDER:
 {json.dumps(list(self.KEY_PRECEDENTS.values()), indent=2)}
 
+CURRENT JUSTICE PROFILES (HISTORICAL SIGNALS ONLY):
+{json.dumps(context["justice_profiles"], indent=2)}
+
 Provide a detailed legal analysis with specific constitutional provisions and case citations.
-Focus on realistic, actionable legal strategies."""
+Focus on realistic, actionable legal strategies. The justice outlook must be speculative
+and based only on published opinions and stated judicial philosophies."""
 
         try:
             response = client.chat(

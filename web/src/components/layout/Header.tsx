@@ -11,6 +11,7 @@ const navigation = [
   { name: "Dashboard", href: "/" },
   { name: "Tracker", href: "/tracker" },
   { name: "States", href: "/states" },
+  { name: "Justices", href: "/justices" },
   { name: "Resistance", href: "/resistance" },
   { name: "Timeline", href: "/timeline" },
 ];

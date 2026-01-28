@@ -220,6 +220,50 @@ class CourtCaseDetail(CourtCaseBase):
     insight_generated_at: datetime | None = None
 
 
+# =============================================================================
+# Supreme Court Justices
+# =============================================================================
+
+
+class JusticeBase(BaseModel):
+    """Base schema for Supreme Court justices."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    slug: str
+    role: str | None = None
+    is_active: bool
+    start_date: date | None = None
+    end_date: date | None = None
+    official_photo_url: str | None = None
+
+
+class JusticeDetail(JusticeBase):
+    """Detailed justice profile."""
+
+    appointed_by: str | None = None
+    official_bio_url: str | None = None
+    wikipedia_url: str | None = None
+
+    opinion_counts: dict[str, int] = {}
+    profile_summary: str | None = None
+    judicial_philosophy: str | None = None
+    voting_tendencies: list[str] = []
+    notable_opinions: list[str] = []
+    statistical_profile: dict[str, object] = {}
+    methodology: str | None = None
+    disclaimer: str | None = None
+    generated_at: datetime | None = None
+
+
+class JusticeList(PaginatedResponse):
+    """Paginated list of justices."""
+
+    items: list[JusticeBase]
+
+
 class CourtCaseList(PaginatedResponse):
     """Paginated list of court cases."""
 
@@ -308,6 +352,12 @@ class ResistanceAnalysis(BaseModel):
     challenge_strategies: list[dict] = []
     state_resistance_options: list[dict] = []
     overall_vulnerability_score: int
+    justice_outlook: list[dict] = []
+    justice_outlook_disclaimer: str | None = None
+    case_outcome_meter: int | None = None
+    case_outcome_rationale: str | None = None
+    persuasion_strategies: list[dict] = []
+    persuasion_disclaimer: str | None = None
 
 
 class ProgressSummary(BaseModel):

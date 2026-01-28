@@ -147,6 +147,13 @@ class JusticeProfileGenerator:
                 return json.dumps(value, ensure_ascii=True)
             return json.dumps([value], ensure_ascii=True) if isinstance(value, str) else None
 
+        def to_text(value) -> str | None:
+            if value is None:
+                return None
+            if isinstance(value, str):
+                return value
+            return json.dumps(value, ensure_ascii=True)
+
         profile = (
             self.session.query(JusticeProfile)
             .filter(JusticeProfile.justice_id == justice_id)
@@ -156,16 +163,16 @@ class JusticeProfileGenerator:
             profile = JusticeProfile(justice_id=justice_id)
             self.session.add(profile)
 
-        profile.profile_summary = parsed.get("summary")
-        profile.judicial_philosophy = parsed.get("judicial_philosophy")
+        profile.profile_summary = to_text(parsed.get("summary"))
+        profile.judicial_philosophy = to_text(parsed.get("judicial_philosophy"))
         profile.voting_tendencies = to_json(parsed.get("voting_tendencies"))
         profile.notable_opinions = to_json(parsed.get("notable_opinions"))
-        profile.statistical_profile = (
-            json.dumps(parsed.get("statistical_profile"), ensure_ascii=True)
-            if isinstance(parsed.get("statistical_profile"), dict)
-            else None
-        )
-        profile.methodology = parsed.get("methodology")
+        statistical = parsed.get("statistical_profile")
+        if statistical is not None:
+            profile.statistical_profile = json.dumps(statistical, ensure_ascii=True)
+        else:
+            profile.statistical_profile = None
+        profile.methodology = to_text(parsed.get("methodology"))
         profile.disclaimer = DISCLAIMER_TEXT
         profile.ai_model_version = self.ollama_model
         profile.generated_at = datetime.now(UTC)

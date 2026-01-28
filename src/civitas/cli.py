@@ -90,6 +90,65 @@ def ingest_federal(
         console.print(f"  {key}: {value:,}")
 
 
+@ingest_app.command("p2025-backfill")
+def backfill_p2025_metadata(
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+    pdf_path: str = typer.Option(
+        "data/project2025/mandate_for_leadership.pdf",
+        "--pdf",
+        help="Path to Mandate for Leadership PDF (used for parser init)",
+    ),
+    force: bool = typer.Option(
+        False, "--force", help="Recompute timeline/priority for all records"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Preview changes without saving"),
+):
+    """Backfill timeline/priority for Project 2025 objectives."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Project2025Policy, get_engine
+    from civitas.project2025.parser import EnhancedProject2025Parser
+
+    console.print("[bold blue]Backfilling Project 2025 timeline/priority...[/bold blue]")
+
+    engine = get_engine(db_path)
+    parser = EnhancedProject2025Parser(pdf_path)
+
+    updated = 0
+    checked = 0
+
+    with Session(engine) as session:
+        policies = session.query(Project2025Policy).all()
+        for policy in policies:
+            checked += 1
+            if (
+                not force
+                and policy.implementation_timeline != "unknown"
+                and policy.priority != "medium"
+            ):
+                continue
+
+            timeline = parser._detect_timeline(policy.proposal_text)
+            priority = parser._detect_priority(policy.proposal_text, policy.action_type)
+
+            if timeline != policy.implementation_timeline or priority != policy.priority:
+                if dry_run:
+                    console.print(
+                        f"  [yellow]Would update[/yellow] #{policy.id} "
+                        f"timeline {policy.implementation_timeline}→{timeline}, "
+                        f"priority {policy.priority}→{priority}"
+                    )
+                else:
+                    policy.implementation_timeline = timeline
+                    policy.priority = priority
+                    updated += 1
+
+        if not dry_run:
+            session.commit()
+
+    console.print(f"[bold green]Checked {checked} policies, updated {updated}.[/bold green]")
+
+
 @ingest_app.command("scotus")
 def ingest_scotus(
     term: str | None = typer.Option(None, "--term", help="Specific term (e.g., '24' for 2024)"),

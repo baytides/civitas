@@ -59,6 +59,10 @@ class ObjectiveDetail(ObjectiveBase):
     implementation_notes: str | None = None
     created_at: datetime
     updated_at: datetime
+    plain_summary: str | None = None
+    why_this_matters: str | None = None
+    key_impacts: list[str] = []
+    insight_generated_at: datetime | None = None
 
 
 class ObjectiveList(PaginatedResponse):
@@ -136,6 +140,10 @@ class LegislationDetail(LegislationBase):
     policy_area: str | None = None
     subjects: list[str] = []
     actions: list[LegislationActionBase] = []
+    plain_summary: str | None = None
+    why_this_matters: str | None = None
+    key_impacts: list[str] = []
+    insight_generated_at: datetime | None = None
 
 
 # =============================================================================
@@ -165,6 +173,10 @@ class ExecutiveOrderDetail(ExecutiveOrderBase):
     pdf_url: str | None = None
     html_url: str | None = None
     matched_objectives: list[ObjectiveBase] = []
+    plain_summary: str | None = None
+    why_this_matters: str | None = None
+    key_impacts: list[str] = []
+    insight_generated_at: datetime | None = None
 
 
 class ExecutiveOrderList(PaginatedResponse):
@@ -202,6 +214,10 @@ class CourtCaseDetail(CourtCaseBase):
     dissent_author: str | None = None
     source_url: str | None = None
     linked_objectives: list[ObjectiveBase] = []
+    plain_summary: str | None = None
+    why_this_matters: str | None = None
+    key_impacts: list[str] = []
+    insight_generated_at: datetime | None = None
 
 
 class CourtCaseList(PaginatedResponse):

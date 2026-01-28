@@ -31,6 +31,9 @@ console = Console()
 ingest_app = typer.Typer(help="Data ingestion commands")
 app.add_typer(ingest_app, name="ingest")
 
+insights_app = typer.Typer(help="Insight summary commands")
+app.add_typer(insights_app, name="insights")
+
 
 @ingest_app.command("california")
 def ingest_california(
@@ -1525,6 +1528,53 @@ def project2025_report(
                 console.print(f"  • {alert['agency']}: {alert['proposal_text'][:80]}...")
                 if alert.get("matching_legislation"):
                     console.print(f"    Matching: {alert['matching_legislation']}")
+
+
+# =============================================================================
+# Insight Generation Commands
+# =============================================================================
+
+@insights_app.command("generate")
+def generate_insights(
+    content_type: str = typer.Option(
+        ...,
+        "--type",
+        "-t",
+        help="Content type: objective | eo | case | legislation",
+    ),
+    limit: int = typer.Option(20, "--limit", help="Number of items to process"),
+    ids: str | None = typer.Option(None, "--ids", help="Comma-separated IDs"),
+    force: bool = typer.Option(False, "--force", help="Regenerate existing insights"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+    ollama_host: str | None = typer.Option(None, "--ollama-host", help="Ollama host URL"),
+    ollama_model: str | None = typer.Option(None, "--ollama-model", help="Ollama model name"),
+):
+    """Generate plain-language insight summaries."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Base, get_engine
+    from civitas.insights import InsightGenerator
+
+    content_type = content_type.strip().lower()
+    id_list = [int(item) for item in ids.split(",")] if ids else None
+
+    engine = get_engine(db_path)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        generator = InsightGenerator(
+            session=session,
+            ollama_host=ollama_host,
+            ollama_model=ollama_model,
+        )
+        created = generator.generate_batch(
+            content_type=content_type,
+            limit=limit,
+            ids=id_list,
+            force=force,
+        )
+
+    console.print(f"[bold green]Generated {created} insight summaries.[/bold green]")
 
 
 # =============================================================================

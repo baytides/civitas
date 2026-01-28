@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from civitas.api.schemas import CourtCaseBase, CourtCaseDetail, CourtCaseList
-from civitas.api.utils import objective_to_base
+from civitas.api.utils import get_content_insight, objective_to_base
 from civitas.db.models import (
     CourtCase,
     LegalChallenge,
@@ -107,18 +107,16 @@ async def get_case(
         else []
     )
 
+    base = CourtCaseBase.model_validate(case)
+    insight = get_content_insight(db, "case", case.id)
+
     return CourtCaseDetail(
-        id=case.id,
-        citation=case.citation,
-        case_name=case.case_name,
-        court_level=case.court_level,
-        court=case.court,
-        decision_date=case.decision_date,
-        status=case.status,
+        **base.model_dump(),
         docket_number=case.docket_number,
         holding=case.holding,
         majority_author=case.majority_author,
         dissent_author=case.dissent_author,
         source_url=case.source_url,
         linked_objectives=[objective_to_base(obj) for obj in linked_objectives],
+        **insight,
     )

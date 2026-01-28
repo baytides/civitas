@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from civitas.api.schemas import ExecutiveOrderBase, ExecutiveOrderDetail, ExecutiveOrderList
-from civitas.api.utils import objective_to_base
+from civitas.api.utils import get_content_insight, objective_to_base
 from civitas.db.models import ExecutiveOrder, Project2025Policy
 
 router = APIRouter()
@@ -80,6 +80,8 @@ async def get_executive_order(
     for obj in objectives:
         matched_objectives.append(objective_to_base(obj))
 
+    insight = get_content_insight(db, "eo", eo.id)
+
     return ExecutiveOrderDetail(
         id=eo.id,
         document_number=eo.document_number,
@@ -92,4 +94,5 @@ async def get_executive_order(
         pdf_url=eo.pdf_url,
         html_url=eo.html_url,
         matched_objectives=matched_objectives,
+        **insight,
     )

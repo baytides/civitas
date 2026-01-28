@@ -15,6 +15,7 @@ from civitas.api.schemas import (
     LegislationDetail,
     LegislationList,
 )
+from civitas.api.utils import get_content_insight
 from civitas.db.models import Legislation, LegislationAction, Project2025Policy
 
 router = APIRouter()
@@ -119,6 +120,8 @@ async def get_legislation(
         except json.JSONDecodeError:
             subjects = []
 
+    insight = get_content_insight(db, "legislation", leg.id)
+
     return LegislationDetail(
         **LegislationBase.model_validate(leg).model_dump(),
         summary=leg.summary,
@@ -133,4 +136,5 @@ async def get_legislation(
             )
             for action in actions
         ],
+        **insight,
     )

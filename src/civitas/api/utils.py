@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import json
+
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
+
 from civitas.api.schemas import ObjectiveBase
-from civitas.db.models import Project2025Policy
+from civitas.db.models import ContentInsight, Project2025Policy
 
 
 def _normalize_objective_text(text: str | None) -> str:
@@ -61,3 +66,39 @@ def objective_to_base(obj: Project2025Policy) -> ObjectiveBase:
         title_full=full_title,
         updated_at=obj.updated_at,
     )
+
+
+def get_content_insight(
+    db: Session,
+    content_type: str,
+    content_id: int,
+) -> dict:
+    """Return cached insight fields for a content item."""
+    try:
+        insight = (
+            db.query(ContentInsight)
+            .filter(
+                ContentInsight.content_type == content_type,
+                ContentInsight.content_id == content_id,
+            )
+            .first()
+        )
+    except OperationalError:
+        return {}
+
+    if not insight:
+        return {}
+
+    key_impacts: list[str] = []
+    if insight.key_impacts:
+        try:
+            key_impacts = json.loads(insight.key_impacts)
+        except json.JSONDecodeError:
+            key_impacts = []
+
+    return {
+        "plain_summary": insight.summary,
+        "why_this_matters": insight.why_matters,
+        "key_impacts": key_impacts,
+        "insight_generated_at": insight.generated_at,
+    }

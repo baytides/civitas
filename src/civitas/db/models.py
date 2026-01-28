@@ -721,6 +721,31 @@ class ResistanceRecommendation(Base):
 # =============================================================================
 
 
+class ContentInsight(Base):
+    """Cached insight summaries for objectives, EOs, cases, and legislation."""
+
+    __tablename__ = "content_insights"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    content_type: Mapped[str] = mapped_column(String(50), index=True)
+    content_id: Mapped[int] = mapped_column(Integer, index=True)
+
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    why_matters: Mapped[str | None] = mapped_column(Text, nullable=True)
+    key_impacts: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+
+    ai_model_version: Mapped[str] = mapped_column(String(50))
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("content_type", "content_id", name="uq_content_insight"),
+        Index("ix_content_insight_type_id", "content_type", "content_id"),
+    )
+
+
 class ResistanceAnalysis(Base):
     """Cached AI analysis for resistance expert mode."""
 

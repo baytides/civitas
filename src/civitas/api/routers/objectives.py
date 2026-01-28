@@ -16,7 +16,7 @@ from civitas.api.schemas import (
     ObjectiveMetadata,
     ObjectiveStats,
 )
-from civitas.api.utils import build_objective_title, objective_to_base
+from civitas.api.utils import get_content_insight, objective_to_base
 from civitas.db.models import Project2025Policy
 
 router = APIRouter()
@@ -243,21 +243,11 @@ async def get_objective(
         json.loads(obj.matching_legislation_ids) if obj.matching_legislation_ids else []
     )
 
+    base = objective_to_base(obj)
+    insight = get_content_insight(db, "objective", obj.id)
+
     return ObjectiveDetail(
-        id=obj.id,
-        section=obj.section,
-        chapter=obj.chapter,
-        agency=obj.agency,
-        proposal_text=obj.proposal_text,
-        proposal_summary=obj.proposal_summary,
-        page_number=obj.page_number,
-        category=obj.category,
-        action_type=obj.action_type,
-        priority=obj.priority,
-        implementation_timeline=obj.implementation_timeline,
-        status=obj.status,
-        confidence=obj.confidence,
-        title=build_objective_title(obj),
+        **base.model_dump(),
         keywords=keywords,
         constitutional_concerns=constitutional_concerns,
         matching_eo_ids=matching_eo_ids,
@@ -265,4 +255,5 @@ async def get_objective(
         implementation_notes=obj.implementation_notes,
         created_at=obj.created_at,
         updated_at=obj.updated_at,
+        **insight,
     )

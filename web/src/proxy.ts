@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Middleware to add trailing slashes to page routes only.
- * API routes (/api/*) are excluded so they proxy cleanly to FastAPI
+ * Proxy to add trailing slashes to page routes only.
+ * API routes (/api/*) are excluded so they pass through cleanly to FastAPI
  * without redirect loops (FastAPI strips trailing slashes, Next.js adds them).
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Skip API routes — let rewrites handle them directly

@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import json
+import mimetypes
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from civitas.api.schemas import JusticeBase, JusticeDetail, JusticeList
 from civitas.db.models import Justice, JusticeOpinion, JusticeProfile
 
 router = APIRouter()
+
+PHOTO_DIR = Path("data/justices/photos")
 
 
 def get_db(request: Request) -> Session:
@@ -38,8 +44,43 @@ def _parse_json_object(value: str | None) -> dict:
     return parsed if isinstance(parsed, dict) else {}
 
 
+def _photo_url(request: Request, slug: str) -> str:
+    base = str(request.base_url).rstrip("/")
+    return f"{base}/api/v1/justices/{slug}/photo"
+
+
+def _ensure_photo_dir() -> None:
+    PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _guess_extension(url: str) -> str:
+    lowered = url.lower()
+    if lowered.endswith(".png"):
+        return "png"
+    if lowered.endswith(".jpg") or lowered.endswith(".jpeg"):
+        return "jpg"
+    return "jpg"
+
+
+def _download_photo(url: str, path: Path) -> bool:
+    try:
+        response = httpx.get(
+            url,
+            timeout=20.0,
+            follow_redirects=True,
+            headers={"User-Agent": "Civitas/1.0 (civic data project)"},
+        )
+        if response.status_code != 200:
+            return False
+        path.write_bytes(response.content)
+        return True
+    except Exception:
+        return False
+
+
 @router.get("/justices", response_model=JusticeList)
 async def list_justices(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
     active_only: bool = Query(False),
@@ -59,18 +100,29 @@ async def list_justices(
         .all()
     )
 
+    items_out = []
+    for item in items:
+        base = JusticeBase.model_validate(item)
+        items_out.append(
+            JusticeBase(
+                **base.model_dump(),
+                official_photo_url=_photo_url(request, item.slug),
+            )
+        )
+
     return JusticeList(
         page=page,
         per_page=per_page,
         total=total,
         total_pages=(total + per_page - 1) // per_page,
-        items=[JusticeBase.model_validate(item) for item in items],
+        items=items_out,
     )
 
 
 @router.get("/justices/{slug}", response_model=JusticeDetail)
 async def get_justice(
     slug: str,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> JusticeDetail:
     """Get a justice by slug with profile data."""
@@ -118,4 +170,27 @@ async def get_justice(
         methodology=profile.methodology if profile else None,
         disclaimer=profile.disclaimer if profile else None,
         generated_at=profile.generated_at if profile else None,
+        official_photo_url=_photo_url(request, justice.slug),
     )
+
+
+@router.get("/justices/{slug}/photo")
+async def get_justice_photo(
+    slug: str,
+    db: Session = Depends(get_db),
+) -> Response:
+    """Serve cached justice photo, downloading once if needed."""
+    justice = db.query(Justice).filter(Justice.slug == slug).first()
+    if not justice or not justice.official_photo_url:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+    _ensure_photo_dir()
+    ext = _guess_extension(justice.official_photo_url)
+    photo_path = PHOTO_DIR / f"{slug}.{ext}"
+
+    if not photo_path.exists():
+        if not _download_photo(justice.official_photo_url, photo_path):
+            raise HTTPException(status_code=404, detail="Photo not available")
+
+    media_type, _ = mimetypes.guess_type(str(photo_path))
+    return FileResponse(photo_path, media_type=media_type or "image/jpeg")

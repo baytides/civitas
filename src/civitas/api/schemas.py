@@ -253,6 +253,8 @@ class StateBillBase(BaseModel):
     session: str
     status: str | None = None
     introduced_date: date | None = None
+    p2025_category: str | None = None
+    p2025_stance: str | None = None  # support, oppose, neutral
 
 
 class StateLegislatorBase(BaseModel):

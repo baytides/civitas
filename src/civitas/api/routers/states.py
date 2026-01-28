@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from civitas.analysis.categories import CATEGORIES
 from civitas.api.schemas import (
     StateBase,
     StateBillBase,
@@ -16,7 +17,6 @@ from civitas.api.schemas import (
     StateList,
 )
 from civitas.db.models import Legislation, Legislator, StateResistanceAction
-from civitas.states import OpenStatesClient
 
 router = APIRouter()
 
@@ -26,8 +26,60 @@ def get_db(request: Request) -> Session:
     return Session(request.app.state.engine)
 
 
-# State name mapping
-STATE_NAMES = OpenStatesClient.STATES
+# State name mapping (static, OpenStates-free)
+STATE_NAMES = {
+    "al": "Alabama",
+    "ak": "Alaska",
+    "az": "Arizona",
+    "ar": "Arkansas",
+    "ca": "California",
+    "co": "Colorado",
+    "ct": "Connecticut",
+    "de": "Delaware",
+    "fl": "Florida",
+    "ga": "Georgia",
+    "hi": "Hawaii",
+    "id": "Idaho",
+    "il": "Illinois",
+    "in": "Indiana",
+    "ia": "Iowa",
+    "ks": "Kansas",
+    "ky": "Kentucky",
+    "la": "Louisiana",
+    "me": "Maine",
+    "md": "Maryland",
+    "ma": "Massachusetts",
+    "mi": "Michigan",
+    "mn": "Minnesota",
+    "ms": "Mississippi",
+    "mo": "Missouri",
+    "mt": "Montana",
+    "ne": "Nebraska",
+    "nv": "Nevada",
+    "nh": "New Hampshire",
+    "nj": "New Jersey",
+    "nm": "New Mexico",
+    "ny": "New York",
+    "nc": "North Carolina",
+    "nd": "North Dakota",
+    "oh": "Ohio",
+    "ok": "Oklahoma",
+    "or": "Oregon",
+    "pa": "Pennsylvania",
+    "ri": "Rhode Island",
+    "sc": "South Carolina",
+    "sd": "South Dakota",
+    "tn": "Tennessee",
+    "tx": "Texas",
+    "ut": "Utah",
+    "vt": "Vermont",
+    "va": "Virginia",
+    "wa": "Washington",
+    "wv": "West Virginia",
+    "wi": "Wisconsin",
+    "wy": "Wyoming",
+    "dc": "District of Columbia",
+}
 
 STATE_NAME_ALIASES: dict[str, str] = {}
 for code, name in STATE_NAMES.items():
@@ -57,6 +109,39 @@ def jurisdiction_aliases(code: str) -> list[str]:
     return list(aliases)
 
 
+P2025_CATEGORIES = [cat for cat in CATEGORIES if cat.p2025_related]
+
+
+def classify_bill(text: str) -> tuple[str | None, str | None]:
+    """Return (p2025_category, stance) using keyword heuristics."""
+    text_lower = text.lower()
+    best_category = None
+    best_score = 0
+    stance = None
+
+    for category in P2025_CATEGORIES:
+        score = sum(1 for kw in category.keywords if kw.lower() in text_lower)
+        if score > best_score:
+            best_score = score
+            best_category = category.slug
+
+        if category.threat_keywords and any(
+            kw.lower() in text_lower for kw in category.threat_keywords
+        ):
+            stance = "support"
+        if category.resistance_keywords and any(
+            kw.lower() in text_lower for kw in category.resistance_keywords
+        ):
+            stance = "oppose"
+
+    if best_score == 0:
+        return None, None
+
+    if stance is None:
+        stance = "neutral"
+    return best_category, stance
+
+
 @router.get("/states", response_model=StateList)
 async def list_states(
     db: Session = Depends(get_db),
@@ -77,6 +162,7 @@ async def list_states(
     # Get legislator counts by state
     legislator_counts = (
         db.query(Legislator.jurisdiction, func.count(Legislator.id))
+        .filter(Legislator.is_current.is_(True))
         .group_by(Legislator.jurisdiction)
         .all()
     )
@@ -131,24 +217,36 @@ async def get_state(
     # Get counts
     aliases = jurisdiction_aliases(code)
     bill_count = db.query(Legislation).filter(Legislation.jurisdiction.in_(aliases)).count()
-    legislator_count = db.query(Legislator).filter(Legislator.jurisdiction.in_(aliases)).count()
+    legislator_count = (
+        db.query(Legislator)
+        .filter(Legislator.jurisdiction.in_(aliases), Legislator.is_current.is_(True))
+        .count()
+    )
     resistance_action_count = (
         db.query(StateResistanceAction).filter(StateResistanceAction.state_code == code).count()
     )
 
     # Get recent bills
-    recent_bills = (
+    recent_bills_raw = (
         db.query(Legislation)
         .filter(Legislation.jurisdiction.in_(aliases))
         .order_by(Legislation.introduced_date.desc().nullslast())
-        .limit(10)
+        .limit(50)
         .all()
     )
+    recent_bills = []
+    for bill in recent_bills_raw:
+        text = f"{bill.title or ''} {bill.summary or ''}".strip()
+        category, stance = classify_bill(text)
+        if category:
+            recent_bills.append((bill, category, stance))
+        if len(recent_bills) >= 10:
+            break
 
     # Get legislators
     legislators = (
         db.query(Legislator)
-        .filter(Legislator.jurisdiction.in_(aliases))
+        .filter(Legislator.jurisdiction.in_(aliases), Legislator.is_current.is_(True))
         .order_by(Legislator.full_name)
         .limit(100)
         .all()
@@ -162,17 +260,21 @@ async def get_state(
         resistance_action_count=resistance_action_count,
         recent_bills=[
             StateBillBase(
-                id=b.id,
+                id=bill.id,
                 identifier=(
-                    f"{b.chamber.upper()[0]}B {b.number}" if b.number else b.source_id or str(b.id)
+                    f"{bill.chamber.upper()[0]}B {bill.number}"
+                    if bill.number
+                    else bill.source_id or str(bill.id)
                 ),
-                title=b.title,
-                chamber=b.chamber,
-                session=b.session or "",
-                status=b.status,
-                introduced_date=b.introduced_date,
+                title=bill.title,
+                chamber=bill.chamber,
+                session=bill.session or "",
+                status=bill.status,
+                introduced_date=bill.introduced_date,
+                p2025_category=category,
+                p2025_stance=stance,
             )
-            for b in recent_bills
+            for bill, category, stance in recent_bills
         ],
         legislators=[
             StateLegislatorBase(
@@ -214,12 +316,19 @@ async def get_state_bills(
     total = query.count()
     offset = (page - 1) * per_page
 
-    bills = (
+    bills_raw = (
         query.order_by(Legislation.introduced_date.desc().nullslast())
         .offset(offset)
         .limit(per_page)
         .all()
     )
+
+    bills = []
+    for bill in bills_raw:
+        text = f"{bill.title or ''} {bill.summary or ''}".strip()
+        category, stance = classify_bill(text)
+        if category:
+            bills.append((bill, category, stance))
 
     return {
         "page": page,
@@ -228,17 +337,21 @@ async def get_state_bills(
         "total_pages": (total + per_page - 1) // per_page,
         "items": [
             StateBillBase(
-                id=b.id,
+                id=bill.id,
                 identifier=(
-                    f"{b.chamber.upper()[0]}B {b.number}" if b.number else b.source_id or str(b.id)
+                    f"{bill.chamber.upper()[0]}B {bill.number}"
+                    if bill.number
+                    else bill.source_id or str(bill.id)
                 ),
-                title=b.title,
-                chamber=b.chamber,
-                session=b.session or "",
-                status=b.status,
-                introduced_date=b.introduced_date,
+                title=bill.title,
+                chamber=bill.chamber,
+                session=bill.session or "",
+                status=bill.status,
+                introduced_date=bill.introduced_date,
+                p2025_category=category,
+                p2025_stance=stance,
             ).model_dump()
-            for b in bills
+            for bill, category, stance in bills
         ],
     }
 
@@ -257,7 +370,9 @@ async def get_state_legislators(
         raise HTTPException(status_code=404, detail="State not found")
 
     aliases = jurisdiction_aliases(code)
-    query = db.query(Legislator).filter(Legislator.jurisdiction.in_(aliases))
+    query = db.query(Legislator).filter(
+        Legislator.jurisdiction.in_(aliases), Legislator.is_current.is_(True)
+    )
 
     if chamber:
         query = query.filter(Legislator.chamber == chamber)

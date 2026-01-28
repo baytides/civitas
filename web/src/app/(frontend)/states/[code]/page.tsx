@@ -19,6 +19,8 @@ interface StateBill {
   session: string;
   status: string | null;
   introduced_date: string | null;
+  p2025_category?: string | null;
+  p2025_stance?: string | null;
 }
 
 interface StateLegislator {
@@ -191,6 +193,24 @@ export default function StateDetailPage() {
                         {bill.status && (
                           <Badge variant="outline" className="shrink-0 text-xs">
                             {bill.status}
+                          </Badge>
+                        )}
+                        {bill.p2025_stance && (
+                          <Badge
+                            variant={
+                              bill.p2025_stance === "oppose"
+                                ? "enacted"
+                                : bill.p2025_stance === "support"
+                                  ? "blocked"
+                                  : "outline"
+                            }
+                            className="shrink-0 text-xs"
+                          >
+                            {bill.p2025_stance === "oppose"
+                              ? "Opposes P2025"
+                              : bill.p2025_stance === "support"
+                                ? "Supports P2025"
+                                : "P2025 Related"}
                           </Badge>
                         )}
                       </div>

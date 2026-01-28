@@ -141,22 +141,14 @@ def fetch_circuit_assignments() -> dict[str, list[str]]:
 
     assignments: dict[str, list[str]] = {}
 
-    # Split by headings containing justice names
-    blocks = re.split(r"<h3[^>]*>", html, flags=re.IGNORECASE)
-    for block in blocks[1:]:
-        name_match = re.search(r"([^<]+)</h3>", block, flags=re.IGNORECASE)
-        if not name_match:
+    # Circuit assignments live in a list of <li><b>For the ... Circuit - Justice Name</b></li>
+    pattern = re.compile(r"For the\s+([^<]+?)\s+-\s*([^<]+?)</b>", flags=re.IGNORECASE)
+    for circuit_text, justice_text in pattern.findall(html):
+        circuit = " ".join(circuit_text.split())
+        justice = " ".join(justice_text.split())
+        if not circuit or not justice or "Circuit" not in circuit:
             continue
-        name = name_match.group(1).strip()
-
-        circuits = re.findall(r">([^<]*Circuit[^<]*)<", block, flags=re.IGNORECASE)
-        cleaned = []
-        for circuit in circuits:
-            text = " ".join(circuit.split())
-            if "Circuit" in text:
-                cleaned.append(text)
-        if cleaned:
-            assignments[name] = cleaned
+        assignments.setdefault(justice, []).append(circuit)
 
     return assignments
 

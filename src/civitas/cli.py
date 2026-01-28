@@ -410,9 +410,7 @@ def sync_scotus_justices(
         linked = link_opinions_to_justices(session)
         session.commit()
 
-    console.print(
-        f"[bold green]Synced {updated} justices, linked {linked} opinions.[/bold green]"
-    )
+    console.print(f"[bold green]Synced {updated} justices, linked {linked} opinions.[/bold green]")
 
 
 @scotus_app.command("generate-profiles")

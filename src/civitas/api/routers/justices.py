@@ -78,11 +78,7 @@ async def get_justice(
     if not justice:
         raise HTTPException(status_code=404, detail="Justice not found")
 
-    profile = (
-        db.query(JusticeProfile)
-        .filter(JusticeProfile.justice_id == justice.id)
-        .first()
-    )
+    profile = db.query(JusticeProfile).filter(JusticeProfile.justice_id == justice.id).first()
 
     counts = {
         "majority": db.query(JusticeOpinion)

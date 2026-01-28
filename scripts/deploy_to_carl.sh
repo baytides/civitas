@@ -6,7 +6,12 @@ set -e
 CARL_HOST="20.98.70.48"
 CARL_USER="azureuser"
 DEPLOY_DIR="/opt/civitas"
-CONGRESS_API_KEY="IhCViWp64GevdK0vQXCTy2oPxyrE7oMoDgeHqQ1Z"
+CONGRESS_API_KEY="${CONGRESS_API_KEY:-}"
+
+if [[ -z "${CONGRESS_API_KEY}" ]]; then
+    echo "ERROR: CONGRESS_API_KEY is not set. Export it before running this script."
+    exit 1
+fi
 
 echo "=========================================="
 echo "Civitas Deployment to Carl AI Server"

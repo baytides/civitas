@@ -19,9 +19,8 @@ const nextConfig = {
     return config;
   },
   turbopack: {},
-  // Trailing slashes for page routes only; API routes skip this via skipTrailingSlashRedirect + middleware
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
+  // Avoid trailing-slash redirects to prevent redirect loops on Cloudflare/OpenNext
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {

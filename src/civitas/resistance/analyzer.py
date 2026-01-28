@@ -165,8 +165,13 @@ class ResistanceAnalyzer:
 
         if max_age_days is not None:
             cutoff = datetime.now(UTC) - timedelta(days=max_age_days)
-            if analysis.generated_at and analysis.generated_at < cutoff:
-                return None
+            if analysis.generated_at:
+                cutoff_to_compare = cutoff
+                generated_at = analysis.generated_at
+                if generated_at.tzinfo is None and cutoff.tzinfo is not None:
+                    cutoff_to_compare = cutoff.replace(tzinfo=None)
+                if generated_at < cutoff_to_compare:
+                    return None
 
         try:
             return json.loads(analysis.analysis_json)

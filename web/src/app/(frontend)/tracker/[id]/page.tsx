@@ -113,12 +113,12 @@ export default function ObjectiveDetailPage() {
             }
           }
         } else if (response.status === 404) {
-          setError("Policy not found");
+          setError("This item is still being processed by Carl. Check back soon.");
         } else {
           setError("Failed to load policy details");
         }
       } catch {
-        setError("This item is still being processed by Carl. Check back soon.");
+        setError("Failed to connect to server");
       }
       setLoading(false);
     }

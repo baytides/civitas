@@ -80,12 +80,12 @@ export default function LegislationDetailPage() {
             // ignore objective fetch failures
           }
         } else if (response.status === 404) {
-          setError("Legislation not found");
+          setError("This item is still being processed by Carl. Check back soon.");
         } else {
           setError("Failed to load legislation");
         }
       } catch {
-        setError("This item is still being processed by Carl. Check back soon.");
+        setError("Failed to connect to server");
       }
       setLoading(false);
     }

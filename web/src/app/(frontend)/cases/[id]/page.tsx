@@ -56,12 +56,12 @@ export default function CaseDetailPage() {
         if (response.ok) {
           setCourtCase(await response.json());
         } else if (response.status === 404) {
-          setError("Court case not found");
+          setError("This item is still being processed by Carl. Check back soon.");
         } else {
           setError("Failed to load court case");
         }
       } catch {
-        setError("This item is still being processed by Carl. Check back soon.");
+        setError("Failed to connect to server");
       }
       setLoading(false);
     }

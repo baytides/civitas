@@ -56,12 +56,12 @@ export default function StateDetailPage() {
         if (response.ok) {
           setState(await response.json());
         } else if (response.status === 404) {
-          setError("State not found");
+          setError("This item is still being processed by Carl. Check back soon.");
         } else {
           setError("Failed to load state data");
         }
       } catch {
-        setError("This item is still being processed by Carl. Check back soon.");
+        setError("Failed to connect to server");
       }
       setLoading(false);
     }

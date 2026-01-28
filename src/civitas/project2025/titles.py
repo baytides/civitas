@@ -40,7 +40,7 @@ class Project2025TitleGenerator:
             "You are a policy editor. Create short, human-readable titles for each item. "
             "Use 6-12 words. Start with a clear action or outcome. "
             "Avoid jargon, avoid filler words, avoid quoting the full sentence. "
-            "Return JSON only: {\"titles\": [{\"id\": 1, \"short_title\": \"...\"}]}"
+            'Return JSON only: {"titles": [{"id": 1, "short_title": "..."}]}'
         )
         system = load_prompt(
             path_env="CARL_OBJECTIVE_TITLE_PROMPT_PATH",
@@ -58,10 +58,7 @@ class Project2025TitleGenerator:
             }
             for item in items
         ]
-        user = (
-            "Generate short titles for these items:\n"
-            f"{json.dumps(payload, ensure_ascii=True)}"
-        )
+        user = f"Generate short titles for these items:\n{json.dumps(payload, ensure_ascii=True)}"
         return [
             {"role": "system", "content": system},
             {"role": "user", "content": user},

@@ -673,9 +673,7 @@ def generate_project2025_titles(
         "--limit",
         help="Number of items to generate per batch",
     ),
-    ids: str | None = typer.Option(
-        None, "--ids", help="Comma-separated policy IDs to regenerate"
-    ),
+    ids: str | None = typer.Option(None, "--ids", help="Comma-separated policy IDs to regenerate"),
     force: bool = typer.Option(False, "--force", help="Regenerate even if title exists"),
     ollama_host: str | None = typer.Option(
         None,

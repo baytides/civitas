@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { USMap } from "@/components/states/USMap";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
@@ -25,9 +27,15 @@ interface StateDisplay {
 }
 
 export default function StatesPage() {
+  const router = useRouter();
   const [states, setStates] = useState<StateDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"name" | "bills">("name");
+
+  const handleStateClick = useCallback(
+    (code: string) => router.push(`/states/${code}`),
+    [router]
+  );
 
   useEffect(() => {
     async function fetchStates() {
@@ -115,6 +123,21 @@ export default function StatesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Interactive Map */}
+      {states.length > 0 && (
+        <Card className="mb-8">
+          <CardContent className="pt-6">
+            <h2 className="text-lg font-semibold mb-2 text-center">
+              Legislative Activity by State
+            </h2>
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              Click a state to view details. Color intensity reflects bill count.
+            </p>
+            <USMap states={states} onStateClick={handleStateClick} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Sort Options */}
       <div className="flex justify-end gap-2 mb-6">

@@ -74,15 +74,19 @@ def fetch_justice_metadata() -> list[JusticeMetadata]:
     response.raise_for_status()
     html = response.text
 
-    pattern = re.compile(
-        r'<img[^>]+src="([^"]*justice_pictures[^"]+)"[^>]*alt="([^"]+)"',
-        re.IGNORECASE,
-    )
+    tag_pattern = re.compile(r"<img[^>]*justice_pictures[^>]*>", re.IGNORECASE)
+    src_pattern = re.compile(r'src="([^"]+)"', re.IGNORECASE)
+    alt_pattern = re.compile(r'alt="([^"]+)"', re.IGNORECASE)
 
     items: list[JusticeMetadata] = []
-    for match in pattern.finditer(html):
-        src = match.group(1)
-        alt = match.group(2)
+    for match in tag_pattern.finditer(html):
+        tag = match.group(0)
+        src_match = src_pattern.search(tag)
+        alt_match = alt_pattern.search(tag)
+        if not src_match or not alt_match:
+            continue
+        src = src_match.group(1)
+        alt = alt_match.group(1)
 
         name_part, role_part = _parse_alt_text(alt)
         if not name_part:

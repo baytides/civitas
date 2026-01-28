@@ -30,14 +30,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
 
-from civitas.db.models import Base, get_database_url, get_engine
+from civitas.db.models import Base
 
 
 def create_postgres_database(db_url: str) -> None:
     """Create all tables in PostgreSQL."""
-    print(f"Creating database tables...")
+    print("Creating database tables...")
 
     engine = create_engine(db_url)
     Base.metadata.create_all(engine)
@@ -66,7 +65,8 @@ def setup_postgres_fts(engine) -> None:
         conn.execute(text("""
             CREATE INDEX IF NOT EXISTS ix_court_cases_fts
             ON court_cases
-            USING GIN (to_tsvector('english', coalesce(case_name, '') || ' ' || coalesce(holding, '')))
+            USING GIN (to_tsvector('english',
+                coalesce(case_name, '') || ' ' || coalesce(holding, '')))
         """))
 
         # Create GIN indexes for law sections
@@ -80,7 +80,9 @@ def setup_postgres_fts(engine) -> None:
         conn.execute(text("""
             CREATE INDEX IF NOT EXISTS ix_p2025_policies_fts
             ON project2025_policies
-            USING GIN (to_tsvector('english', coalesce(proposal_text, '') || ' ' || coalesce(proposal_summary, '')))
+            USING GIN (to_tsvector('english',
+                coalesce(proposal_text, '') || ' '
+                || coalesce(proposal_summary, '')))
         """))
 
         conn.commit()
@@ -90,8 +92,6 @@ def setup_postgres_fts(engine) -> None:
 
 def migrate_from_sqlite(sqlite_path: str, postgres_url: str) -> None:
     """Migrate data from SQLite to PostgreSQL."""
-    import json
-    from datetime import datetime
 
     print(f"Migrating data from {sqlite_path} to PostgreSQL...")
 

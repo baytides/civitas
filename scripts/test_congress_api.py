@@ -7,11 +7,10 @@ from pathlib import Path
 # Add src to path for development
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from rich import print as rprint
 from rich.console import Console
 from rich.table import Table
 
-from civitas.congress import CongressClient, BillSummary, LawListResponse
+from civitas.congress import CongressClient, LawListResponse
 
 console = Console()
 

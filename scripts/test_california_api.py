@@ -17,14 +17,18 @@ console = Console()
 
 def test_download_and_parse(session_year: int = 2023):
     """Test downloading and parsing a legislative session."""
-    console.print(f"\n[bold blue]Testing: California Legislature {session_year} Session[/bold blue]")
+    msg = f"Testing: California Legislature {session_year} Session"
+    console.print(f"\n[bold blue]{msg}[/bold blue]")
 
     client = CaliforniaLegislatureClient(data_dir=Path("data/california"))
 
     # Check if data exists, download if not
     data_path = client.data_dir / str(session_year)
     if not data_path.exists():
-        console.print(f"[yellow]Downloading {session_year} session data (this may take a while)...[/yellow]")
+        console.print(
+            f"[yellow]Downloading {session_year} session data"
+            " (this may take a while)...[/yellow]"
+        )
         data_path = client.download_session(session_year)
     else:
         console.print(f"[green]Using cached data from {data_path}[/green]")
@@ -83,7 +87,9 @@ def test_download_and_parse(session_year: int = 2023):
         for code in codes[:15]:  # Show first 15
             table.add_row(
                 code.code,
-                (code.title[:60] + "...") if code.title and len(code.title) > 60 else (code.title or "N/A"),
+                (code.title[:60] + "...")
+                if code.title and len(code.title) > 60
+                else (code.title or "N/A"),
             )
 
         console.print(table)
@@ -98,7 +104,10 @@ def test_download_and_parse(session_year: int = 2023):
         if bill.is_chaptered:
             chaptered_count += 1
 
-    console.print(f"[green]✓ Found {chaptered_count} chaptered bills out of {total_count} total[/green]")
+    console.print(
+        f"[green]✓ Found {chaptered_count} chaptered bills"
+        f" out of {total_count} total[/green]"
+    )
 
     client.close()
 
@@ -130,7 +139,11 @@ def test_search_environmental_bills(session_year: int = 2023):
             for bill, version in results[:5]:
                 subject = ""
                 if version and version.subject:
-                    subject = version.subject[:50] + "..." if len(version.subject) > 50 else version.subject
+                    subject = (
+                        version.subject[:50] + "..."
+                        if len(version.subject) > 50
+                        else version.subject
+                    )
 
                 table.add_row(
                     bill.citation,

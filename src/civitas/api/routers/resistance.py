@@ -16,6 +16,8 @@ from civitas.api.schemas import (
 )
 from civitas.db.models import (
     Project2025Policy,
+)
+from civitas.db.models import (
     ResistanceRecommendation as DBResistanceRecommendation,
 )
 from civitas.resistance import ImplementationTracker, ResistanceAnalyzer, ResistanceRecommender

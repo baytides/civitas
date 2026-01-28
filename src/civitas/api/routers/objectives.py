@@ -11,7 +11,6 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from civitas.api.schemas import (
-    ObjectiveBase,
     ObjectiveDetail,
     ObjectiveList,
     ObjectiveMetadata,

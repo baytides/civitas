@@ -83,7 +83,7 @@ class CourtListenerClient:
                 response = self._client.get(url, params=params)
                 response.raise_for_status()
                 return response
-            except (httpx.ReadTimeout, httpx.ConnectTimeout) as exc:
+            except (httpx.ReadTimeout, httpx.ConnectTimeout):
                 if attempt == 3:
                     raise
                 time.sleep(1.5 * attempt)

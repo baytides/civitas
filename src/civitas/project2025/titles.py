@@ -58,8 +58,14 @@ class Project2025TitleGenerator:
             }
             for item in items
         ]
-        user = f"Generate short titles for these items:\n{json.dumps(payload, ensure_ascii=True)}"
-        return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+        user = (
+            "Generate short titles for these items:\n"
+            f"{json.dumps(payload, ensure_ascii=True)}"
+        )
+        return [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
 
     def _parse_response(self, text: str) -> dict | None:
         if not text:

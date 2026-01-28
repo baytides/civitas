@@ -668,13 +668,25 @@ def update_project2025_matches(
 @ingest_app.command("project2025-titles")
 def generate_project2025_titles(
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    limit: int = typer.Option(50, "--limit", help="Number of items to generate per batch"),
+    limit: int = typer.Option(
+        50,
+        "--limit",
+        help="Number of items to generate per batch",
+    ),
     ids: str | None = typer.Option(
         None, "--ids", help="Comma-separated policy IDs to regenerate"
     ),
     force: bool = typer.Option(False, "--force", help="Regenerate even if title exists"),
-    ollama_host: str | None = typer.Option(None, "--ollama-host", help="Ollama host URL"),
-    ollama_model: str | None = typer.Option(None, "--ollama-model", help="Ollama model name"),
+    ollama_host: str | None = typer.Option(
+        None,
+        "--ollama-host",
+        help="Ollama host URL",
+    ),
+    ollama_model: str | None = typer.Option(
+        None,
+        "--ollama-model",
+        help="Ollama model name",
+    ),
 ):
     """Generate short objective titles using Carl (Ollama)."""
     from sqlalchemy.orm import Session

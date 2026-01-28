@@ -1,15 +1,12 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
 interface JusticeDetail {
   id: number;
@@ -31,55 +28,18 @@ interface JusticeDetail {
   generated_at?: string | null;
 }
 
-export default function JusticeDetailPage() {
-  const params = useParams();
-  const slug = useMemo(() => {
-    if (!params) return null;
-    const value = params.slug;
-    if (Array.isArray(value)) return value[0];
-    return value ? String(value) : null;
-  }, [params]);
-  const [justice, setJustice] = useState<JusticeDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchJustice() {
-      if (!slug) {
-        return;
-      }
-      try {
-        const response = await fetch(`${API_BASE}/justices/${slug}`);
-        if (response.ok) {
-          const data = await response.json();
-          setJustice(data);
-        }
-      } catch (error) {
-        console.error("Error fetching justice:", error);
-      }
-      setLoading(false);
-    }
-    fetchJustice();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="container py-8">
-        <Skeleton className="h-10 w-1/3 mb-4" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
+export default async function JusticeDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const response = await fetch(`${API_BASE}/justices/${params.slug}`, {
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    notFound();
   }
-
-  if (!justice) {
-    return (
-      <div className="container py-8">
-        <p className="text-muted-foreground">Justice not found.</p>
-        <Button asChild className="mt-4">
-          <Link href="/justices">Back to Justices</Link>
-        </Button>
-      </div>
-    );
-  }
+  const justice = (await response.json()) as JusticeDetail;
 
   const counts = justice.opinion_counts || {};
 

@@ -1,13 +1,11 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { notFound } from "next/navigation";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
 interface JusticeAPI {
   id: number;
@@ -18,45 +16,15 @@ interface JusticeAPI {
   official_photo_url?: string | null;
 }
 
-export default function JusticesPage() {
-  const [justices, setJustices] = useState<JusticeAPI[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchJustices() {
-      try {
-        const response = await fetch(`${API_BASE}/justices?per_page=200`);
-        if (response.ok) {
-          const data = await response.json();
-          setJustices(data.items || []);
-        }
-      } catch (error) {
-        console.error("Error fetching justices:", error);
-      }
-      setLoading(false);
-    }
-    fetchJustices();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Supreme Court Justices</h1>
-          <p className="text-muted-foreground">
-            Profiles and analytical summaries of the current Court.
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(9)].map((_, i) => (
-            <Skeleton key={i} className="h-48" />
-          ))}
-        </div>
-      </div>
-    );
+export default async function JusticesPage() {
+  const response = await fetch(`${API_BASE}/justices?per_page=200`, {
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    notFound();
   }
-
-  const active = justices.filter((justice) => justice.is_active);
+  const data = (await response.json()) as { items: JusticeAPI[] };
+  const active = (data.items || []).filter((justice) => justice.is_active);
 
   return (
     <div className="container py-8">

@@ -89,7 +89,8 @@ export default function TimelinePage() {
           let totalPages = 1;
 
           while (page <= totalPages) {
-            const response = await fetch(`${API_BASE}/${path}?page=${page}&per_page=${perPage}`);
+            const separator = path.includes("?") ? "&" : "?";
+            const response = await fetch(`${API_BASE}/${path}${separator}page=${page}&per_page=${perPage}`);
             if (!response.ok) break;
             const data = await response.json();
             items.push(...(data.items ?? []));

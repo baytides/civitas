@@ -195,20 +195,43 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
                 elif not isinstance(recs, list):
                     recs = [recs]
             except json.JSONDecodeError:
-                # Fallback to a single, minimally structured recommendation
-                recs = [
-                    {
-                        "action_type": "unknown",
-                        "title": "AI-generated recommendation (unstructured)",
-                        "description": content.strip()[:2000],
-                        "rationale": "",
-                        "legal_basis": None,
-                        "likelihood_of_success": "medium",
-                        "time_sensitivity": "soon",
-                        "resources_required": "medium",
-                        "action_steps": [],
-                    }
-                ]
+                # Attempt a self-repair pass for malformed JSON
+                repair_prompt = (
+                    "Fix the following content into valid JSON. "
+                    "Return ONLY a JSON array of recommendation objects. "
+                    "Each object must include action_type, title, description, "
+                    "rationale, legal_basis, likelihood_of_success, time_sensitivity, "
+                    "resources_required, action_steps, model_text.\n\nCONTENT:\n"
+                    f"{content}"
+                )
+                try:
+                    repair = client.chat(
+                        model=self.ollama_model,
+                        messages=[{"role": "user", "content": repair_prompt}],
+                        format="json",
+                        options={"temperature": 0.0, "num_predict": 300},
+                    )
+                    fixed = repair["message"]["content"]
+                    recs = json.loads(fixed)
+                    if isinstance(recs, dict) and "recommendations" in recs:
+                        recs = recs["recommendations"]
+                    elif not isinstance(recs, list):
+                        recs = [recs]
+                except Exception:
+                    # Fallback to a single, minimally structured recommendation
+                    recs = [
+                        {
+                            "action_type": "unknown",
+                            "title": "AI-generated recommendation (unstructured)",
+                            "description": content.strip()[:2000],
+                            "rationale": "",
+                            "legal_basis": None,
+                            "likelihood_of_success": "medium",
+                            "time_sensitivity": "soon",
+                            "resources_required": "medium",
+                            "action_steps": [],
+                        }
+                    ]
 
             return recs
 
@@ -222,6 +245,13 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
         if rec.get("error") or rec.get("parse_error"):
             return
 
+        def _jsonify(value):
+            if value is None:
+                return None
+            if isinstance(value, (dict, list)):
+                return json.dumps(value, ensure_ascii=True)
+            return value
+
         db_rec = ResistanceRecommendation(
             p2025_policy_id=policy_id,
             tier=tier,
@@ -230,14 +260,16 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
             description=rec.get("description", ""),
             rationale=rec.get("rationale", ""),
             legal_basis=rec.get("legal_basis"),
-            likelihood_of_success=rec.get("likelihood_of_success", "medium"),
-            time_sensitivity=rec.get("time_sensitivity", "soon"),
-            resources_required=rec.get("resources_required", "medium"),
-            action_steps=json.dumps(rec.get("action_steps", [])),
-            model_complaint=rec.get("model_text")
+            likelihood_of_success=str(rec.get("likelihood_of_success", "medium")).lower(),
+            time_sensitivity=str(rec.get("time_sensitivity", "soon")).lower(),
+            resources_required=str(rec.get("resources_required", "medium")).lower()
+            if not isinstance(rec.get("resources_required"), (dict, list))
+            else "medium",
+            action_steps=_jsonify(rec.get("action_steps", [])),
+            model_complaint=_jsonify(rec.get("model_text"))
             if "challenge" in rec.get("action_type", "")
             else None,
-            model_legislation=rec.get("model_text")
+            model_legislation=_jsonify(rec.get("model_text"))
             if "legislation" in rec.get("action_type", "")
             else None,
             ai_model_version=self.ollama_model,

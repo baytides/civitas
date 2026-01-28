@@ -57,7 +57,6 @@ export default function JusticesPage() {
   }
 
   const active = justices.filter((justice) => justice.is_active);
-  const inactive = justices.filter((justice) => !justice.is_active);
 
   return (
     <div className="container py-8">
@@ -103,42 +102,7 @@ export default function JusticesPage() {
         </div>
       </div>
 
-      {inactive.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Former Justices</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {inactive.map((justice) => (
-              <Link key={justice.id} href={`/justices/${justice.slug}`}>
-                <Card className="h-full transition-shadow hover:shadow-md">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center gap-4">
-                      {justice.official_photo_url ? (
-                        <Image
-                          src={justice.official_photo_url}
-                          alt={justice.name}
-                          width={64}
-                          height={64}
-                          className="h-16 w-16 rounded-full object-cover"
-                          unoptimized
-                        />
-                      ) : (
-                        <div className="h-16 w-16 rounded-full bg-muted" />
-                      )}
-                      <div>
-                        <div className="text-lg font-semibold">{justice.name}</div>
-                        <div className="text-sm text-muted-foreground">{justice.role}</div>
-                        <Badge className="mt-2" variant="outline">
-                          Retired
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Former justices intentionally hidden to keep focus on current Court. */}
     </div>
   );
 }

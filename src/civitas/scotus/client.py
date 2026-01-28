@@ -82,20 +82,38 @@ class SCOTUSClient:
         soup = BeautifulSoup(response.text, "lxml")
         opinions = []
 
-        # Find the opinions table
-        table = soup.find("table", class_="table")
+        # Find the opinions table (layout varies)
+        table = soup.find("table", class_="table") or soup.find("table")
         if not table:
             return []
 
+        date_pattern = re.compile(r"\d{1,2}/\d{1,2}/\d{2}")
+
         for row in table.find_all("tr")[1:]:  # Skip header
             cells = row.find_all("td")
-            if len(cells) < 4:
+            if len(cells) < 3:
                 continue
 
-            date_str = cells[0].get_text(strip=True)
-            docket = cells[1].get_text(strip=True)
-            case_name = cells[2].get_text(strip=True)
-            pdf_link = cells[3].find("a")
+            # Determine date/docket columns dynamically
+            date_idx = None
+            for i, cell in enumerate(cells):
+                if date_pattern.search(cell.get_text(strip=True)):
+                    date_idx = i
+                    break
+            if date_idx is None or date_idx + 1 >= len(cells):
+                continue
+
+            date_str = cells[date_idx].get_text(strip=True)
+            docket = cells[date_idx + 1].get_text(strip=True)
+
+            pdf_link = None
+            case_name = None
+            for cell in cells:
+                link = cell.find("a")
+                if link and link.get("href", "").endswith(".pdf"):
+                    pdf_link = link
+                    case_name = link.get_text(strip=True)
+                    break
 
             if not pdf_link:
                 continue

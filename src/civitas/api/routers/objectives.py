@@ -90,6 +90,7 @@ async def get_objective_stats(
             return "unknown"
         normalized = re.sub(r"[\s\-]+", "_", value.strip().lower())
         status_map = {
+            "active": "in_progress",
             "inprogress": "in_progress",
             "in_progress": "in_progress",
             "inprogressing": "in_progress",

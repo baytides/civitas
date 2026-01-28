@@ -37,7 +37,7 @@ class Project2025Tracker:
     def find_matching_legislation(
         self,
         policy: Project2025Policy,
-        threshold: int = 3,
+        threshold: int = 1,
     ) -> list[Legislation]:
         """Find legislation that matches a Project 2025 policy.
 
@@ -49,8 +49,8 @@ class Project2025Tracker:
             List of matching Legislation objects
         """
         keywords = json.loads(policy.keywords) if policy.keywords else []
-
-        if not keywords:
+        terms = self._extract_terms(policy, keywords)
+        if not terms:
             return []
 
         # Search legislation for keyword matches
@@ -58,7 +58,7 @@ class Project2025Tracker:
 
         matches = []
         for leg in query.all():
-            score = self._calculate_match_score(leg, keywords)
+            score = self._calculate_match_score(leg, terms)
             if score >= threshold:
                 matches.append((leg, score))
 
@@ -69,7 +69,7 @@ class Project2025Tracker:
     def find_matching_executive_orders(
         self,
         policy: Project2025Policy,
-        threshold: int = 2,
+        threshold: int = 1,
     ) -> list[ExecutiveOrder]:
         """Find executive orders matching a policy.
 
@@ -81,15 +81,15 @@ class Project2025Tracker:
             List of matching ExecutiveOrder objects
         """
         keywords = json.loads(policy.keywords) if policy.keywords else []
-
-        if not keywords:
+        terms = self._extract_terms(policy, keywords)
+        if not terms:
             return []
 
         query = self.session.query(ExecutiveOrder)
 
         matches = []
         for eo in query.all():
-            score = self._calculate_eo_match_score(eo, keywords)
+            score = self._calculate_eo_match_score(eo, terms)
             if score >= threshold:
                 matches.append((eo, score))
 
@@ -99,7 +99,7 @@ class Project2025Tracker:
     def _calculate_match_score(
         self,
         legislation: Legislation,
-        keywords: list[str],
+        terms: list[str],
     ) -> int:
         """Calculate match score between legislation and keywords."""
         score = 0
@@ -108,11 +108,12 @@ class Project2025Tracker:
                 legislation.title or "",
                 legislation.summary or "",
                 legislation.policy_area or "",
+                legislation.full_text or "",
             ]
         ).lower()
 
-        for keyword in keywords:
-            if keyword.lower() in search_text:
+        for term in terms:
+            if term in search_text:
                 score += 1
 
         return score
@@ -120,7 +121,7 @@ class Project2025Tracker:
     def _calculate_eo_match_score(
         self,
         eo: ExecutiveOrder,
-        keywords: list[str],
+        terms: list[str],
     ) -> int:
         """Calculate match score for executive orders."""
         score = 0
@@ -128,14 +129,33 @@ class Project2025Tracker:
             [
                 eo.title or "",
                 eo.abstract or "",
+                eo.full_text or "",
             ]
         ).lower()
 
-        for keyword in keywords:
-            if keyword.lower() in search_text:
+        for term in terms:
+            if term in search_text:
                 score += 1
 
         return score
+
+    def _extract_terms(self, policy: Project2025Policy, keywords: list[str]) -> list[str]:
+        """Build a normalized term list for matching."""
+        combined = " ".join(
+            [
+                policy.proposal_text or "",
+                policy.proposal_summary or "",
+                policy.agency or "",
+                " ".join(keywords),
+            ]
+        ).lower()
+        raw_terms = {term.strip(".,;:()[]{}\"'") for term in combined.split()}
+        terms = [
+            term
+            for term in raw_terms
+            if len(term) >= 5 and term not in {"shall", "would", "could", "there", "their"}
+        ]
+        return sorted(terms)
 
     def update_policy_matches(self, policy_id: int) -> dict:
         """Update matched items for a policy.
@@ -161,7 +181,7 @@ class Project2025Tracker:
 
         # Update status based on matches
         if legislation or eos:
-            policy.status = "active"
+            policy.status = "in_progress"
 
         self.session.commit()
 
@@ -197,7 +217,7 @@ class Project2025Tracker:
             report["by_agency"][agency] = report["by_agency"].get(agency, 0) + 1
 
             # Track active implementations
-            if policy.status == "active":
+            if policy.status == "in_progress":
                 leg_ids = json.loads(policy.matching_legislation_ids or "[]")
                 eo_ids = json.loads(policy.matching_eo_ids or "[]")
 
@@ -270,7 +290,7 @@ class Project2025Tracker:
         """
         policies = (
             self.session.query(Project2025Policy)
-            .filter(Project2025Policy.status == "active")
+            .filter(Project2025Policy.status == "in_progress")
             .order_by(Project2025Policy.last_checked.desc())
             .limit(limit)
             .all()

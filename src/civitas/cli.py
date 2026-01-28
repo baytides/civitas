@@ -394,6 +394,11 @@ app.add_typer(scotus_app, name="scotus")
 
 @scotus_app.command("sync-justices")
 def sync_scotus_justices(
+    azure_photos: bool = typer.Option(
+        False,
+        "--azure-photos/--no-azure-photos",
+        help="Store official photos in Azure Blob Storage",
+    ),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Sync justice metadata and link opinions to justices."""
@@ -401,12 +406,19 @@ def sync_scotus_justices(
 
     from civitas.db.models import Base, get_engine
     from civitas.scotus import link_opinions_to_justices, sync_justices
+    from civitas.storage import AzureStorageClient
 
     engine = get_engine(db_path)
     Base.metadata.create_all(engine)
 
+    azure_client = AzureStorageClient() if azure_photos else None
+
     with Session(engine) as session:
-        updated = sync_justices(session)
+        updated = sync_justices(
+            session,
+            azure_client=azure_client,
+            download_photos=azure_photos,
+        )
         linked = link_opinions_to_justices(session)
         session.commit()
 

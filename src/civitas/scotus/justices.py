@@ -53,6 +53,15 @@ class JusticeMetadata:
     is_active: bool
 
 
+def _guess_extension(url: str) -> str:
+    lowered = url.lower()
+    if lowered.endswith(".png"):
+        return "png"
+    if lowered.endswith(".jpg") or lowered.endswith(".jpeg"):
+        return "jpg"
+    return "jpg"
+
+
 def _slugify_name(name: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
     return slug
@@ -124,7 +133,11 @@ def _parse_alt_text(alt_text: str) -> tuple[str | None, str]:
     return name, role
 
 
-def sync_justices(session) -> int:
+def sync_justices(
+    session,
+    azure_client=None,
+    download_photos: bool = False,
+) -> int:
     """Sync justice metadata into the database."""
     items = fetch_justice_metadata()
     updated = 0
@@ -133,6 +146,27 @@ def sync_justices(session) -> int:
         slug = _slugify_name(item.name)
         justice = session.query(Justice).filter(Justice.slug == slug).first()
         last = _last_name(item.name)
+        photo_url = item.photo_url
+
+        if download_photos and azure_client and item.photo_url:
+            try:
+                response = httpx.get(
+                    item.photo_url,
+                    timeout=20.0,
+                    headers={"User-Agent": "Civitas/1.0 (civic data project)"},
+                    follow_redirects=True,
+                )
+                if response.status_code == 200:
+                    ext = _guess_extension(item.photo_url)
+                    photo_url = azure_client.upload_document(
+                        response.content,
+                        "image",
+                        "scotus",
+                        slug,
+                        ext,
+                    )
+            except Exception:
+                photo_url = item.photo_url
 
         if justice is None:
             justice = Justice(
@@ -142,7 +176,7 @@ def sync_justices(session) -> int:
                 role=item.role,
                 is_active=item.is_active,
                 official_bio_url=item.official_bio_url,
-                official_photo_url=item.photo_url,
+                official_photo_url=photo_url,
                 wikipedia_url=item.wikipedia_url,
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
@@ -157,7 +191,7 @@ def sync_justices(session) -> int:
             ("last_name", last),
             ("role", item.role),
             ("official_bio_url", item.official_bio_url),
-            ("official_photo_url", item.photo_url),
+            ("official_photo_url", photo_url),
             ("wikipedia_url", item.wikipedia_url),
             ("is_active", item.is_active),
         ):

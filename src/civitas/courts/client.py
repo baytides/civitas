@@ -122,9 +122,9 @@ class CourtListenerClient:
         if court:
             params["court"] = court
         if filed_after:
-            params["filed_after"] = filed_after.isoformat()
+            params["date_filed__gte"] = filed_after.isoformat()
         if filed_before:
-            params["filed_before"] = filed_before.isoformat()
+            params["date_filed__lte"] = filed_before.isoformat()
 
         response = self._get("/search/", params=params)
 
@@ -173,9 +173,9 @@ class CourtListenerClient:
         if court:
             params["court"] = court
         if filed_after:
-            params["filed_after"] = filed_after.isoformat()
+            params["date_filed__gte"] = filed_after.isoformat()
         if filed_before:
-            params["filed_before"] = filed_before.isoformat()
+            params["date_filed__lte"] = filed_before.isoformat()
 
         remaining = limit if limit is not None else None
         url = "/opinions/"

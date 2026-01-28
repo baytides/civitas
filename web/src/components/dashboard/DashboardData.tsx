@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { StatsGrid } from "./StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -165,13 +166,17 @@ export function RecentExecutiveOrders({ limit = 5 }: { limit?: number }) {
   return (
     <div className="space-y-3">
       {orders.map((order) => (
-        <div key={order.id} className="p-3 border rounded-lg">
+        <Link
+          key={order.id}
+          href={`/executive-orders/${order.id}`}
+          className="block p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+        >
           <h4 className="font-medium text-sm line-clamp-2">{order.title}</h4>
           <p className="text-xs text-muted-foreground mt-1">
             {order.publication_date || "Date unknown"}
             {order.executive_order_number && ` | EO ${order.executive_order_number}`}
           </p>
-        </div>
+        </Link>
       ))}
     </div>
   );

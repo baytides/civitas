@@ -1218,6 +1218,39 @@ def download_openstates(
         console.print(f"[red]Error: {e}[/red]")
 
 
+@ingest_app.command("openstates-scheduler")
+def ingest_openstates_scheduler(
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+    limit_per_state: int = typer.Option(50, "--limit", help="Max bills per state"),
+    lookback_days: int = typer.Option(7, "--lookback-days", help="Days to look back"),
+    max_states: int = typer.Option(8, "--max-states", help="Max states per run"),
+    state_file: str = typer.Option(
+        "data/openstates_scheduler.json", "--state-file", help="Scheduler state file"
+    ),
+):
+    """Smart OpenStates ingestion within 500/day API limit."""
+    from civitas.states import SchedulerConfig, run_scheduler
+
+    config = SchedulerConfig(
+        db_url=db_path,
+        state_file=Path(state_file),
+        limit_per_state=limit_per_state,
+        lookback_days=lookback_days,
+        max_states=max_states,
+    )
+
+    try:
+        counts = run_scheduler(config)
+    except Exception as exc:
+        console.print(f"[red]OpenStates scheduler failed: {exc}[/red]")
+        return
+
+    console.print("[bold green]OpenStates scheduler complete![/bold green]")
+    console.print(f"  States processed: {counts['states']}")
+    console.print(f"  Bills added: {counts['bills_added']}")
+    console.print(f"  Bills skipped: {counts['bills_skipped']}")
+
+
 @ingest_app.command("all-states")
 def ingest_all_states(
     states: str | None = typer.Option(

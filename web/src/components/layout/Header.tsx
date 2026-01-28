@@ -15,9 +15,41 @@ const navigation = [
   { name: "Timeline", href: "/timeline" },
 ];
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+
+function useThreatLevel() {
+  const [threat, setThreat] = React.useState({ label: "...", color: "bg-muted text-muted-foreground" });
+
+  React.useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await fetch(`${API_BASE}/objectives/stats`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const total = data.total || 0;
+        const enacted = data.by_status?.enacted || 0;
+        const inProgress = data.by_status?.in_progress || 0;
+        const active = enacted + inProgress;
+        const pct = total > 0 ? (active / total) * 100 : 0;
+
+        if (pct >= 30) setThreat({ label: "CRITICAL", color: "bg-red-600 text-white" });
+        else if (pct >= 15) setThreat({ label: "HIGH", color: "bg-orange-500 text-white" });
+        else if (pct >= 5) setThreat({ label: "ELEVATED", color: "bg-yellow-500 text-black" });
+        else setThreat({ label: "LOW", color: "bg-green-500 text-white" });
+      } catch {
+        // keep loading state on failure
+      }
+    }
+    fetchStats();
+  }, []);
+
+  return threat;
+}
+
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const threat = useThreatLevel();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -107,8 +139,8 @@ export function Header() {
           {/* Threat Level Indicator */}
           <div className="hidden sm:flex items-center space-x-2">
             <span className="text-xs text-muted-foreground">Threat:</span>
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-500 text-white animate-pulse-threat">
-              HIGH
+            <span className={cn("inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold", threat.color)}>
+              {threat.label}
             </span>
           </div>
 

@@ -29,7 +29,7 @@ export function Footer() {
               Tracking Project 2025 implementation to protect American democracy.
             </p>
             <p className="text-xs text-muted-foreground">
-              Data updated daily from official government sources.
+              Data sourced from the Federal Register, CourtListener, Open States, and Congress.gov.
             </p>
           </div>
 

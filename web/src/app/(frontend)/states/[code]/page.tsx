@@ -313,9 +313,15 @@ export default function StateDetailPage() {
                   View Resistance Strategy
                 </Button>
               </Link>
-              <Button className="w-full" variant="outline">
-                Contact Your Representatives
-              </Button>
+              <a
+                href={`https://openstates.org/${code.toLowerCase()}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="w-full" variant="outline">
+                  Find Your Representatives
+                </Button>
+              </a>
             </CardContent>
           </Card>
 

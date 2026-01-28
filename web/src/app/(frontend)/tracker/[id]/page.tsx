@@ -325,6 +325,11 @@ export default function ObjectiveDetailPage() {
                   <p className="text-sm">{objective.implementation_notes}</p>
                 </div>
               )}
+              <div className="pt-2 border-t">
+                <p className="text-xs text-muted-foreground">
+                  Last updated: {formatDate(objective.updated_at)}
+                </p>
+              </div>
             </CardContent>
           </Card>
 

@@ -70,18 +70,21 @@ const eventTypeConfig = {
     label: "Executive Order",
     color:
       "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200",
+    borderColor: "border-l-purple-500",
   },
   legislation: {
     icon: <DocumentIcon className="h-4 w-4" />,
     label: "Legislation",
     color:
       "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200",
+    borderColor: "border-l-blue-500",
   },
   court_case: {
     icon: <ScaleIcon className="h-4 w-4" />,
     label: "Court Case",
     color:
       "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200",
+    borderColor: "border-l-amber-500",
   },
 };
 
@@ -399,7 +402,7 @@ export default function TimelinePage() {
                               : "md:col-start-2 md:pl-8"
                           )}
                         >
-                          <Card className="border-l-4 border-l-purple-500">
+                          <Card className={cn("border-l-4", config.borderColor)}>
                             <CardContent className="pt-4">
                               <div className="flex items-start gap-3">
                                 <div

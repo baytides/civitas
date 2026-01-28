@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Space_Grotesk, Source_Sans_3 } from "next/font/google";
+import { WebsiteJsonLd } from "@/components/JsonLd";
 import "./globals.css";
 
 const headingFont = Space_Grotesk({
@@ -16,6 +17,7 @@ const bodyFont = Source_Sans_3({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.SITE_URL || "https://projectcivitas.com"),
   title: "Civitas - Protecting American Democracy",
   description:
     "Fighting Project 2025 implementation to protect American democracy. Monitor threats, understand impacts, and take action.",
@@ -35,12 +37,23 @@ export const metadata: Metadata = {
     url: "https://projectcivitas.com",
     siteName: "Civitas",
     type: "website",
+    images: [
+      {
+        url: "/og?title=Civitas&subtitle=Protecting+American+Democracy&type=page",
+        width: 1200,
+        height: 630,
+        alt: "Civitas - Protecting American Democracy",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Civitas - Protecting American Democracy",
     description:
       "Fighting Project 2025 implementation to protect American democracy.",
+    images: [
+      "/og?title=Civitas&subtitle=Protecting+American+Democracy&type=page",
+    ],
   },
 };
 
@@ -69,6 +82,7 @@ export default function RootLayout({
             `,
           }}
         />
+        <WebsiteJsonLd />
         {children}
       </body>
     </html>

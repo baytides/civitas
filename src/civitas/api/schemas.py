@@ -44,6 +44,9 @@ class ObjectiveBase(BaseModel):
     status: str
     confidence: float
     title: str
+    title_short: str
+    title_full: str
+    updated_at: datetime | None = None
 
 
 class ObjectiveDetail(ObjectiveBase):
@@ -108,12 +111,31 @@ class LegislationBase(BaseModel):
     last_action_date: date | None = None
     enacted_date: date | None = None
     source_url: str | None = None
+    updated_at: datetime | None = None
 
 
 class LegislationList(PaginatedResponse):
     """Paginated list of legislation."""
 
     items: list[LegislationBase]
+
+
+class LegislationActionBase(BaseModel):
+    """Base schema for legislation actions."""
+
+    action_date: date
+    action_text: str
+    action_code: str | None = None
+
+
+class LegislationDetail(LegislationBase):
+    """Detailed legislation with actions and text."""
+
+    summary: str | None = None
+    full_text: str | None = None
+    policy_area: str | None = None
+    subjects: list[str] = []
+    actions: list[LegislationActionBase] = []
 
 
 # =============================================================================
@@ -134,6 +156,7 @@ class ExecutiveOrderBase(BaseModel):
     publication_date: date | None = None
     president: str | None = None
     abstract: str | None = None
+    updated_at: datetime | None = None
 
 
 class ExecutiveOrderDetail(ExecutiveOrderBase):
@@ -167,6 +190,7 @@ class CourtCaseBase(BaseModel):
     court: str
     decision_date: date | None = None
     status: str | None = None
+    updated_at: datetime | None = None
 
 
 class CourtCaseDetail(CourtCaseBase):

@@ -40,5 +40,9 @@ next-env.d.ts
 .vercel/
 vercel.json
 
+# Generated sitemap & robots (next-sitemap)
+public/sitemap*.xml
+public/robots.txt
+
 # Cloudflare
 .wrangler/

@@ -5,12 +5,17 @@ from __future__ import annotations
 import json
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from civitas.api.schemas import LegislationBase, LegislationList
-from civitas.db.models import Legislation, Project2025Policy
+from civitas.api.schemas import (
+    LegislationActionBase,
+    LegislationBase,
+    LegislationDetail,
+    LegislationList,
+)
+from civitas.db.models import Legislation, LegislationAction, Project2025Policy
 
 router = APIRouter()
 
@@ -28,6 +33,7 @@ async def list_legislation(
     enacted: bool | None = Query(None),
     since: date | None = Query(None, description="Filter by action date on/after"),
     matched_only: bool = Query(False, description="Only legislation matched to Project 2025"),
+    ids: str | None = Query(None, description="Comma-separated legislation IDs"),
     db: Session = Depends(get_db),
 ) -> LegislationList:
     """List legislation with filtering and pagination."""
@@ -61,6 +67,16 @@ async def list_legislation(
         else:
             query = query.filter(Legislation.id == -1)
 
+    if ids:
+        try:
+            id_list = [int(item.strip()) for item in ids.split(",") if item.strip()]
+        except ValueError:
+            id_list = []
+        if id_list:
+            query = query.filter(Legislation.id.in_(id_list))
+        else:
+            query = query.filter(Legislation.id == -1)
+
     total = query.count()
     offset = (page - 1) * per_page
     items = (
@@ -76,4 +92,45 @@ async def list_legislation(
         total=total,
         total_pages=(total + per_page - 1) // per_page,
         items=[LegislationBase.model_validate(item) for item in items],
+    )
+
+
+@router.get("/legislation/{legislation_id}", response_model=LegislationDetail)
+async def get_legislation(
+    legislation_id: int,
+    db: Session = Depends(get_db),
+) -> LegislationDetail:
+    """Get a single piece of legislation with actions."""
+    leg = db.query(Legislation).filter(Legislation.id == legislation_id).first()
+    if not leg:
+        raise HTTPException(status_code=404, detail="Legislation not found")
+
+    actions = (
+        db.query(LegislationAction)
+        .filter(LegislationAction.legislation_id == legislation_id)
+        .order_by(LegislationAction.action_date.desc())
+        .all()
+    )
+
+    subjects: list[str] = []
+    if leg.subjects:
+        try:
+            subjects = json.loads(leg.subjects)
+        except json.JSONDecodeError:
+            subjects = []
+
+    return LegislationDetail(
+        **LegislationBase.model_validate(leg).model_dump(),
+        summary=leg.summary,
+        full_text=leg.full_text,
+        policy_area=leg.policy_area,
+        subjects=subjects,
+        actions=[
+            LegislationActionBase(
+                action_date=action.action_date,
+                action_text=action.action_text,
+                action_code=action.action_code,
+            )
+            for action in actions
+        ],
     )

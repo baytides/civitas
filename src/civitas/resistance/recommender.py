@@ -243,6 +243,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
         import time
 
         from sqlalchemy.exc import OperationalError
+
         from civitas.db.models import ResistanceRecommendation
 
         if rec.get("error") or rec.get("parse_error"):

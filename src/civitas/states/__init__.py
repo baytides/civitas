@@ -29,6 +29,7 @@ from .bulk_ingest import (
     download_bulk_data,
 )
 from .openstates import OpenStatesClient, StateBill, StateLegislator
+from .scheduler import SchedulerConfig, run_scheduler
 
 # Direct scrapers (preferred approach)
 from .scrapers import (
@@ -53,4 +54,6 @@ __all__ = [
     "OpenStatesClient",
     "StateBill",
     "StateLegislator",
+    "SchedulerConfig",
+    "run_scheduler",
 ]

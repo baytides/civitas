@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,10 +77,13 @@ export default function JusticesPage() {
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     {justice.official_photo_url ? (
-                      <img
+                      <Image
                         src={justice.official_photo_url}
                         alt={justice.name}
+                        width={64}
+                        height={64}
                         className="h-16 w-16 rounded-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="h-16 w-16 rounded-full bg-muted" />
@@ -109,10 +113,13 @@ export default function JusticesPage() {
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                       {justice.official_photo_url ? (
-                        <img
+                        <Image
                           src={justice.official_photo_url}
                           alt={justice.name}
+                          width={64}
+                          height={64}
                           className="h-16 w-16 rounded-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="h-16 w-16 rounded-full bg-muted" />

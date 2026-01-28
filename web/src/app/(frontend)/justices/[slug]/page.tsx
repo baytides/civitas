@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -82,10 +83,13 @@ export default function JusticeDetailPage({ params }: { params: { slug: string }
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <div className="flex items-center gap-4">
           {justice.official_photo_url ? (
-            <img
+            <Image
               src={justice.official_photo_url}
               alt={justice.name}
+              width={96}
+              height={96}
               className="h-24 w-24 rounded-full object-cover"
+              unoptimized
             />
           ) : (
             <div className="h-24 w-24 rounded-full bg-muted" />

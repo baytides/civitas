@@ -220,7 +220,10 @@ async def get_analysis(
         overall_vulnerability_score=analysis.get("overall_vulnerability_score", 0),
         justice_outlook=analysis.get("justice_outlook", []) or [],
         justice_outlook_disclaimer=analysis.get("justice_outlook_disclaimer")
-        or "Speculative only. Based on historical opinions and stated philosophies; not predictive.",
+        or (
+            "Speculative only. Based on historical opinions and stated philosophies; "
+            "not predictive."
+        ),
         case_outcome_meter=analysis.get("case_outcome_meter"),
         case_outcome_rationale=analysis.get("case_outcome_rationale"),
         persuasion_strategies=analysis.get("persuasion_strategies", []) or [],

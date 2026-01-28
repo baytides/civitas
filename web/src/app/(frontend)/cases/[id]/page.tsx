@@ -61,7 +61,7 @@ export default function CaseDetailPage() {
           setError("Failed to load court case");
         }
       } catch {
-        setError("Failed to connect to server");
+        setError("This item is still being processed by Carl. Check back soon.");
       }
       setLoading(false);
     }

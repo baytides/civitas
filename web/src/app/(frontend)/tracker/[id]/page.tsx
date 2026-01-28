@@ -118,7 +118,7 @@ export default function ObjectiveDetailPage() {
           setError("Failed to load policy details");
         }
       } catch {
-        setError("Failed to connect to server");
+        setError("This item is still being processed by Carl. Check back soon.");
       }
       setLoading(false);
     }

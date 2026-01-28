@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from civitas.ai.prompts import load_prompt
 from civitas.db.models import (
     ContentInsight,
     CourtCase,
@@ -48,13 +49,18 @@ class InsightGenerator:
         return normalized[:limit]
 
     def _build_prompt(self, content_type: str, payload: dict) -> list[dict]:
-        system = (
+        default_system = (
             "You are a nonpartisan policy analyst. "
             "Return JSON only with keys: summary, why_matters, key_impacts. "
             "summary: 2-3 plain-language sentences. "
             "why_matters: 2 sentences explaining impact on people or institutions. "
             "key_impacts: 3-5 short bullet phrases. "
             "No markdown, no extra keys."
+        )
+        system = load_prompt(
+            path_env="CARL_INSIGHT_PROMPT_PATH",
+            inline_env="CARL_INSIGHT_PROMPT",
+            fallback=default_system,
         )
         user = f"Content type: {content_type}\nData: {json.dumps(payload, ensure_ascii=True)}"
         return [{"role": "system", "content": system}, {"role": "user", "content": user}]

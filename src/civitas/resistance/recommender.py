@@ -12,6 +12,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
+from civitas.ai.prompts import load_prompt
+
 DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 
@@ -143,7 +145,7 @@ class ResistanceRecommender:
         num_predict = int(os.getenv("RESISTANCE_RECOMMEND_NUM_PREDICT", "400"))
         temperature = float(os.getenv("RESISTANCE_RECOMMEND_TEMPERATURE", "0.3"))
 
-        system_prompt = f"""You are a legal and political strategist generating actionable recommendations for resisting a policy.
+        default_system_prompt = f"""You are a legal and political strategist generating actionable recommendations for resisting a policy.
 
 TIER: {tier_info["name"]}
 DESCRIPTION: {tier_info["description"]}
@@ -164,6 +166,11 @@ Output must be a JSON array of objects. Each object must contain:
 - model_text: Draft language if applicable (complaint, legislation, etc.)
 
 Respond in JSON format with an array of recommendations."""
+        system_prompt = load_prompt(
+            path_env="CARL_RESISTANCE_RECOMMEND_PROMPT_PATH",
+            inline_env="CARL_RESISTANCE_RECOMMEND_PROMPT",
+            fallback=default_system_prompt,
+        )
 
         user_prompt = f"""Generate {tier_info["name"]} recommendations for this P2025 policy:
 

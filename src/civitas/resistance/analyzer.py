@@ -11,6 +11,8 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
+from civitas.ai.prompts import load_prompt
+
 # Default Ollama configuration (Carl AI VM on Azure)
 DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
@@ -352,7 +354,7 @@ class ResistanceAnalyzer:
         num_predict = int(os.getenv("RESISTANCE_ANALYSIS_NUM_PREDICT", "400"))
         temperature = float(os.getenv("RESISTANCE_ANALYSIS_TEMPERATURE", "0.2"))
 
-        system_prompt = """You are a constitutional law expert analyzing government policies for legal vulnerabilities. Your role is to:
+        default_system_prompt = """You are a constitutional law expert analyzing government policies for legal vulnerabilities. Your role is to:
 
 1. Identify constitutional issues with the policy
 2. Find relevant legal precedents that could challenge it
@@ -370,6 +372,11 @@ Respond in JSON format with these fields:
 - immediate_actions: Array of {action, who, explanation}
 - overall_vulnerability_score: Number 0-100 (100 = most vulnerable to challenge)
 """
+        system_prompt = load_prompt(
+            path_env="CARL_RESISTANCE_ANALYSIS_PROMPT_PATH",
+            inline_env="CARL_RESISTANCE_ANALYSIS_PROMPT",
+            fallback=default_system_prompt,
+        )
 
         user_prompt = f"""Analyze this Project 2025 policy proposal for legal vulnerabilities:
 

@@ -240,6 +240,9 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
 
     def _store_recommendation(self, policy_id: int, tier: str, rec: dict) -> None:
         """Store a recommendation in the database."""
+        import time
+
+        from sqlalchemy.exc import OperationalError
         from civitas.db.models import ResistanceRecommendation
 
         if rec.get("error") or rec.get("parse_error"):
@@ -276,7 +279,14 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
             ai_confidence_score=rec.get("confidence", 0.7),
         )
         self.session.add(db_rec)
-        self.session.commit()
+        for attempt in range(3):
+            try:
+                self.session.commit()
+                break
+            except OperationalError as exc:
+                if "database is locked" not in str(exc).lower() or attempt == 2:
+                    raise
+                time.sleep(2 * (attempt + 1))
 
     def get_urgent_actions(self, category: str | None = None) -> list[dict]:
         """Get urgent Tier 1 actions across all policies.

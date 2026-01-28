@@ -524,6 +524,7 @@ class Project2025Policy(Base):
     # Proposal content
     proposal_text: Mapped[str] = mapped_column(Text)
     proposal_summary: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    short_title: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
     # Keywords for matching
     keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array

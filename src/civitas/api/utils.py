@@ -31,6 +31,8 @@ def _select_objective_base(obj: Project2025Policy) -> str:
 
 def build_objective_title(obj: Project2025Policy, max_len: int = 140) -> str:
     """Return a short, readable title for a P2025 objective."""
+    if obj.short_title:
+        return obj.short_title
     base = _select_objective_base(obj)
 
     if len(base) <= max_len:

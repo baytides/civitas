@@ -665,6 +665,39 @@ def update_project2025_matches(
     console.print(f"  Updated to in_progress: {updated}")
 
 
+@ingest_app.command("project2025-titles")
+def generate_project2025_titles(
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+    limit: int = typer.Option(50, "--limit", help="Number of items to generate per batch"),
+    ids: str | None = typer.Option(
+        None, "--ids", help="Comma-separated policy IDs to regenerate"
+    ),
+    force: bool = typer.Option(False, "--force", help="Regenerate even if title exists"),
+    ollama_host: str | None = typer.Option(None, "--ollama-host", help="Ollama host URL"),
+    ollama_model: str | None = typer.Option(None, "--ollama-model", help="Ollama model name"),
+):
+    """Generate short objective titles using Carl (Ollama)."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.project2025.titles import Project2025TitleGenerator
+
+    id_list = None
+    if ids:
+        id_list = [int(val.strip()) for val in ids.split(",") if val.strip().isdigit()]
+
+    engine = get_engine(db_path)
+    with Session(engine) as session:
+        generator = Project2025TitleGenerator(
+            session=session,
+            ollama_host=ollama_host,
+            ollama_model=ollama_model,
+        )
+        updated = generator.generate_batch(limit=limit, ids=id_list, force=force)
+
+    console.print(f"[bold green]Generated short titles: {updated}[/bold green]")
+
+
 @ingest_app.command("uscode")
 def ingest_uscode(
     titles: str | None = typer.Option(

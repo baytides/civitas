@@ -103,12 +103,9 @@ async def list_justices(
     items_out = []
     for item in items:
         base = JusticeBase.model_validate(item)
-        items_out.append(
-            JusticeBase(
-                **base.model_dump(),
-                official_photo_url=_photo_url(request, item.slug),
-            )
-        )
+        payload = base.model_dump()
+        payload["official_photo_url"] = _photo_url(request, item.slug)
+        items_out.append(JusticeBase(**payload))
 
     return JusticeList(
         page=page,
@@ -155,9 +152,11 @@ async def get_justice(
     counts["total"] = counts["majority"] + counts["dissent"] + counts["concurrence"]
 
     base = JusticeBase.model_validate(justice)
+    payload = base.model_dump()
+    payload["official_photo_url"] = _photo_url(request, justice.slug)
 
     return JusticeDetail(
-        **base.model_dump(),
+        **payload,
         appointed_by=justice.appointed_by,
         official_bio_url=justice.official_bio_url,
         wikipedia_url=justice.wikipedia_url,
@@ -170,7 +169,6 @@ async def get_justice(
         methodology=profile.methodology if profile else None,
         disclaimer=profile.disclaimer if profile else None,
         generated_at=profile.generated_at if profile else None,
-        official_photo_url=_photo_url(request, justice.slug),
     )
 
 

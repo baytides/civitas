@@ -1534,6 +1534,7 @@ def project2025_report(
 # Insight Generation Commands
 # =============================================================================
 
+
 @insights_app.command("generate")
 def generate_insights(
     content_type: str = typer.Option(
@@ -1864,10 +1865,7 @@ def resistance_recommend_batch(
 
         if force:
             policies = (
-                session.query(Project2025Policy)
-                .order_by(Project2025Policy.id)
-                .limit(limit)
-                .all()
+                session.query(Project2025Policy).order_by(Project2025Policy.id).limit(limit).all()
             )
         else:
             has_recs = (

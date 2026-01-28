@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { USMap } from "@/components/states/USMap";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
@@ -27,15 +25,9 @@ interface StateDisplay {
 }
 
 export default function StatesPage() {
-  const router = useRouter();
   const [states, setStates] = useState<StateDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"name" | "bills">("name");
-
-  const handleStateClick = useCallback(
-    (code: string) => router.push(`/states/${code}`),
-    [router]
-  );
 
   useEffect(() => {
     async function fetchStates() {
@@ -132,9 +124,11 @@ export default function StatesPage() {
               Legislative Activity by State
             </h2>
             <p className="text-sm text-muted-foreground text-center mb-4">
-              Click a state to view details. Color intensity reflects bill count.
+              Interactive map is temporarily disabled while we improve compatibility.
             </p>
-            <USMap states={states} onStateClick={handleStateClick} />
+            <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+              Map coming back soon. Use the state list below to browse details.
+            </div>
           </CardContent>
         </Card>
       )}

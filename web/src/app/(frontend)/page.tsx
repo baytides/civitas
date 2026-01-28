@@ -31,6 +31,26 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* What is Project 2025 */}
+        <section>
+          <Card className="bg-muted/30">
+            <CardHeader>
+              <CardTitle>What is Project 2025?</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-3">
+              <p>
+                Project 2025 is a coordinated policy roadmap and staffing plan designed to
+                reshape the federal government across agencies. It outlines proposed executive,
+                legislative, and regulatory actions that could change how institutions function.
+              </p>
+              <p>
+                Civitas tracks those proposals, the laws and executive actions that implement
+                them, and the legal or policy responses that can resist or mitigate their impact.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
         {/* Threat Level + Stats */}
         <section className="grid lg:grid-cols-3 gap-8">
           <Card className="lg:col-span-1">

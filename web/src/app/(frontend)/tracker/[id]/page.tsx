@@ -25,6 +25,12 @@ interface ObjectiveDetail {
   implementation_timeline: string;
   status: string;
   confidence: number;
+  title_full?: string;
+  title_short?: string;
+  plain_summary?: string | null;
+  why_this_matters?: string | null;
+  key_impacts?: string[];
+  insight_generated_at?: string | null;
   keywords: string[];
   constitutional_concerns: string[];
   matching_eo_ids: number[];
@@ -41,11 +47,22 @@ interface EOSummary {
   signing_date: string | null;
 }
 
+interface LegislationSummary {
+  id: number;
+  title: string | null;
+  citation: string;
+  jurisdiction: string;
+  status: string | null;
+  introduced_date: string | null;
+  last_action_date: string | null;
+}
+
 export default function ObjectiveDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [objective, setObjective] = useState<ObjectiveDetail | null>(null);
   const [matchedEOs, setMatchedEOs] = useState<EOSummary[]>([]);
+  const [matchedLegislation, setMatchedLegislation] = useState<LegislationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +95,22 @@ export default function ObjectiveDetailPage() {
             });
             const eos = (await Promise.all(eoPromises)).filter(Boolean) as EOSummary[];
             setMatchedEOs(eos);
+          }
+
+          // Fetch matched legislation if any
+          if (data.matching_legislation_ids && data.matching_legislation_ids.length > 0) {
+            try {
+              const idsParam = data.matching_legislation_ids.join(",");
+              const legRes = await fetch(
+                `${API_BASE}/legislation?ids=${idsParam}&per_page=200`
+              );
+              if (legRes.ok) {
+                const legData = await legRes.json();
+                setMatchedLegislation(legData.items || []);
+              }
+            } catch {
+              // ignore failed legislation fetches
+            }
           }
         } else if (response.status === 404) {
           setError("Policy not found");
@@ -188,7 +221,9 @@ export default function ObjectiveDetailPage() {
             </div>
 
             <h1 className="text-2xl font-bold mb-4">
-              {objective.proposal_summary || objective.proposal_text.slice(0, 150)}
+              {objective.title_full ||
+                objective.proposal_summary ||
+                objective.proposal_text.slice(0, 150)}
             </h1>
 
             <div className="p-4 rounded-lg bg-muted/50 border">
@@ -229,6 +264,35 @@ export default function ObjectiveDetailPage() {
             </Card>
           )}
 
+          {/* Why This Matters */}
+          {(objective.why_this_matters || objective.plain_summary || (objective.key_impacts || []).length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Why This Matters</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {objective.plain_summary && (
+                  <p className="text-sm text-muted-foreground">
+                    {objective.plain_summary}
+                  </p>
+                )}
+                {objective.why_this_matters && (
+                  <p className="text-sm">{objective.why_this_matters}</p>
+                )}
+                {(objective.key_impacts || []).length > 0 && (
+                  <ul className="space-y-2">
+                    {objective.key_impacts?.map((impact, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                        {impact}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Related Executive Orders */}
           <Card>
             <CardHeader>
@@ -263,6 +327,51 @@ export default function ObjectiveDetailPage() {
               ) : (
                 <p className="text-muted-foreground">
                   No related executive orders tracked
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Related Legislation */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Related Legislation</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {matchedLegislation.length > 0 ? (
+                <div className="space-y-3">
+                  {matchedLegislation.map((bill) => (
+                    <Link
+                      key={bill.id}
+                      href={`/legislation/${bill.id}`}
+                      className="block p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="font-medium">
+                            {bill.title || bill.citation}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {bill.citation} · {snakeToTitle(bill.jurisdiction)}
+                          </p>
+                          {bill.last_action_date && (
+                            <p className="text-xs text-muted-foreground">
+                              Last action {formatDate(bill.last_action_date)}
+                            </p>
+                          )}
+                        </div>
+                        {bill.status && (
+                          <Badge variant="outline" className="shrink-0">
+                            {snakeToTitle(bill.status)}
+                          </Badge>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  No related legislation tracked
                 </p>
               )}
             </CardContent>
@@ -329,6 +438,11 @@ export default function ObjectiveDetailPage() {
                 <p className="text-xs text-muted-foreground">
                   Last updated: {formatDate(objective.updated_at)}
                 </p>
+                {objective.insight_generated_at && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Insight generated: {formatDate(objective.insight_generated_at)}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

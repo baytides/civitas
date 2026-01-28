@@ -156,7 +156,7 @@ function ResistanceContent() {
   const searchParams = useSearchParams();
   const objectiveIdParam = searchParams.get("objective");
 
-  const [expertMode, setExpertMode] = useState(false);
+  const [expertMode, setExpertMode] = useState(true);
   const [expandedTier, setExpandedTier] = useState<number>(1);
   const [selectedUrgency, setSelectedUrgency] = useState<string>("all");
   const [selectedObjective, setSelectedObjective] = useState<APIObjective | null>(null);

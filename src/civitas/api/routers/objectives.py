@@ -38,6 +38,8 @@ async def list_objectives(
     agency: str | None = Query(None),
     priority: str | None = Query(None),
     timeline: str | None = Query(None),
+    eo_id: int | None = Query(None, description="Filter by matched executive order ID"),
+    legislation_id: int | None = Query(None, description="Filter by matched legislation ID"),
     db: Session = Depends(get_db),
 ) -> ObjectiveList:
     """List P2025 objectives with filtering and pagination."""
@@ -54,6 +56,12 @@ async def list_objectives(
         query = query.filter(Project2025Policy.priority == priority)
     if timeline:
         query = query.filter(Project2025Policy.implementation_timeline == timeline)
+    if eo_id:
+        query = query.filter(Project2025Policy.matching_eo_ids.contains(f'"{eo_id}"'))
+    if legislation_id:
+        query = query.filter(
+            Project2025Policy.matching_legislation_ids.contains(f'"{legislation_id}"')
+        )
 
     # Get total count
     total = query.count()

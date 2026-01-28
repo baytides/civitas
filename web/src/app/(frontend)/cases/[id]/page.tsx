@@ -35,6 +35,11 @@ interface CourtCaseDetail {
   dissent_author: string | null;
   source_url: string | null;
   linked_objectives: LinkedObjective[];
+  plain_summary?: string | null;
+  why_this_matters?: string | null;
+  key_impacts?: string[];
+  insight_generated_at?: string | null;
+  updated_at?: string | null;
 }
 
 export default function CaseDetailPage() {
@@ -151,6 +156,33 @@ export default function CaseDetailPage() {
             )}
           </div>
 
+          {/* Why This Matters */}
+          {(courtCase.why_this_matters || (courtCase.key_impacts || []).length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Why This Matters</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {courtCase.plain_summary && (
+                  <p className="text-sm text-muted-foreground">{courtCase.plain_summary}</p>
+                )}
+                {courtCase.why_this_matters && (
+                  <p className="text-sm">{courtCase.why_this_matters}</p>
+                )}
+                {(courtCase.key_impacts || []).length > 0 && (
+                  <ul className="space-y-2">
+                    {courtCase.key_impacts?.map((impact, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                        {impact}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Related Project 2025 Objectives */}
           {courtCase.linked_objectives.length > 0 && (
             <Card>
@@ -231,6 +263,18 @@ export default function CaseDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Dissent Author</p>
                   <p className="font-medium">{courtCase.dissent_author}</p>
+                </div>
+              )}
+              {courtCase.updated_at && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Last updated: {formatDate(courtCase.updated_at)}
+                  </p>
+                  {courtCase.insight_generated_at && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Insight generated: {formatDate(courtCase.insight_generated_at)}
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>

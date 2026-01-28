@@ -34,6 +34,11 @@ interface ExecutiveOrderDetail {
   pdf_url: string | null;
   html_url: string | null;
   matched_objectives: MatchedObjective[];
+  plain_summary?: string | null;
+  why_this_matters?: string | null;
+  key_impacts?: string[];
+  insight_generated_at?: string | null;
+  updated_at?: string | null;
 }
 
 export default function ExecutiveOrderDetailPage() {
@@ -138,10 +143,37 @@ export default function ExecutiveOrderDetailPage() {
             <h1 className="text-3xl font-bold mb-2">{displayNumber}</h1>
             <h2 className="text-xl text-muted-foreground mb-4">{eo.title}</h2>
 
-            {eo.abstract && (
+            {eo.plain_summary && (
+              <p className="text-muted-foreground">{eo.plain_summary}</p>
+            )}
+            {!eo.plain_summary && eo.abstract && (
               <p className="text-muted-foreground">{eo.abstract}</p>
             )}
           </div>
+
+          {/* Why This Matters */}
+          {(eo.why_this_matters || (eo.key_impacts || []).length > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Why This Matters</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {eo.why_this_matters && (
+                  <p className="text-sm">{eo.why_this_matters}</p>
+                )}
+                {(eo.key_impacts || []).length > 0 && (
+                  <ul className="space-y-2">
+                    {eo.key_impacts?.map((impact, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                        {impact}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Matched Project 2025 Objectives */}
           <Card>
@@ -229,6 +261,18 @@ export default function ExecutiveOrderDetailPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">President</p>
                   <p className="font-medium">{eo.president}</p>
+                </div>
+              )}
+              {eo.updated_at && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Last updated: {formatDate(eo.updated_at)}
+                  </p>
+                  {eo.insight_generated_at && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Insight generated: {formatDate(eo.insight_generated_at)}
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>

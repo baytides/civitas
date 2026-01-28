@@ -94,5 +94,6 @@ async def get_executive_order(
         pdf_url=eo.pdf_url,
         html_url=eo.html_url,
         matched_objectives=matched_objectives,
+        updated_at=eo.updated_at,
         **insight,
     )

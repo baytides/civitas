@@ -270,7 +270,7 @@ Generate 2-4 specific, actionable recommendations for this tier. Focus on legal 
             title=rec.get("title", "Untitled")[:500],
             description=rec.get("description", ""),
             rationale=rec.get("rationale", ""),
-            legal_basis=rec.get("legal_basis"),
+            legal_basis=_jsonify(rec.get("legal_basis")),
             likelihood_of_success=str(rec.get("likelihood_of_success", "medium")).lower(),
             time_sensitivity=str(rec.get("time_sensitivity", "soon")).lower(),
             resources_required=str(rec.get("resources_required", "medium")).lower()

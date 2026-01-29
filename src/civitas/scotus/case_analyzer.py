@@ -90,28 +90,33 @@ class CaseAnalyzer:
         return Groq(api_key=self.groq_api_key)
 
     def _build_system_prompt(self) -> str:
-        return """You are a constitutional law expert analyzing Supreme Court cases. Respond with ONLY valid JSON.
-
-You MUST respond with this EXACT JSON structure:
-{
-  "legal_issues": ["Primary legal question 1", "Legal question 2"],
-  "constitutional_provisions": ["Amendment/Article involved"],
-  "legal_doctrine": "The legal doctrine or test applied",
-  "outcome_summary": "One sentence summary of the ruling",
-  "precedent_impact": "How this case affects existing law",
-  "ideological_lean": "conservative/liberal/mixed/technical",
-  "significance_score": 75,
-  "categories": ["civil_rights", "criminal_procedure", "federalism", "first_amendment", "due_process", "equal_protection", "executive_power", "separation_of_powers", "commerce_clause", "statutory_interpretation"],
-  "majority_reasoning": "Brief summary of majority's legal reasoning",
-  "dissent_reasoning": "Brief summary of dissent's reasoning (if any)"
-}
-
-RULES:
-- Respond with ONLY the JSON object, no other text
-- categories should only include relevant ones from the provided list
-- significance_score: 1-100 based on legal/historical importance
-- ideological_lean: based on outcome and reasoning, not politics
-- Be specific about constitutional provisions and legal doctrines"""
+        # fmt: off
+        return (
+            "You are a constitutional law expert analyzing Supreme Court cases. "
+            "Respond with ONLY valid JSON.\n\n"
+            "You MUST respond with this EXACT JSON structure:\n"
+            "{\n"
+            '  "legal_issues": ["Primary legal question 1", "Legal question 2"],\n'
+            '  "constitutional_provisions": ["Amendment/Article involved"],\n'
+            '  "legal_doctrine": "The legal doctrine or test applied",\n'
+            '  "outcome_summary": "One sentence summary of the ruling",\n'
+            '  "precedent_impact": "How this case affects existing law",\n'
+            '  "ideological_lean": "conservative/liberal/mixed/technical",\n'
+            '  "significance_score": 75,\n'
+            '  "categories": ["civil_rights", "criminal_procedure", "federalism", '
+            '"first_amendment", "due_process", "equal_protection", "executive_power", '
+            '"separation_of_powers", "commerce_clause", "statutory_interpretation"],\n'
+            '  "majority_reasoning": "Brief summary of majority\'s legal reasoning",\n'
+            '  "dissent_reasoning": "Brief summary of dissent\'s reasoning (if any)"\n'
+            "}\n\n"
+            "RULES:\n"
+            "- Respond with ONLY the JSON object, no other text\n"
+            "- categories should only include relevant ones from the provided list\n"
+            "- significance_score: 1-100 based on legal/historical importance\n"
+            "- ideological_lean: based on outcome and reasoning, not politics\n"
+            "- Be specific about constitutional provisions and legal doctrines"
+        )
+        # fmt: on
 
     def _build_user_prompt(self, case: CourtCase) -> str:
         # Get justice opinions for this case
@@ -265,7 +270,7 @@ Respond with the JSON structure specified."""
                 model_used = self.groq_model
             except Exception as e:
                 if "429" in str(e) or "rate" in str(e).lower():
-                    print(f"  Groq rate limited, falling back to Ollama...")
+                    print("  Groq rate limited, falling back to Ollama...")
                     self._groq_rate_limited = True
                 else:
                     raise
@@ -332,7 +337,8 @@ Respond with the JSON structure specified."""
             try:
                 # Show which provider we're using
                 if verbose:
-                    provider = "Groq" if (self.use_groq and not self._groq_rate_limited) else "Ollama"
+                    using_groq = self.use_groq and not self._groq_rate_limited
+                    provider = "Groq" if using_groq else "Ollama"
                     print(f"  [{i}/{len(cases)}] {case.case_name[:50]}... ({provider})")
 
                 result = self.analyze_case(case, force=force)
@@ -342,14 +348,15 @@ Respond with the JSON structure specified."""
 
                     # Track which provider was used
                     if result.get("case_id") and case.analysis_model:
-                        if "groq" in case.analysis_model.lower() or "llama-3.3" in case.analysis_model:
+                        model = case.analysis_model.lower()
+                        if "groq" in model or "llama-3.3" in model:
                             groq_count += 1
                         else:
                             ollama_count += 1
                 else:
                     failed += 1
                     if verbose:
-                        print(f"    Failed to parse response")
+                        print("    Failed to parse response")
 
             except Exception as e:
                 print(f"    Error: {e}")

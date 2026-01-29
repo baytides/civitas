@@ -354,7 +354,6 @@ def ingest_scotus_transcripts(
         civitas ingest scotus-transcripts --term=24     # Just 2024 term
         civitas ingest scotus-transcripts --all         # All available terms
     """
-    from sqlalchemy.orm import Session
 
     from civitas.db.models import get_engine
     from civitas.scotus import SCOTUSClient
@@ -364,7 +363,8 @@ def ingest_scotus_transcripts(
 
     console.print("[bold blue]Ingesting SCOTUS oral argument transcripts...[/bold blue]")
 
-    engine = get_engine(db_path)
+    # engine not needed for transcript downloads (stored in Azure)
+    _ = get_engine(db_path)
     counts = {"transcripts": 0}
 
     with SCOTUSClient(azure_client=azure_client) as client:
@@ -383,8 +383,8 @@ def ingest_scotus_transcripts(
 
             for transcript in transcripts:
                 try:
-                    pdf_path, azure_url = client.download_transcript(transcript)
-                    text = client._extract_transcript_text(pdf_path)
+                    pdf_path, _ = client.download_transcript(transcript)
+                    _ = client._extract_transcript_text(pdf_path)
                     counts["transcripts"] += 1
                     console.print(f"    Downloaded: {transcript.case_name[:50]}...")
                 except Exception as e:
@@ -500,7 +500,7 @@ def ingest_scotus_historical(
             "[yellow]Warning: No COURT_LISTENER_TOKEN set. Rate limits will be restricted.[/yellow]"
         )
 
-    console.print(f"[bold blue]Ingesting SCOTUS opinions from Court Listener...[/bold blue]")
+    console.print("[bold blue]Ingesting SCOTUS opinions from Court Listener...[/bold blue]")
     if justice:
         console.print(f"  Filtering by justice: {justice}")
 
@@ -648,7 +648,7 @@ def analyze_scotus_cases(
 
         # Show current stats
         stats = analyzer.get_case_stats()
-        console.print(f"[bold blue]SCOTUS Case Analysis[/bold blue]")
+        console.print("[bold blue]SCOTUS Case Analysis[/bold blue]")
         console.print(f"  Total cases: {stats['total_scotus_cases']}")
         console.print(f"  Already analyzed: {stats['analyzed']}")
         console.print(f"  Remaining: {stats['remaining']}")
@@ -665,7 +665,7 @@ def analyze_scotus_cases(
         # Final stats
         stats = analyzer.get_case_stats()
         console.print()
-        console.print(f"[bold green]Analysis complete![/bold green]")
+        console.print("[bold green]Analysis complete![/bold green]")
         console.print(f"  Successful: {successful}")
         console.print(f"  Failed: {failed}")
         console.print(f"  Progress: {stats['analyzed']}/{stats['total_scotus_cases']} ({stats['percent_complete']}%)")
@@ -1172,7 +1172,7 @@ def ingest_scrape_state(
     from sqlalchemy.orm import Session
 
     from civitas.db.models import Legislation, get_engine
-    from civitas.states.scrapers import get_scraper, list_available_scrapers, get_state_name
+    from civitas.states.scrapers import get_scraper, list_available_scrapers
 
     state_lower = state.lower()
     scraper_cls = get_scraper(state_lower)
@@ -1315,7 +1315,7 @@ def match_state_p2025(
     """
     from sqlalchemy.orm import Session
 
-    from civitas.db.models import Legislation, get_engine
+    from civitas.db.models import get_engine
 
     engine = get_engine(db_path)
 
@@ -1383,7 +1383,7 @@ def match_state_p2025(
 @ingest_app.command("list-scrapers")
 def list_state_scrapers():
     """List available state legislature scrapers."""
-    from civitas.states.scrapers import list_available_scrapers, get_state_name
+    from civitas.states.scrapers import get_state_name, list_available_scrapers
 
     scrapers = list_available_scrapers()
 
@@ -2873,8 +2873,8 @@ def generate_storm_report(
     try:
         from civitas.db import get_session_local
 
-        Session = get_session_local(db_path)
-        with Session() as session:
+        session_factory = get_session_local(db_path)
+        with session_factory() as session:
             generator = STORMReportGenerator(
                 session=session,
                 output_dir=output_dir,
@@ -2887,7 +2887,7 @@ def generate_storm_report(
                 use_ollama=use_ollama,
             )
 
-            console.print(f"\n[bold green]Report generated successfully![/bold green]")
+            console.print("\n[bold green]Report generated successfully![/bold green]")
             console.print(f"  Topic: {report.topic}")
             console.print(f"  Output: {report.output_dir}")
 
@@ -2924,12 +2924,12 @@ def export_p2025_for_storm(
     try:
         from civitas.db import get_session_local
 
-        Session = get_session_local(db_path)
-        with Session() as session:
+        session_factory = get_session_local(db_path)
+        with session_factory() as session:
             generator = STORMReportGenerator(session=session)
             csv_path = generator.export_policies_for_storm(output_file)
 
-            console.print(f"[bold green]Export complete![/bold green]")
+            console.print("[bold green]Export complete![/bold green]")
             console.print(f"  Output: {csv_path}")
 
             # Count lines

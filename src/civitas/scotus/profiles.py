@@ -84,38 +84,54 @@ class JusticeProfileGenerator:
         return Groq(api_key=self.groq_api_key)
 
     def _build_prompt(self, payload: dict) -> list[dict]:
-        default_system = """You are a constitutional law scholar writing comprehensive justice profiles for an informed public audience. Return JSON only.
-
-Write in flowing, analytical prose - NOT bullet points. Each section should read like professional legal scholarship.
-
-Required JSON structure:
-{
-  "summary": "A comprehensive 4-6 sentence narrative about this justice's path to the Supreme Court, their significance in Court history, and their overall impact on American jurisprudence. Include context about their confirmation and tenure.",
-
-  "judicial_philosophy": "A detailed 5-8 sentence analysis of their interpretive methodology. Discuss their approach to constitutional interpretation (originalism, living constitutionalism, pragmatism, etc.), their views on precedent and stare decisis, their treatment of federal vs. state power, and any distinctive analytical frameworks they employ. Use specific examples from their record where relevant.",
-
-  "voting_tendencies": "A flowing 4-6 sentence narrative (NOT bullets) describing their voting patterns. Discuss which justices they most frequently align with, areas of law where they are most predictable vs. surprising, and any notable shifts in their jurisprudence over time. Analyze their position within the Court's ideological spectrum.",
-
-  "statistical_profile": {
-    "majority_alignment_rate": 0.85,
-    "dissent_frequency": 0.12,
-    "opinion_authorship_rate": 0.15,
-    "ideological_score": "Describe their position on conservative-liberal spectrum",
-    "key_coalition_partners": "Justices they most frequently join",
-    "signature_areas": "Areas of law where they have been most influential"
-  },
-
-  "methodology": "A clear 3-4 sentence explanation for the general audience describing how this profile was generated. Explain that the analysis is based on statistical analysis of published Supreme Court opinions, voting records, and case outcomes. Note that AI was used to synthesize patterns from court records and that this represents analytical observations, not predictions of future behavior."
-}
-
-CRITICAL RULES:
-- Write substantive narratives, not lists or bullet points
-- voting_tendencies MUST be prose paragraphs, not an array
-- Focus on legal analysis, not political characterization
-- Be specific about constitutional doctrines and legal frameworks
-- The methodology should be written for a general audience to understand how the profile was created
-- Do NOT include notable_opinions - that data comes from our database
-- No markdown formatting"""
+        # fmt: off
+        # Long prompt strings - kept as readable prose for LLM
+        default_system = (
+            "You are a constitutional law scholar writing comprehensive justice "
+            "profiles for an informed public audience. Return JSON only.\n\n"
+            "Write in flowing, analytical prose - NOT bullet points. Each section "
+            "should read like professional legal scholarship.\n\n"
+            "Required JSON structure:\n{\n"
+            '  "summary": "A comprehensive 4-6 sentence narrative about this '
+            "justice's path to the Supreme Court, their significance in Court "
+            "history, and their overall impact on American jurisprudence. "
+            'Include context about their confirmation and tenure.",\n\n'
+            '  "judicial_philosophy": "A detailed 5-8 sentence analysis of their '
+            "interpretive methodology. Discuss their approach to constitutional "
+            "interpretation (originalism, living constitutionalism, pragmatism, "
+            "etc.), their views on precedent and stare decisis, their treatment "
+            "of federal vs. state power, and any distinctive analytical "
+            'frameworks they employ. Use specific examples from their record.",\n\n'
+            '  "voting_tendencies": "A flowing 4-6 sentence narrative (NOT bullets) '
+            "describing their voting patterns. Discuss which justices they most "
+            "frequently align with, areas of law where they are most predictable "
+            "vs. surprising, and any notable shifts in their jurisprudence over "
+            'time. Analyze their position within the Court\'s ideological spectrum.",\n\n'
+            '  "statistical_profile": {\n'
+            '    "majority_alignment_rate": 0.85,\n'
+            '    "dissent_frequency": 0.12,\n'
+            '    "opinion_authorship_rate": 0.15,\n'
+            '    "ideological_score": "Describe their position on conservative-liberal spectrum",\n'
+            '    "key_coalition_partners": "Justices they most frequently join",\n'
+            '    "signature_areas": "Areas of law where they have been most influential"\n'
+            "  },\n\n"
+            '  "methodology": "A clear 3-4 sentence explanation for the general '
+            "audience describing how this profile was generated. Explain that the "
+            "analysis is based on statistical analysis of published Supreme Court "
+            "opinions, voting records, and case outcomes. Note that AI was used to "
+            "synthesize patterns from court records and that this represents "
+            'analytical observations, not predictions of future behavior."\n'
+            "}\n\n"
+            "CRITICAL RULES:\n"
+            "- Write substantive narratives, not lists or bullet points\n"
+            "- voting_tendencies MUST be prose paragraphs, not an array\n"
+            "- Focus on legal analysis, not political characterization\n"
+            "- Be specific about constitutional doctrines and legal frameworks\n"
+            "- The methodology should be written for a general audience\n"
+            "- Do NOT include notable_opinions - that data comes from our database\n"
+            "- No markdown formatting"
+        )
+        # fmt: on
 
         system = load_prompt(
             path_env="CARL_JUSTICE_PROFILE_PROMPT_PATH",
@@ -177,7 +193,12 @@ CRITICAL RULES:
         concurrence_rate = (concurrence / total) if total else 0.0
 
         recent_cases = (
-            self.session.query(CourtCase.case_name, CourtCase.citation, CourtCase.decision_date, CourtCase.case_analysis)
+            self.session.query(
+                CourtCase.case_name,
+                CourtCase.citation,
+                CourtCase.decision_date,
+                CourtCase.case_analysis,
+            )
             .join(JusticeOpinion, JusticeOpinion.court_case_id == CourtCase.id)
             .filter(JusticeOpinion.justice_id == justice_id)
             .order_by(CourtCase.decision_date.desc().nullslast())

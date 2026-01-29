@@ -707,6 +707,120 @@ def generate_scotus_profiles(
     console.print(f"[bold green]Generated {created} justice profiles.[/bold green]")
 
 
+@scotus_app.command("scrape-all")
+def scrape_all_scotus_historical(
+    start_year: int = typer.Option(1789, "--start-year", help="Start year (default: 1789)"),
+    end_year: int | None = typer.Option(None, "--end-year", help="End year (default: current)"),
+    batch_size: int = typer.Option(100, "--batch-size", help="Batch size per API call"),
+    rate_limit: float = typer.Option(0.5, "--rate-limit", help="Seconds between API calls"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Scrape comprehensive historical SCOTUS data from 1789 to present.
+
+    Uses Court Listener API to fetch all Supreme Court opinions with
+    proper author attribution, vote counts, and full text.
+
+    This is a long-running operation. Consider running overnight.
+
+    Examples:
+        civitas scotus scrape-all                      # Full history 1789-present
+        civitas scotus scrape-all --start-year=1950   # From 1950 to present
+        civitas scotus scrape-all --start-year=2000 --end-year=2010  # Specific range
+    """
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Base, get_engine
+    from civitas.scotus.historical import HistoricalSCOTUSScraper
+
+    api_token = os.getenv("COURT_LISTENER_TOKEN")
+
+    if not api_token:
+        console.print(
+            "[yellow]Warning: No COURT_LISTENER_TOKEN set. Rate limits will be restricted.[/yellow]"
+        )
+        console.print(
+            "[yellow]Get a token at: https://www.courtlistener.com/sign-in/[/yellow]"
+        )
+        console.print()
+
+    end = end_year or date.today().year
+
+    console.print(f"[bold blue]Scraping SCOTUS cases from {start_year} to {end}...[/bold blue]")
+
+    engine = get_engine(db_path)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        with HistoricalSCOTUSScraper(
+            session=session,
+            api_token=api_token,
+            rate_limit_delay=rate_limit,
+            verbose=True,
+        ) as scraper:
+            # Show initial stats
+            initial_stats = scraper.get_stats()
+            console.print(f"  Current cases in DB: {initial_stats['total_scotus_cases']}")
+            console.print(f"  Cases with author: {initial_stats['cases_with_author']}")
+            console.print()
+
+            # Run the scrape
+            stats = scraper.scrape_year_range(
+                start_year=start_year,
+                end_year=end,
+                batch_size=batch_size,
+            )
+
+            # Link any unlinked opinions
+            linked = scraper.link_unlinked_opinions()
+
+            # Final stats
+            final_stats = scraper.get_stats()
+
+    console.print()
+    console.print("[bold green]Scraping complete![/bold green]")
+    console.print(f"  Cases fetched: {stats.cases_fetched}")
+    console.print(f"  Cases inserted: {stats.cases_inserted}")
+    console.print(f"  Cases updated: {stats.cases_updated}")
+    console.print(f"  Opinions linked: {linked}")
+    console.print(f"  Errors: {stats.errors}")
+    console.print(f"  Duration: {stats.duration_seconds:.1f} seconds")
+    console.print()
+    console.print("[bold]Final database stats:[/bold]")
+    console.print(f"  Total SCOTUS cases: {final_stats['total_scotus_cases']}")
+    console.print(f"  Cases with author: {final_stats['cases_with_author']}")
+    console.print(f"  Date range: {final_stats['oldest_case_date']} to {final_stats['newest_case_date']}")
+
+
+@scotus_app.command("stats")
+def show_scotus_stats(
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Show SCOTUS data statistics."""
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Base, get_engine
+    from civitas.scotus.historical import HistoricalSCOTUSScraper
+
+    engine = get_engine(db_path)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        scraper = HistoricalSCOTUSScraper(session=session, verbose=False)
+        stats = scraper.get_stats()
+
+    console.print("[bold blue]SCOTUS Database Statistics[/bold blue]")
+    console.print()
+    console.print(f"  Total SCOTUS cases: {stats['total_scotus_cases']}")
+    console.print(f"  Cases with author: {stats['cases_with_author']}")
+    console.print(f"  Justice opinion links: {stats['total_justice_opinions']}")
+    console.print(f"  Linked to justices: {stats['linked_justice_opinions']}")
+    console.print()
+    if stats['oldest_case_date']:
+        console.print(
+            f"  Date range: {stats['oldest_case_date']} to {stats['newest_case_date']}"
+        )
+
+
 @ingest_app.command("executive-orders")
 def ingest_executive_orders(
     president: str | None = typer.Option(None, "--president", help="Filter by president"),

@@ -14,6 +14,7 @@ interface JusticeAPI {
   role?: string | null;
   is_active: boolean;
   official_photo_url?: string | null;
+  start_date?: string | null;
 }
 
 export default async function JusticesPage() {
@@ -36,7 +37,6 @@ export default async function JusticesPage() {
       </div>
 
       <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-4">Active Justices</h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {active.map((justice) => (
             <Link key={justice.id} href={`/justices/${justice.slug}`}>
@@ -58,9 +58,11 @@ export default async function JusticesPage() {
                     <div>
                       <div className="text-lg font-semibold">{justice.name}</div>
                       <div className="text-sm text-muted-foreground">{justice.role}</div>
-                      <Badge className="mt-2" variant="secondary">
-                        Active
-                      </Badge>
+                      {justice.start_date && (
+                        <Badge className="mt-2" variant="secondary">
+                          Confirmed {new Date(justice.start_date).getFullYear()}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -205,10 +205,19 @@ def backfill_p2025_metadata(
 @ingest_app.command("scotus")
 def ingest_scotus(
     term: str | None = typer.Option(None, "--term", help="Specific term (e.g., '24' for 2024)"),
+    all_terms: bool = typer.Option(False, "--all", help="Scrape all available terms (18-25)"),
+    include_orders: bool = typer.Option(True, "--orders/--no-orders", help="Include opinions relating to orders"),
     azure: bool = typer.Option(False, "--azure", help="Store documents in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
-    """Ingest Supreme Court slip opinions."""
+    """Ingest Supreme Court slip opinions from supremecourt.gov.
+
+    Examples:
+        civitas ingest scotus                    # Recent 3 terms
+        civitas ingest scotus --term=24          # Just 2024 term
+        civitas ingest scotus --all              # All terms (18-25)
+        civitas ingest scotus --all --no-orders  # All terms, skip orders
+    """
     from sqlalchemy.orm import Session
 
     from civitas.db.models import CourtCase, Justice, JusticeOpinion, get_engine
@@ -223,11 +232,31 @@ def ingest_scotus(
     counts = {"cases": 0, "stored_in_azure": 0}
 
     with SCOTUSClient(azure_client=azure_client) as client:
-        terms = [term] if term else client.list_terms()[:3]  # Recent 3 terms by default
+        if term:
+            terms = [term]
+        elif all_terms:
+            terms = client.AVAILABLE_TERMS
+        else:
+            terms = client.list_terms()[:3]  # Recent 3 terms by default
+
+        console.print(f"  Scraping {len(terms)} term(s): {', '.join(terms)}")
 
         for t in terms:
             console.print(f"  [cyan]Term {t}...[/cyan]")
-            opinions = client.get_opinions_for_term(t)
+
+            # Get slip opinions
+            opinions = list(client.get_opinions_for_term(t))
+
+            # Also get orders opinions if requested
+            if include_orders:
+                for item in client.list_orders_opinions(t):
+                    try:
+                        pdf_path, azure_url = client.download_opinion(item)
+                        parsed = client._parse_opinion_pdf(pdf_path, item, azure_url)
+                        if parsed:
+                            opinions.append(parsed)
+                    except Exception:
+                        continue
 
             for opinion in opinions:
                 with Session(engine) as session:
@@ -308,6 +337,64 @@ def ingest_scotus(
         console.print(f"  Stored in Azure: {counts['stored_in_azure']}")
 
 
+@ingest_app.command("scotus-transcripts")
+def ingest_scotus_transcripts(
+    term: str | None = typer.Option(None, "--term", help="Specific term (e.g., '24' for 2024)"),
+    all_terms: bool = typer.Option(False, "--all", help="Scrape all available terms"),
+    azure: bool = typer.Option(False, "--azure", help="Store transcripts in Azure Blob Storage"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Ingest SCOTUS oral argument transcripts.
+
+    Transcripts provide valuable insights into each justice's questioning
+    style and priorities, useful for profiling.
+
+    Examples:
+        civitas ingest scotus-transcripts                # Recent 3 terms
+        civitas ingest scotus-transcripts --term=24     # Just 2024 term
+        civitas ingest scotus-transcripts --all         # All available terms
+    """
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import get_engine
+    from civitas.scotus import SCOTUSClient
+    from civitas.storage import AzureStorageClient
+
+    azure_client = AzureStorageClient() if azure else None
+
+    console.print("[bold blue]Ingesting SCOTUS oral argument transcripts...[/bold blue]")
+
+    engine = get_engine(db_path)
+    counts = {"transcripts": 0}
+
+    with SCOTUSClient(azure_client=azure_client) as client:
+        if term:
+            terms = [term]
+        elif all_terms:
+            terms = client.AVAILABLE_TERMS
+        else:
+            terms = client.list_terms()[:3]
+
+        console.print(f"  Scraping {len(terms)} term(s): {', '.join(terms)}")
+
+        for t in terms:
+            console.print(f"  [cyan]Term {t}...[/cyan]")
+            transcripts = client.list_transcripts(t)
+
+            for transcript in transcripts:
+                try:
+                    pdf_path, azure_url = client.download_transcript(transcript)
+                    text = client._extract_transcript_text(pdf_path)
+                    counts["transcripts"] += 1
+                    console.print(f"    Downloaded: {transcript.case_name[:50]}...")
+                except Exception as e:
+                    console.print(f"    [yellow]Error: {transcript.docket_number}: {e}[/yellow]")
+                    continue
+
+    console.print("\n[bold green]Transcript ingestion complete![/bold green]")
+    console.print(f"  Transcripts: {counts['transcripts']}")
+
+
 @ingest_app.command("courts")
 def ingest_courts(
     days: int = typer.Option(90, "--days", help="Days of opinions to fetch"),
@@ -384,6 +471,113 @@ def ingest_courts(
     console.print(f"  Cases: {counts['cases']}")
 
 
+@ingest_app.command("scotus-historical")
+def ingest_scotus_historical(
+    limit: int = typer.Option(500, "--limit", help="Maximum opinions to ingest"),
+    years: int = typer.Option(20, "--years", help="Years of history to fetch"),
+    justice: str | None = typer.Option(None, "--justice", help="Filter by justice last name"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Ingest historical SCOTUS opinions from Court Listener.
+
+    This provides comprehensive historical data including opinion authors,
+    which is needed for accurate justice profiles.
+
+    Examples:
+        civitas ingest scotus-historical --years=10 --limit=1000
+        civitas ingest scotus-historical --justice=Roberts --limit=100
+    """
+    from datetime import timedelta
+
+    from sqlalchemy.orm import Session
+
+    from civitas.courts import CourtListenerClient
+    from civitas.db.models import CourtCase, Justice, JusticeOpinion, get_engine
+
+    api_token = os.getenv("COURT_LISTENER_TOKEN")
+    if not api_token:
+        console.print(
+            "[yellow]Warning: No COURT_LISTENER_TOKEN set. Rate limits will be restricted.[/yellow]"
+        )
+
+    console.print(f"[bold blue]Ingesting SCOTUS opinions from Court Listener...[/bold blue]")
+    if justice:
+        console.print(f"  Filtering by justice: {justice}")
+
+    engine = get_engine(db_path)
+    counts = {"cases": 0, "opinions": 0, "linked": 0}
+
+    with CourtListenerClient(api_token=api_token) as client:
+        if justice:
+            opinions = client.get_scotus_opinions_by_justice(justice, limit=limit)
+        else:
+            filed_after = date.today() - timedelta(days=years * 365)
+            opinions = client.get_scotus_opinions(
+                filed_after=filed_after,
+                limit=limit,
+            )
+
+        with Session(engine) as session:
+            # Build justice name -> id map
+            justice_map = {
+                j.last_name.lower(): j.id for j in session.query(Justice).all()
+            }
+
+            for opinion in opinions:
+                # Check if already exists
+                existing = (
+                    session.query(CourtCase)
+                    .filter(CourtCase.source_id == f"cl-{opinion.id}")
+                    .first()
+                )
+
+                if existing:
+                    continue
+
+                # Create case record
+                case = CourtCase(
+                    citation=opinion.citation or f"CL-{opinion.id}",
+                    case_name=opinion.case_name,
+                    court_level="scotus",
+                    court="Supreme Court",
+                    decision_date=opinion.date_created,
+                    majority_opinion=opinion.plain_text,
+                    majority_author=opinion.author,
+                    source_id=f"cl-{opinion.id}",
+                    status="decided",
+                )
+                session.add(case)
+                session.flush()
+                counts["cases"] += 1
+
+                # Link to justice if author is known
+                if opinion.author:
+                    author_last = opinion.author.split()[-1].lower() if opinion.author else None
+                    justice_id = justice_map.get(author_last)
+
+                    if justice_id:
+                        jo = JusticeOpinion(
+                            justice_id=justice_id,
+                            court_case_id=case.id,
+                            author_name=opinion.author,
+                            opinion_type=opinion.opinion_type or "majority",
+                        )
+                        session.add(jo)
+                        counts["opinions"] += 1
+                        counts["linked"] += 1
+
+                # Commit every 50 records
+                if counts["cases"] % 50 == 0:
+                    session.commit()
+                    console.print(f"  Progress: {counts['cases']} cases...")
+
+            session.commit()
+
+    console.print("\n[bold green]SCOTUS historical ingestion complete![/bold green]")
+    console.print(f"  Cases added: {counts['cases']}")
+    console.print(f"  Justice opinions linked: {counts['linked']}")
+
+
 # =============================================================================
 # SCOTUS Justice Profile Commands
 # =============================================================================
@@ -423,6 +617,58 @@ def sync_scotus_justices(
         session.commit()
 
     console.print(f"[bold green]Synced {updated} justices, linked {linked} opinions.[/bold green]")
+
+
+@scotus_app.command("analyze-cases")
+def analyze_scotus_cases(
+    limit: int = typer.Option(50, "--limit", help="Number of cases to analyze"),
+    force: bool = typer.Option(False, "--force", help="Regenerate existing analyses"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Analyze Supreme Court cases using AI.
+
+    Extracts legal issues, constitutional provisions, doctrines,
+    and ideological indicators from case holdings and opinions.
+
+    Examples:
+        civitas scotus analyze-cases                # Analyze up to 50 unanalyzed cases
+        civitas scotus analyze-cases --limit=200   # Analyze up to 200 cases
+        civitas scotus analyze-cases --force       # Regenerate all analyses
+    """
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Base, get_engine
+    from civitas.scotus.case_analyzer import CaseAnalyzer
+
+    engine = get_engine(db_path)
+    Base.metadata.create_all(engine)
+
+    with Session(engine) as session:
+        analyzer = CaseAnalyzer(session=session)
+
+        # Show current stats
+        stats = analyzer.get_case_stats()
+        console.print(f"[bold blue]SCOTUS Case Analysis[/bold blue]")
+        console.print(f"  Total cases: {stats['total_scotus_cases']}")
+        console.print(f"  Already analyzed: {stats['analyzed']}")
+        console.print(f"  Remaining: {stats['remaining']}")
+        console.print()
+
+        provider = "Groq" if analyzer.use_groq else "OpenAI" if analyzer.use_openai else "Ollama"
+        model = analyzer.groq_model if analyzer.use_groq else analyzer.openai_model if analyzer.use_openai else analyzer.ollama_model
+        console.print(f"  Provider: {provider} ({model})")
+        console.print()
+
+        console.print(f"[bold]Analyzing up to {limit} cases...[/bold]")
+        successful, failed = analyzer.analyze_batch(limit=limit, force=force)
+
+        # Final stats
+        stats = analyzer.get_case_stats()
+        console.print()
+        console.print(f"[bold green]Analysis complete![/bold green]")
+        console.print(f"  Successful: {successful}")
+        console.print(f"  Failed: {failed}")
+        console.print(f"  Progress: {stats['analyzed']}/{stats['total_scotus_cases']} ({stats['percent_complete']}%)")
 
 
 @scotus_app.command("generate-profiles")
@@ -905,44 +1151,39 @@ def ingest_constitutions(
 
 @ingest_app.command("scrape-state")
 def ingest_scrape_state(
-    state: str = typer.Argument(..., help="Two-letter state code (e.g., 'ca')"),
+    state: str = typer.Argument(..., help="Two-letter state code (e.g., 'ca', 'ny')"),
     session: str | None = typer.Option(None, "-s", "--session", help="Session identifier"),
     chamber: str | None = typer.Option(None, "-c", "--chamber", help="Chamber (upper/lower)"),
     limit: int = typer.Option(500, "-n", "--limit", help="Max bills to scrape"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+    match_p2025: bool = typer.Option(False, "--match-p2025", help="Match bills against P2025 policies"),
 ):
     """Scrape state bills directly from legislature website.
 
     This bypasses the OpenStates API entirely by scraping directly from
     official state legislature websites.
 
-    Currently supported states: CA (California)
+    Supported states: CA (California), NY (New York)
 
     Example:
-        civitas ingest scrape-state ca --session 20232024 --limit 100
+        civitas ingest scrape-state ny --session 2025 --limit 100
+        civitas ingest scrape-state ca --session 2023 --match-p2025
     """
     from sqlalchemy.orm import Session
 
     from civitas.db.models import Legislation, get_engine
-
-    # Import available scrapers
-    scrapers = {}
-    try:
-        from civitas.states.scrapers import CaliforniaScraper
-
-        scrapers["ca"] = CaliforniaScraper
-    except ImportError:
-        pass
+    from civitas.states.scrapers import get_scraper, list_available_scrapers, get_state_name
 
     state_lower = state.lower()
-    if state_lower not in scrapers:
+    scraper_cls = get_scraper(state_lower)
+
+    if scraper_cls is None:
         console.print(f"[red]No scraper available for state: {state.upper()}[/red]")
-        console.print(f"Available states: {', '.join(s.upper() for s in scrapers.keys())}")
+        available = list_available_scrapers()
+        console.print(f"Available states: {', '.join(s.upper() for s, _ in available)}")
         console.print("\nAlternatives:")
         console.print("  - civitas ingest openstates-bulk  (uses monthly dump, unlimited)")
         return
-
-    scraper_cls = scrapers[state_lower]
 
     console.print(f"[bold blue]Scraping {scraper_cls.STATE_NAME} legislature...[/bold blue]")
 
@@ -1052,6 +1293,111 @@ def ingest_state_legislators(
     console.print("  - civitas ingest scrape-state  (direct scrape)")
     console.print("  - civitas ingest openstates-bulk  (monthly dump)")
     return
+
+
+@ingest_app.command("match-p2025")
+def match_state_p2025(
+    state: str | None = typer.Option(None, "-s", "--state", help="Filter by state code"),
+    category: str | None = typer.Option(None, "-c", "--category", help="P2025 category filter"),
+    stance: str | None = typer.Option(None, "--stance", help="Filter by stance (supports/opposes)"),
+    limit: int = typer.Option(100, "-n", "--limit", help="Max bills to analyze"),
+    use_ai: bool = typer.Option(True, "--ai/--no-ai", help="Use AI for stance detection"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Match state legislation against Project 2025 policies.
+
+    Analyzes state bills to find those that support or oppose P2025 policies.
+    Uses keyword matching for initial filtering and AI for stance detection.
+
+    Example:
+        civitas ingest match-p2025 --state ny --category abortion
+        civitas ingest match-p2025 --stance opposes --limit 50
+    """
+    from sqlalchemy.orm import Session
+
+    from civitas.db.models import Legislation, get_engine
+
+    engine = get_engine(db_path)
+
+    console.print("[bold blue]Matching state legislation against P2025 policies...[/bold blue]")
+    if state:
+        console.print(f"  State: {state.upper()}")
+    if category:
+        console.print(f"  Category: {category}")
+    console.print(f"  Limit: {limit}")
+    console.print(f"  AI stance detection: {'enabled' if use_ai else 'disabled'}")
+    console.print()
+
+    try:
+        from civitas.states.p2025_matcher import match_state_legislation
+
+        with Session(engine) as db_session:
+            results = match_state_legislation(
+                db_session,
+                state=state,
+                limit=limit,
+                use_ai=use_ai,
+            )
+
+            # Filter by category/stance if specified
+            if category or stance:
+                filtered = []
+                for r in results:
+                    matches = r["matches"]
+                    if category:
+                        matches = [m for m in matches if m["category"] == category]
+                    if stance:
+                        matches = [m for m in matches if m["stance"] == stance]
+                    if matches:
+                        r["matches"] = matches
+                        filtered.append(r)
+                results = filtered
+
+            if not results:
+                console.print("[yellow]No matching bills found.[/yellow]")
+                return
+
+            console.print(f"[bold green]Found {len(results)} bills with P2025 relevance[/bold green]\n")
+
+            for r in results[:20]:  # Show top 20
+                console.print(f"[bold]{r['citation']}[/bold] ({r['state']})")
+                console.print(f"  {r['title'][:80]}...")
+                for m in r["matches"][:3]:  # Top 3 matches per bill
+                    stance_color = "red" if m["stance"] == "supports" else "green" if m["stance"] == "opposes" else "yellow"
+                    console.print(
+                        f"  [{stance_color}]{m['stance'].upper()}[/{stance_color}] "
+                        f"{m['category']}: {m['policy_title'][:50]}... "
+                        f"(relevance: {m['relevance']:.2f}, confidence: {m['confidence']:.2f})"
+                    )
+                    if m.get("rationale"):
+                        console.print(f"    → {m['rationale'][:80]}")
+                console.print()
+
+    except ImportError as e:
+        console.print(f"[red]Missing dependency: {e}[/red]")
+        console.print("Install with: pip install ollama")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+@ingest_app.command("list-scrapers")
+def list_state_scrapers():
+    """List available state legislature scrapers."""
+    from civitas.states.scrapers import list_available_scrapers, get_state_name
+
+    scrapers = list_available_scrapers()
+
+    console.print("[bold blue]Available State Scrapers[/bold blue]\n")
+
+    if not scrapers:
+        console.print("[yellow]No scrapers available.[/yellow]")
+        return
+
+    for state_code, scraper_cls in scrapers:
+        state_name = get_state_name(state_code)
+        console.print(f"  [bold]{state_code.upper()}[/bold] - {state_name}")
+        console.print(f"       Base URL: {scraper_cls.BASE_URL}")
+        console.print()
 
 
 @ingest_app.command("openstates-bulk")
@@ -2491,6 +2837,109 @@ def interactive_chat(
             break
         except Exception as e:
             console.print(f"[red]Error: {e}[/red]")
+
+
+# =============================================================================
+# Research / Report Generation Commands
+# =============================================================================
+
+research_app = typer.Typer(help="Research and report generation commands")
+app.add_typer(research_app, name="research")
+
+
+@research_app.command("storm-report")
+def generate_storm_report(
+    topic: str = typer.Argument(..., help="Topic for the report (e.g., 'EPA regulations under Project 2025')"),
+    output_dir: str = typer.Option("./storm_output", "-o", "--output", help="Output directory"),
+    use_ollama: bool = typer.Option(False, "--ollama", help="Use Ollama instead of OpenAI"),
+    use_web_search: bool = typer.Option(False, "--web", help="Enable web search for additional sources"),
+    no_custom_docs: bool = typer.Option(False, "--no-docs", help="Skip custom P2025 document retrieval"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Generate a comprehensive STORM report on a Project 2025 topic.
+
+    Uses Stanford STORM to create Wikipedia-style articles with citations.
+    Requires: pip install knowledge-storm
+
+    Examples:
+        civitas research storm-report "EPA regulations under Project 2025"
+        civitas research storm-report "Immigration enforcement policies" --ollama
+        civitas research storm-report "Education policy changes" --web
+    """
+    from civitas.research import STORMReportGenerator
+
+    console.print(f"[bold blue]Generating STORM report: {topic}[/bold blue]")
+
+    try:
+        from civitas.db import get_session_local
+
+        Session = get_session_local(db_path)
+        with Session() as session:
+            generator = STORMReportGenerator(
+                session=session,
+                output_dir=output_dir,
+            )
+
+            report = generator.generate_policy_report(
+                topic=topic,
+                use_custom_docs=not no_custom_docs,
+                use_web_search=use_web_search,
+                use_ollama=use_ollama,
+            )
+
+            console.print(f"\n[bold green]Report generated successfully![/bold green]")
+            console.print(f"  Topic: {report.topic}")
+            console.print(f"  Output: {report.output_dir}")
+
+            if report.article_path:
+                console.print(f"  Article: {report.article_path}")
+                # Show preview
+                article_file = Path(report.article_path)
+                if article_file.exists():
+                    content = article_file.read_text()[:1000]
+                    console.print("\n[bold]Preview:[/bold]")
+                    console.print(Markdown(content + "\n\n..."))
+
+    except ImportError as e:
+        console.print(f"[red]STORM not installed: {e}[/red]")
+        console.print("[yellow]Install with: pip install knowledge-storm[/yellow]")
+    except Exception as e:
+        console.print(f"[red]Error generating report: {e}[/red]")
+        raise
+
+
+@research_app.command("export-p2025")
+def export_p2025_for_storm(
+    output_file: str = typer.Option("p2025_policies.csv", "-o", "--output", help="Output CSV file"),
+    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
+):
+    """Export Project 2025 policies to CSV for STORM VectorRM.
+
+    Creates a CSV file suitable for use with STORM's vector retrieval module.
+    """
+    from civitas.research import STORMReportGenerator
+
+    console.print("[bold blue]Exporting P2025 policies for STORM...[/bold blue]")
+
+    try:
+        from civitas.db import get_session_local
+
+        Session = get_session_local(db_path)
+        with Session() as session:
+            generator = STORMReportGenerator(session=session)
+            csv_path = generator.export_policies_for_storm(output_file)
+
+            console.print(f"[bold green]Export complete![/bold green]")
+            console.print(f"  Output: {csv_path}")
+
+            # Count lines
+            with open(csv_path) as f:
+                line_count = sum(1 for _ in f) - 1  # Subtract header
+            console.print(f"  Policies: {line_count}")
+
+    except Exception as e:
+        console.print(f"[red]Error exporting: {e}[/red]")
+        raise
 
 
 # =============================================================================

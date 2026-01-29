@@ -1,4 +1,4 @@
-"""AI-powered resistance analysis using Carl (Ollama/Llama).
+"""AI-powered resistance analysis using OpenAI or Ollama.
 
 Analyzes P2025 policies against constitutional law, court precedents,
 and existing legislation to identify legal vulnerabilities and
@@ -13,9 +13,11 @@ from sqlalchemy.orm import Session
 
 from civitas.ai.prompts import load_prompt
 
-# Default Ollama configuration (Carl AI VM on Azure)
+# Default configuration
 DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
+DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 class ResistanceAnalyzer:
@@ -137,6 +139,7 @@ class ResistanceAnalyzer:
         session: Session,
         ollama_host: str | None = None,
         ollama_model: str | None = None,
+        use_openai: bool | None = None,
     ):
         """Initialize the resistance analyzer.
 
@@ -144,10 +147,31 @@ class ResistanceAnalyzer:
             session: SQLAlchemy database session
             ollama_host: Ollama server URL (default: Carl AI VM)
             ollama_model: Model name (default: llama3.2)
+            use_openai: Use OpenAI API instead of Ollama (default: auto-detect from OPENAI_API_KEY)
         """
         self.session = session
         self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
         self.ollama_model = ollama_model or os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
+
+        # Auto-detect provider: Groq > OpenAI > Ollama
+        self.groq_api_key = os.getenv("GROQ_API_KEY")
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
+
+        if use_openai is not None:
+            self.use_openai = use_openai
+            self.use_groq = False
+        elif self.groq_api_key:
+            self.use_groq = True
+            self.use_openai = False
+        elif self.openai_api_key:
+            self.use_openai = True
+            self.use_groq = False
+        else:
+            self.use_openai = False
+            self.use_groq = False
+
+        self.openai_model = os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
+        self.groq_model = os.getenv("GROQ_MODEL", DEFAULT_GROQ_MODEL)
 
     def get_cached_analysis(
         self,
@@ -212,6 +236,22 @@ class ResistanceAnalyzer:
         except ImportError:
             raise ImportError("Install ollama: pip install ollama")
         return ollama.Client(host=self.ollama_host)
+
+    def _get_openai_client(self):
+        """Get OpenAI client."""
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("Install openai: pip install openai")
+        return OpenAI()
+
+    def _get_groq_client(self):
+        """Get Groq client."""
+        try:
+            from groq import Groq
+        except ImportError:
+            raise ImportError("Install groq: pip install groq")
+        return Groq(api_key=self.groq_api_key)
 
     def analyze_policy(self, policy_id: int, persist: bool = False) -> dict:
         """Analyze a P2025 policy for legal vulnerabilities.
@@ -386,35 +426,35 @@ class ResistanceAnalyzer:
 
     def _ai_analyze(self, policy, context: dict) -> dict:
         """Use AI to analyze the policy and generate resistance strategies."""
-        client = self._get_ollama_client()
-        num_predict = int(os.getenv("RESISTANCE_ANALYSIS_NUM_PREDICT", "400"))
         temperature = float(os.getenv("RESISTANCE_ANALYSIS_TEMPERATURE", "0.2"))
 
-        default_system_prompt = """You are a constitutional law expert analyzing government policies for legal vulnerabilities. Your role is to:
+        default_system_prompt = """You are a constitutional law expert. Analyze the policy and respond with ONLY valid JSON.
 
-1. Identify constitutional issues with the policy
-2. Find relevant legal precedents that could challenge it
-3. Suggest legal strategies for resistance
-4. Assess likelihood of success for different approaches
-5. Provide a speculative, non-predictive outlook on how current justices historically approach similar issues
-6. Provide a speculative meter for case outcome if reviewed by the current Court
+You MUST respond with this EXACT JSON structure (fill in all values):
+{
+  "constitutional_issues": [
+    {"provision": "Amendment or Article", "issue": "Description of the constitutional problem", "severity": "High/Medium/Low"}
+  ],
+  "relevant_precedents": [
+    {"citation": "Case Name, Volume U.S. Page (Year)", "relevance": "Why this case applies"}
+  ],
+  "challenge_strategies": [
+    {"type": "Type of legal challenge", "basis": "Constitutional/statutory basis", "likelihood": "High/Medium/Low", "explanation": "How to execute this strategy"}
+  ],
+  "state_resistance_options": [
+    {"action": "State-level action", "legal_basis": "10th Amendment or other basis", "explanation": "Implementation details"}
+  ],
+  "immediate_actions": [
+    {"action": "Immediate step", "who": "Who can take this action", "explanation": "How to do it"}
+  ],
+  "overall_vulnerability_score": 75
+}
 
-Be specific and cite actual constitutional provisions and case law.
-Focus on actionable legal strategies, not political commentary.
-
-Respond in JSON format with these fields:
-- constitutional_issues: Array of {provision, issue, severity}
-- relevant_precedents: Array of {citation, relevance}
-- challenge_strategies: Array of {type, basis, likelihood, explanation}
-- state_resistance_options: Array of {action, legal_basis, explanation}
-- immediate_actions: Array of {action, who, explanation}
-- overall_vulnerability_score: Number 0-100 (100 = most vulnerable to challenge)
-- justice_outlook: Array of {justice, historical_signals, speculative_outlook, confidence}
-- justice_outlook_disclaimer: String (must reiterate that this is speculative and non-predictive)
-- case_outcome_meter: Number 0-100 (speculative likelihood of successful challenge if reviewed by current Court)
-- case_outcome_rationale: String (2-3 sentences explaining the meter)
-- persuasion_strategies: Array of {strategy, rationale, scope_narrowing, target_justices, confidence}
-- persuasion_disclaimer: String (must reiterate speculative, non-predictive guidance)
+RULES:
+- Respond with ONLY the JSON object, no other text
+- Include at least 2 items in each array
+- Be specific with constitutional provisions and case citations
+- Focus on actionable legal strategies
 """
         system_prompt = load_prompt(
             path_env="CARL_RESISTANCE_ANALYSIS_PROMPT_PATH",
@@ -422,41 +462,24 @@ Respond in JSON format with these fields:
             fallback=default_system_prompt,
         )
 
-        user_prompt = f"""Analyze this Project 2025 policy proposal for legal vulnerabilities:
+        user_prompt = f"""Analyze this Project 2025 policy for legal vulnerabilities:
 
 AGENCY: {policy.agency}
 SECTION: {policy.section}
-PROPOSAL: {policy.proposal_text}
+PROPOSAL: {policy.proposal_text[:1000]}
 
-CONTEXT FROM DATABASE:
-Constitutional Provisions Potentially Relevant:
-{json.dumps(context["constitutional_provisions"], indent=2)}
-
-Related Court Cases in Database:
-{json.dumps(context["relevant_cases"], indent=2)}
-
-KEY PRECEDENTS TO CONSIDER:
-{json.dumps(list(self.KEY_PRECEDENTS.values()), indent=2)}
-
-CURRENT JUSTICE PROFILES (HISTORICAL SIGNALS ONLY):
-{json.dumps(context["justice_profiles"], indent=2)}
-
-Provide a detailed legal analysis with specific constitutional provisions and case citations.
-Focus on realistic, actionable legal strategies. The justice outlook must be speculative
-and based only on published opinions and stated judicial philosophies."""
+Respond with the JSON structure specified above. Include specific constitutional provisions and real case citations."""
 
         try:
-            response = client.chat(
-                model=self.ollama_model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                format="json",
-                options={"temperature": temperature, "num_predict": num_predict},
-            )
-
-            content = response["message"]["content"]
+            if self.use_groq:
+                content = self._groq_analyze(system_prompt, user_prompt, temperature)
+                model_used = self.groq_model
+            elif self.use_openai:
+                content = self._openai_analyze(system_prompt, user_prompt, temperature)
+                model_used = self.openai_model
+            else:
+                content = self._ollama_analyze(system_prompt, user_prompt, temperature)
+                model_used = self.ollama_model
 
             # Parse JSON response
             try:
@@ -477,7 +500,7 @@ and based only on published opinions and stated judicial philosophies."""
             # Add metadata
             analysis["policy_id"] = policy.id
             analysis["analyzed_at"] = datetime.now(UTC).isoformat()
-            analysis["model"] = self.ollama_model
+            analysis["model"] = model_used
 
             return analysis
 
@@ -487,6 +510,52 @@ and based only on published opinions and stated judicial philosophies."""
                 "policy_id": policy.id,
                 "context": context,
             }
+
+    def _ollama_analyze(self, system_prompt: str, user_prompt: str, temperature: float) -> str:
+        """Run analysis using Ollama."""
+        client = self._get_ollama_client()
+        num_predict = int(os.getenv("RESISTANCE_ANALYSIS_NUM_PREDICT", "2000"))
+
+        response = client.chat(
+            model=self.ollama_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            format="json",
+            options={"temperature": temperature, "num_predict": num_predict},
+        )
+        return response["message"]["content"]
+
+    def _openai_analyze(self, system_prompt: str, user_prompt: str, temperature: float) -> str:
+        """Run analysis using OpenAI."""
+        client = self._get_openai_client()
+
+        response = client.chat.completions.create(
+            model=self.openai_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=temperature,
+            response_format={"type": "json_object"},
+        )
+        return response.choices[0].message.content
+
+    def _groq_analyze(self, system_prompt: str, user_prompt: str, temperature: float) -> str:
+        """Run analysis using Groq (fast, free tier)."""
+        client = self._get_groq_client()
+
+        response = client.chat.completions.create(
+            model=self.groq_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=temperature,
+            response_format={"type": "json_object"},
+        )
+        return response.choices[0].message.content
 
     def batch_analyze(self, limit: int = 50) -> list[dict]:
         """Analyze multiple policies that haven't been analyzed yet.

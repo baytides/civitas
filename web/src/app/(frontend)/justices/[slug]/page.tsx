@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
+interface NotableOpinion {
+  case_name: string;
+  citation?: string | null;
+  decision_date?: string | null;
+}
+
 interface JusticeDetail {
   id: number;
   name: string;
@@ -20,22 +26,42 @@ interface JusticeDetail {
   opinion_counts?: Record<string, number>;
   profile_summary?: string | null;
   judicial_philosophy?: string | null;
-  voting_tendencies?: string[];
-  notable_opinions?: string[];
+  voting_tendencies?: string[] | string;
+  notable_opinions?: NotableOpinion[];
   statistical_profile?: Record<string, unknown>;
   methodology?: string | null;
   disclaimer?: string | null;
   generated_at?: string | null;
   circuit_assignments?: string[];
   assignments_updated_at?: string | null;
+  start_date?: string | null;
+  appointed_by?: string | null;
+}
+
+// Convert snake_case keys to human-readable labels
+function formatStatLabel(key: string): string {
+  const labelMap: Record<string, string> = {
+    average_opinion_length: "Average Opinion Length",
+    median_opinion_year: "Median Opinion Year",
+    majority_rate_deviation: "Majority Rate Deviation",
+    dissent_rate_deviation: "Dissent Rate Deviation",
+    concurrence_rate_deviation: "Concurrence Rate Deviation",
+    recent_case_decision_rate: "Recent Case Decision Rate",
+    total_opinions: "Total Opinions",
+    majority_rate: "Majority Rate",
+    dissent_rate: "Dissent Rate",
+    concurrence_rate: "Concurrence Rate",
+  };
+  return labelMap[key] || key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export default async function JusticeDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const response = await fetch(`${API_BASE}/justices/${params.slug}`, {
+  const { slug } = await params;
+  const response = await fetch(`${API_BASE}/justices/${slug}`, {
     cache: "no-store",
   });
   if (!response.ok) {
@@ -54,25 +80,32 @@ export default async function JusticeDetailPage({
       </div>
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           {justice.official_photo_url ? (
             <Image
               src={justice.official_photo_url}
               alt={justice.name}
-              width={96}
-              height={96}
-              className="h-24 w-24 rounded-full object-cover"
+              width={160}
+              height={160}
+              className="h-40 w-40 rounded-full object-cover"
               unoptimized
             />
           ) : (
-            <div className="h-24 w-24 rounded-full bg-muted" />
+            <div className="h-40 w-40 rounded-full bg-muted" />
           )}
           <div>
             <h1 className="text-3xl font-bold">{justice.name}</h1>
             <p className="text-muted-foreground">{justice.role}</p>
-            <Badge className="mt-2" variant={justice.is_active ? "default" : "outline"}>
-              {justice.is_active ? "Active" : "Retired"}
-            </Badge>
+            {justice.start_date && (
+              <Badge className="mt-2" variant="secondary">
+                Confirmed {new Date(justice.start_date).getFullYear()}
+              </Badge>
+            )}
+            {justice.appointed_by && (
+              <p className="text-sm text-muted-foreground mt-1">
+                Appointed by {justice.appointed_by}
+              </p>
+            )}
           </div>
         </div>
 
@@ -163,12 +196,21 @@ export default async function JusticeDetailPage({
         <Card>
           <CardContent className="pt-6">
             <h2 className="text-lg font-semibold mb-2">Voting Tendencies</h2>
-            {justice.voting_tendencies && justice.voting_tendencies.length > 0 ? (
-              <ul className="list-disc pl-5 text-muted-foreground">
-                {justice.voting_tendencies.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+            {justice.voting_tendencies ? (
+              typeof justice.voting_tendencies === "string" ? (
+                <p className="text-muted-foreground">{justice.voting_tendencies}</p>
+              ) : justice.voting_tendencies.length === 1 && justice.voting_tendencies[0].length > 100 ? (
+                // Single long string in array = narrative format
+                <p className="text-muted-foreground">{justice.voting_tendencies[0]}</p>
+              ) : justice.voting_tendencies.length > 0 ? (
+                <ul className="list-disc pl-5 text-muted-foreground">
+                  {justice.voting_tendencies.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground">Profile generation in progress.</p>
+              )
             ) : (
               <p className="text-muted-foreground">Profile generation in progress.</p>
             )}
@@ -180,8 +222,16 @@ export default async function JusticeDetailPage({
             <h2 className="text-lg font-semibold mb-2">Notable Opinions</h2>
             {justice.notable_opinions && justice.notable_opinions.length > 0 ? (
               <ul className="list-disc pl-5 text-muted-foreground">
-                {justice.notable_opinions.map((item) => (
-                  <li key={item}>{item}</li>
+                {justice.notable_opinions.map((opinion) => (
+                  <li key={opinion.citation || opinion.case_name}>
+                    <span className="font-medium">{opinion.case_name}</span>
+                    {opinion.citation && (
+                      <span className="text-sm"> ({opinion.citation})</span>
+                    )}
+                    {opinion.decision_date && (
+                      <span className="text-sm"> - {opinion.decision_date}</span>
+                    )}
+                  </li>
                 ))}
               </ul>
             ) : (
@@ -197,7 +247,7 @@ export default async function JusticeDetailPage({
               <div className="grid gap-2 md:grid-cols-2">
                 {Object.entries(justice.statistical_profile).map(([key, value]) => (
                   <div key={key} className="rounded border p-3 text-sm">
-                    <div className="text-muted-foreground">{key}</div>
+                    <div className="text-muted-foreground">{formatStatLabel(key)}</div>
                     <div className="font-medium">{String(value)}</div>
                   </div>
                 ))}

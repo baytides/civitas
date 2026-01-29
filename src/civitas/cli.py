@@ -206,7 +206,9 @@ def backfill_p2025_metadata(
 def ingest_scotus(
     term: str | None = typer.Option(None, "--term", help="Specific term (e.g., '24' for 2024)"),
     all_terms: bool = typer.Option(False, "--all", help="Scrape all available terms (18-25)"),
-    include_orders: bool = typer.Option(True, "--orders/--no-orders", help="Include opinions relating to orders"),
+    include_orders: bool = typer.Option(
+        True, "--orders/--no-orders", help="Include opinions relating to orders"
+    ),
     azure: bool = typer.Option(False, "--azure", help="Store documents in Azure Blob Storage"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
@@ -519,9 +521,7 @@ def ingest_scotus_historical(
 
         with Session(engine) as session:
             # Build justice name -> id map
-            justice_map = {
-                j.last_name.lower(): j.id for j in session.query(Justice).all()
-            }
+            justice_map = {j.last_name.lower(): j.id for j in session.query(Justice).all()}
 
             for opinion in opinions:
                 # Check if already exists
@@ -655,7 +655,13 @@ def analyze_scotus_cases(
         console.print()
 
         provider = "Groq" if analyzer.use_groq else "OpenAI" if analyzer.use_openai else "Ollama"
-        model = analyzer.groq_model if analyzer.use_groq else analyzer.openai_model if analyzer.use_openai else analyzer.ollama_model
+        model = (
+            analyzer.groq_model
+            if analyzer.use_groq
+            else analyzer.openai_model
+            if analyzer.use_openai
+            else analyzer.ollama_model
+        )
         console.print(f"  Provider: {provider} ({model})")
         console.print()
 
@@ -668,7 +674,9 @@ def analyze_scotus_cases(
         console.print("[bold green]Analysis complete![/bold green]")
         console.print(f"  Successful: {successful}")
         console.print(f"  Failed: {failed}")
-        console.print(f"  Progress: {stats['analyzed']}/{stats['total_scotus_cases']} ({stats['percent_complete']}%)")
+        console.print(
+            f"  Progress: {stats['analyzed']}/{stats['total_scotus_cases']} ({stats['percent_complete']}%)"
+        )
 
 
 @scotus_app.command("generate-profiles")
@@ -1156,7 +1164,9 @@ def ingest_scrape_state(
     chamber: str | None = typer.Option(None, "-c", "--chamber", help="Chamber (upper/lower)"),
     limit: int = typer.Option(500, "-n", "--limit", help="Max bills to scrape"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    match_p2025: bool = typer.Option(False, "--match-p2025", help="Match bills against P2025 policies"),
+    match_p2025: bool = typer.Option(
+        False, "--match-p2025", help="Match bills against P2025 policies"
+    ),
 ):
     """Scrape state bills directly from legislature website.
 
@@ -1357,13 +1367,21 @@ def match_state_p2025(
                 console.print("[yellow]No matching bills found.[/yellow]")
                 return
 
-            console.print(f"[bold green]Found {len(results)} bills with P2025 relevance[/bold green]\n")
+            console.print(
+                f"[bold green]Found {len(results)} bills with P2025 relevance[/bold green]\n"
+            )
 
             for r in results[:20]:  # Show top 20
                 console.print(f"[bold]{r['citation']}[/bold] ({r['state']})")
                 console.print(f"  {r['title'][:80]}...")
                 for m in r["matches"][:3]:  # Top 3 matches per bill
-                    stance_color = "red" if m["stance"] == "supports" else "green" if m["stance"] == "opposes" else "yellow"
+                    stance_color = (
+                        "red"
+                        if m["stance"] == "supports"
+                        else "green"
+                        if m["stance"] == "opposes"
+                        else "yellow"
+                    )
                     console.print(
                         f"  [{stance_color}]{m['stance'].upper()}[/{stance_color}] "
                         f"{m['category']}: {m['policy_title'][:50]}... "
@@ -2849,11 +2867,17 @@ app.add_typer(research_app, name="research")
 
 @research_app.command("storm-report")
 def generate_storm_report(
-    topic: str = typer.Argument(..., help="Topic for the report (e.g., 'EPA regulations under Project 2025')"),
+    topic: str = typer.Argument(
+        ..., help="Topic for the report (e.g., 'EPA regulations under Project 2025')"
+    ),
     output_dir: str = typer.Option("./storm_output", "-o", "--output", help="Output directory"),
     use_ollama: bool = typer.Option(False, "--ollama", help="Use Ollama instead of OpenAI"),
-    use_web_search: bool = typer.Option(False, "--web", help="Enable web search for additional sources"),
-    no_custom_docs: bool = typer.Option(False, "--no-docs", help="Skip custom P2025 document retrieval"),
+    use_web_search: bool = typer.Option(
+        False, "--web", help="Enable web search for additional sources"
+    ),
+    no_custom_docs: bool = typer.Option(
+        False, "--no-docs", help="Skip custom P2025 document retrieval"
+    ),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
     """Generate a comprehensive STORM report on a Project 2025 topic.

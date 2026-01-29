@@ -121,9 +121,7 @@ class CaseAnalyzer:
     def _build_user_prompt(self, case: CourtCase) -> str:
         # Get justice opinions for this case
         opinions = (
-            self.session.query(JusticeOpinion)
-            .filter(JusticeOpinion.court_case_id == case.id)
-            .all()
+            self.session.query(JusticeOpinion).filter(JusticeOpinion.court_case_id == case.id).all()
         )
 
         majority_authors = [o.author_name for o in opinions if o.opinion_type == "majority"]
@@ -135,17 +133,17 @@ class CaseAnalyzer:
 CASE: {case.case_name}
 CITATION: {case.citation}
 DECIDED: {case.decision_date}
-VOTE: {case.vote_majority or '?'}-{case.vote_dissent or '?'}
+VOTE: {case.vote_majority or "?"}-{case.vote_dissent or "?"}
 
-MAJORITY AUTHOR: {case.majority_author or ', '.join(majority_authors) or 'Unknown'}
-DISSENTING: {', '.join(dissent_authors) if dissent_authors else 'None'}
-CONCURRING: {', '.join(concur_authors) if concur_authors else 'None'}
+MAJORITY AUTHOR: {case.majority_author or ", ".join(majority_authors) or "Unknown"}
+DISSENTING: {", ".join(dissent_authors) if dissent_authors else "None"}
+CONCURRING: {", ".join(concur_authors) if concur_authors else "None"}
 
 HOLDING:
-{(case.holding or 'Not available')[:2000]}
+{(case.holding or "Not available")[:2000]}
 
 SYLLABUS:
-{(case.syllabus or 'Not available')[:1500]}
+{(case.syllabus or "Not available")[:1500]}
 
 Respond with the JSON structure specified."""
         return prompt
@@ -211,7 +209,7 @@ Respond with the JSON structure specified."""
 
             # Track usage
             self._groq_requests_this_minute += 1
-            if hasattr(response, 'usage') and response.usage:
+            if hasattr(response, "usage") and response.usage:
                 self._groq_tokens_today += response.usage.total_tokens
 
             return response.choices[0].message.content
@@ -306,7 +304,7 @@ Respond with the JSON structure specified."""
         limit: int = 50,
         force: bool = False,
         court_level: str = "scotus",
-        verbose: bool = True
+        verbose: bool = True,
     ) -> tuple[int, int]:
         """Analyze multiple cases.
 
@@ -319,9 +317,7 @@ Respond with the JSON structure specified."""
         Returns:
             Tuple of (successful, failed) counts
         """
-        query = self.session.query(CourtCase).filter(
-            CourtCase.court_level == court_level
-        )
+        query = self.session.query(CourtCase).filter(CourtCase.court_level == court_level)
 
         if not force:
             query = query.filter(CourtCase.case_analysis.is_(None))
@@ -370,18 +366,17 @@ Respond with the JSON structure specified."""
 
     def get_case_stats(self) -> dict:
         """Get statistics on case analysis progress."""
-        total = self.session.query(CourtCase).filter(
-            CourtCase.court_level == "scotus"
-        ).count()
+        total = self.session.query(CourtCase).filter(CourtCase.court_level == "scotus").count()
 
-        analyzed = self.session.query(CourtCase).filter(
-            CourtCase.court_level == "scotus",
-            CourtCase.case_analysis.isnot(None)
-        ).count()
+        analyzed = (
+            self.session.query(CourtCase)
+            .filter(CourtCase.court_level == "scotus", CourtCase.case_analysis.isnot(None))
+            .count()
+        )
 
         return {
             "total_scotus_cases": total,
             "analyzed": analyzed,
             "remaining": total - analyzed,
-            "percent_complete": round(analyzed / total * 100, 1) if total else 0
+            "percent_complete": round(analyzed / total * 100, 1) if total else 0,
         }

@@ -182,22 +182,22 @@ class STORMReportGenerator:
                 if analysis and analysis.analysis_json:
                     try:
                         analysis_data = json.loads(analysis.analysis_json)
-                        vuln_score = analysis_data.get(
-                            'overall_vulnerability_score', 'N/A'
+                        vuln_score = analysis_data.get("overall_vulnerability_score", "N/A")
+                        content_parts.extend(
+                            [
+                                "",
+                                "Legal Analysis:",
+                                f"Vulnerability Score: {vuln_score}/100",
+                            ]
                         )
-                        content_parts.extend([
-                            "",
-                            "Legal Analysis:",
-                            f"Vulnerability Score: {vuln_score}/100",
-                        ])
 
                         # Add constitutional issues
                         issues = analysis_data.get("constitutional_issues", [])
                         if issues:
                             content_parts.append("\nConstitutional Issues:")
                             for issue in issues[:3]:
-                                prov = issue.get('provision', 'Unknown')
-                                iss = issue.get('issue', '')
+                                prov = issue.get("provision", "Unknown")
+                                iss = issue.get("issue", "")
                                 content_parts.append(f"- {prov}: {iss}")
 
                         # Add challenge strategies
@@ -205,8 +205,8 @@ class STORMReportGenerator:
                         if strategies:
                             content_parts.append("\nChallenge Strategies:")
                             for strat in strategies[:3]:
-                                s_type = strat.get('type', 'Unknown')
-                                s_expl = strat.get('explanation', '')[:200]
+                                s_type = strat.get("type", "Unknown")
+                                s_expl = strat.get("explanation", "")[:200]
                                 content_parts.append(f"- {s_type}: {s_expl}")
                     except json.JSONDecodeError:
                         pass
@@ -222,7 +222,7 @@ class STORMReportGenerator:
                 if recommendations:
                     content_parts.extend(["", "Resistance Recommendations:"])
                     for rec in recommendations:
-                        desc = rec.description[:200] if rec.description else ''
+                        desc = rec.description[:200] if rec.description else ""
                         content_parts.append(f"- [{rec.tier}] {rec.title}: {desc}")
 
             content = "\n".join(content_parts)
@@ -236,12 +236,14 @@ class STORMReportGenerator:
             elif policy.proposal_text:
                 desc = policy.proposal_text[:200]
 
-            rows.append({
-                "url": f"civitas://p2025/policy/{policy.id}",
-                "title": title,
-                "description": desc,
-                "content": content,
-            })
+            rows.append(
+                {
+                    "url": f"civitas://p2025/policy/{policy.id}",
+                    "title": title,
+                    "description": desc,
+                    "content": content,
+                }
+            )
 
         # Also add executive orders for context
         from civitas.db.models import ExecutiveOrder
@@ -254,12 +256,14 @@ class STORMReportGenerator:
                 f"Title: {eo.title}\n\n"
                 f"Summary: {eo.summary or 'No summary available'}"
             )
-            rows.append({
-                "url": f"civitas://eo/{eo.id}",
-                "title": f"Executive Order: {eo.title or eo.eo_number}",
-                "description": eo_desc,
-                "content": eo_content,
-            })
+            rows.append(
+                {
+                    "url": f"civitas://eo/{eo.id}",
+                    "title": f"Executive Order: {eo.title or eo.eo_number}",
+                    "description": eo_desc,
+                    "content": eo_content,
+                }
+            )
 
         # Write CSV
         with open(output_path, "w", newline="", encoding="utf-8") as f:
@@ -499,29 +503,17 @@ class STORMReportGenerator:
             STORMReport
         """
         category_topics = {
-            "immigration": (
-                "How does Project 2025 propose to change immigration policy?"
-            ),
-            "environment": (
-                "What environmental and EPA changes does Project 2025 recommend?"
-            ),
-            "education": (
-                "How would Project 2025 restructure federal education policy?"
-            ),
+            "immigration": ("How does Project 2025 propose to change immigration policy?"),
+            "environment": ("What environmental and EPA changes does Project 2025 recommend?"),
+            "education": ("How would Project 2025 restructure federal education policy?"),
             "healthcare": "What healthcare and HHS reforms does Project 2025 propose?",
-            "labor": (
-                "How does Project 2025 plan to change labor regulations and unions?"
-            ),
+            "labor": ("How does Project 2025 plan to change labor regulations and unions?"),
             "civil_rights": (
                 "What civil rights and anti-discrimination changes does P2025 suggest?"
             ),
-            "abortion": (
-                "How does Project 2025 approach abortion and reproductive rights?"
-            ),
+            "abortion": ("How does Project 2025 approach abortion and reproductive rights?"),
             "guns": "What Second Amendment and firearm policies does P2025 support?",
-            "federal_power": (
-                "How does Project 2025 propose to reduce federal agency power?"
-            ),
+            "federal_power": ("How does Project 2025 propose to reduce federal agency power?"),
         }
 
         topic = category_topics.get(

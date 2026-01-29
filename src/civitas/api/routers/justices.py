@@ -123,17 +123,19 @@ async def list_justices(
 
     items_out = []
     for item in items:
-        items_out.append(JusticeBase(
-            id=item.id,
-            name=item.name,
-            slug=item.slug,
-            role=item.role,
-            is_active=item.is_active,
-            start_date=item.start_date,
-            end_date=item.end_date,
-            official_photo_url=_photo_url(request, item.slug),
-            circuit_assignments=_parse_json_list(item.circuit_assignments),
-        ))
+        items_out.append(
+            JusticeBase(
+                id=item.id,
+                name=item.name,
+                slug=item.slug,
+                role=item.role,
+                is_active=item.is_active,
+                start_date=item.start_date,
+                end_date=item.end_date,
+                official_photo_url=_photo_url(request, item.slug),
+                circuit_assignments=_parse_json_list(item.circuit_assignments),
+            )
+        )
 
     return JusticeList(
         page=page,

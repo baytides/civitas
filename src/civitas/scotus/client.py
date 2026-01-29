@@ -525,9 +525,7 @@ class SCOTUSClient:
 
         return transcripts
 
-    def download_transcript(
-        self, transcript: SCOTUSTranscript
-    ) -> tuple[Path, str | None]:
+    def download_transcript(self, transcript: SCOTUSTranscript) -> tuple[Path, str | None]:
         """Download a transcript PDF and extract text.
 
         Args:
@@ -559,9 +557,7 @@ class SCOTUSClient:
 
         return filepath, azure_url
 
-    def get_transcripts_for_term(
-        self, term: str
-    ) -> Generator[SCOTUSTranscript, None, None]:
+    def get_transcripts_for_term(self, term: str) -> Generator[SCOTUSTranscript, None, None]:
         """Fetch and parse all transcripts for a term.
 
         Args:

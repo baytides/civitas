@@ -84,18 +84,21 @@ def get_state_name(state: str) -> str:
 # These are imported on demand to avoid loading unnecessary dependencies
 def _lazy_import_new_york():
     from .new_york import NewYorkScraper
+
     _SCRAPER_REGISTRY["ny"] = NewYorkScraper
     return NewYorkScraper
 
 
 def _lazy_import_illinois():
     from .illinois import IllinoisScraper
+
     _SCRAPER_REGISTRY["il"] = IllinoisScraper
     return IllinoisScraper
 
 
 def _lazy_import_washington():
     from .washington import WashingtonScraper
+
     _SCRAPER_REGISTRY["wa"] = WashingtonScraper
     return WashingtonScraper
 
@@ -103,18 +106,21 @@ def _lazy_import_washington():
 # Try to import additional scrapers if available
 try:
     from .new_york import NewYorkScraper
+
     _SCRAPER_REGISTRY["ny"] = NewYorkScraper
 except ImportError:
     pass
 
 try:
     from .illinois import IllinoisScraper
+
     _SCRAPER_REGISTRY["il"] = IllinoisScraper
 except ImportError:
     pass
 
 try:
     from .washington import WashingtonScraper
+
     _SCRAPER_REGISTRY["wa"] = WashingtonScraper
 except ImportError:
     pass

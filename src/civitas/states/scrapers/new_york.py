@@ -239,22 +239,26 @@ class NewYorkScraper(StateScraper):
         sponsor_data = data.get("sponsor", {})
         if sponsor_data:
             member = sponsor_data.get("member", {})
-            sponsors.append({
-                "name": member.get("fullName", ""),
-                "type": "primary",
-                "chamber": chamber,
-            })
+            sponsors.append(
+                {
+                    "name": member.get("fullName", ""),
+                    "type": "primary",
+                    "chamber": chamber,
+                }
+            )
 
         # Parse actions from milestones
         actions = []
         milestones = data.get("milestones", {}).get("items", [])
         for milestone in milestones:
             action_date = self._parse_api_date(milestone.get("date"))
-            actions.append({
-                "date": action_date.isoformat() if action_date else None,
-                "action": milestone.get("statusDesc", ""),
-                "chamber": milestone.get("chamber", "").lower(),
-            })
+            actions.append(
+                {
+                    "date": action_date.isoformat() if action_date else None,
+                    "action": milestone.get("statusDesc", ""),
+                    "chamber": milestone.get("chamber", "").lower(),
+                }
+            )
 
         # Get subjects
         subjects = []
@@ -333,7 +337,7 @@ class NewYorkScraper(StateScraper):
                 "%Y-%m-%d",
             ]:
                 try:
-                    return datetime.strptime(date_str[:len(fmt.replace("%", "0"))], fmt).date()
+                    return datetime.strptime(date_str[: len(fmt.replace("%", "0"))], fmt).date()
                 except ValueError:
                     continue
         except Exception:

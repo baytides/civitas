@@ -30,73 +30,158 @@ DEFAULT_OLLAMA_MODEL = "llama3.1:8b-instruct-q8_0"
 P2025_CATEGORIES = {
     "abortion": {
         "keywords": [
-            "abortion", "reproductive", "pregnancy", "fetal", "unborn",
-            "pro-life", "pro-choice", "roe", "dobbs", "contraception",
-            "family planning", "planned parenthood", "termination",
+            "abortion",
+            "reproductive",
+            "pregnancy",
+            "fetal",
+            "unborn",
+            "pro-life",
+            "pro-choice",
+            "roe",
+            "dobbs",
+            "contraception",
+            "family planning",
+            "planned parenthood",
+            "termination",
         ],
         "p2025_stance": "restrict",  # P2025 wants to restrict
     },
     "immigration": {
         "keywords": [
-            "immigration", "immigrant", "border", "asylum", "deportation",
-            "alien", "refugee", "visa", "citizenship", "undocumented",
-            "sanctuary", "ice", "dhs", "remain in mexico", "title 42",
+            "immigration",
+            "immigrant",
+            "border",
+            "asylum",
+            "deportation",
+            "alien",
+            "refugee",
+            "visa",
+            "citizenship",
+            "undocumented",
+            "sanctuary",
+            "ice",
+            "dhs",
+            "remain in mexico",
+            "title 42",
         ],
         "p2025_stance": "restrict",
     },
     "environment": {
         "keywords": [
-            "epa", "climate", "emissions", "environmental", "pollution",
-            "clean air", "clean water", "carbon", "greenhouse", "fossil fuel",
-            "renewable", "solar", "wind", "electric vehicle", "paris agreement",
+            "epa",
+            "climate",
+            "emissions",
+            "environmental",
+            "pollution",
+            "clean air",
+            "clean water",
+            "carbon",
+            "greenhouse",
+            "fossil fuel",
+            "renewable",
+            "solar",
+            "wind",
+            "electric vehicle",
+            "paris agreement",
         ],
         "p2025_stance": "deregulate",
     },
     "education": {
         "keywords": [
-            "education", "school", "dei", "diversity equity inclusion",
-            "critical race", "curriculum", "title ix", "student loan",
-            "department of education", "charter school", "voucher",
-            "transgender student", "library", "book ban",
+            "education",
+            "school",
+            "dei",
+            "diversity equity inclusion",
+            "critical race",
+            "curriculum",
+            "title ix",
+            "student loan",
+            "department of education",
+            "charter school",
+            "voucher",
+            "transgender student",
+            "library",
+            "book ban",
         ],
         "p2025_stance": "reform",  # P2025 wants major reforms
     },
     "healthcare": {
         "keywords": [
-            "medicaid", "medicare", "aca", "affordable care act", "obamacare",
-            "health insurance", "drug pricing", "pharmaceutical", "fda",
-            "public health", "hhs", "cdc", "vaccination", "mandate",
+            "medicaid",
+            "medicare",
+            "aca",
+            "affordable care act",
+            "obamacare",
+            "health insurance",
+            "drug pricing",
+            "pharmaceutical",
+            "fda",
+            "public health",
+            "hhs",
+            "cdc",
+            "vaccination",
+            "mandate",
         ],
         "p2025_stance": "reform",
     },
     "labor": {
         "keywords": [
-            "union", "nlrb", "minimum wage", "overtime", "worker",
-            "collective bargaining", "right to work", "labor",
-            "employee", "gig economy", "independent contractor",
+            "union",
+            "nlrb",
+            "minimum wage",
+            "overtime",
+            "worker",
+            "collective bargaining",
+            "right to work",
+            "labor",
+            "employee",
+            "gig economy",
+            "independent contractor",
         ],
         "p2025_stance": "deregulate",
     },
     "civil_rights": {
         "keywords": [
-            "discrimination", "lgbtq", "transgender", "civil rights",
-            "title vii", "eeoc", "affirmative action", "voting rights",
-            "gender identity", "sexual orientation", "same-sex",
+            "discrimination",
+            "lgbtq",
+            "transgender",
+            "civil rights",
+            "title vii",
+            "eeoc",
+            "affirmative action",
+            "voting rights",
+            "gender identity",
+            "sexual orientation",
+            "same-sex",
         ],
         "p2025_stance": "restrict",
     },
     "guns": {
         "keywords": [
-            "firearm", "gun", "second amendment", "atf", "assault weapon",
-            "background check", "red flag", "concealed carry", "ammunition",
+            "firearm",
+            "gun",
+            "second amendment",
+            "atf",
+            "assault weapon",
+            "background check",
+            "red flag",
+            "concealed carry",
+            "ammunition",
         ],
         "p2025_stance": "expand",  # P2025 wants to expand gun rights
     },
     "federal_power": {
         "keywords": [
-            "federal agency", "executive order", "administrative state",
-            "chevron", "regulation", "deference", "bureaucracy",
-            "schedule f", "civil service", "deep state",
+            "federal agency",
+            "executive order",
+            "administrative state",
+            "chevron",
+            "regulation",
+            "deference",
+            "bureaucracy",
+            "schedule f",
+            "civil service",
+            "deep state",
         ],
         "p2025_stance": "reduce",
     },
@@ -211,9 +296,7 @@ class P2025Matcher:
         # Phase 2: Find matching policies and determine stance
         matches = []
         for category, matched_keywords in relevant_categories.items():
-            category_matches = self._match_category_policies(
-                bill, text, category, matched_keywords
-            )
+            category_matches = self._match_category_policies(bill, text, category, matched_keywords)
             matches.extend(category_matches)
 
         # Sort by relevance score
@@ -294,24 +377,24 @@ class P2025Matcher:
 
             # Determine stance
             if self.use_ai:
-                stance, confidence, rationale = self._ai_classify_stance(
-                    bill, policy, category
-                )
+                stance, confidence, rationale = self._ai_classify_stance(bill, policy, category)
             else:
-                stance, confidence, rationale = self._heuristic_stance(
-                    bill, text, category
-                )
+                stance, confidence, rationale = self._heuristic_stance(bill, text, category)
 
-            matches.append(P2025Match(
-                policy_id=policy.id,
-                policy_title=policy.short_title or policy.proposal_summary or f"Policy {policy.id}",
-                policy_category=category,
-                relevance_score=relevance,
-                stance=stance,
-                confidence=confidence,
-                rationale=rationale,
-                matched_keywords=list(keyword_matches),
-            ))
+            matches.append(
+                P2025Match(
+                    policy_id=policy.id,
+                    policy_title=policy.short_title
+                    or policy.proposal_summary
+                    or f"Policy {policy.id}",
+                    policy_category=category,
+                    relevance_score=relevance,
+                    stance=stance,
+                    confidence=confidence,
+                    rationale=rationale,
+                    matched_keywords=list(keyword_matches),
+                )
+            )
 
         return matches
 
@@ -335,13 +418,27 @@ class P2025Matcher:
 
         # Look for resistance/protection language
         resistance_terms = [
-            "protect", "preserve", "defend", "safeguard", "expand",
-            "strengthen", "guarantee", "ensure access", "right to",
+            "protect",
+            "preserve",
+            "defend",
+            "safeguard",
+            "expand",
+            "strengthen",
+            "guarantee",
+            "ensure access",
+            "right to",
         ]
 
         restriction_terms = [
-            "prohibit", "ban", "restrict", "limit", "eliminate",
-            "repeal", "defund", "reduce", "terminate",
+            "prohibit",
+            "ban",
+            "restrict",
+            "limit",
+            "eliminate",
+            "repeal",
+            "defund",
+            "reduce",
+            "terminate",
         ]
 
         resistance_count = sum(1 for term in resistance_terms if term in text)
@@ -397,7 +494,7 @@ class P2025Matcher:
             "protections against it)\n"
             "- NEUTRAL (not clearly related or takes no clear stance)\n\n"
             "Respond in JSON format with:\n"
-            "- stance: \"supports\", \"opposes\", or \"neutral\"\n"
+            '- stance: "supports", "opposes", or "neutral"\n'
             "- confidence: 0.0 to 1.0\n"
             "- rationale: 1-2 sentence explanation"
         )
@@ -497,6 +594,7 @@ def match_state_legislation(
         jurisdiction = state.lower()
         if len(state) == 2:
             from civitas.states.scrapers import STATE_NAMES
+
             jurisdiction = STATE_NAMES.get(state.lower(), state).lower().replace(" ", "_")
         query = query.filter(Legislation.jurisdiction == jurisdiction)
 
@@ -508,23 +606,25 @@ def match_state_legislation(
 
     results = []
     for bill, matches in matcher.batch_match_bills(query.all()):
-        results.append({
-            "bill_id": bill.id,
-            "citation": bill.citation,
-            "title": bill.title,
-            "state": bill.jurisdiction,
-            "matches": [
-                {
-                    "policy_id": m.policy_id,
-                    "policy_title": m.policy_title,
-                    "category": m.policy_category,
-                    "relevance": m.relevance_score,
-                    "stance": m.stance,
-                    "confidence": m.confidence,
-                    "rationale": m.rationale,
-                }
-                for m in matches
-            ],
-        })
+        results.append(
+            {
+                "bill_id": bill.id,
+                "citation": bill.citation,
+                "title": bill.title,
+                "state": bill.jurisdiction,
+                "matches": [
+                    {
+                        "policy_id": m.policy_id,
+                        "policy_title": m.policy_title,
+                        "category": m.policy_category,
+                        "relevance": m.relevance_score,
+                        "stance": m.stance,
+                        "confidence": m.confidence,
+                        "rationale": m.rationale,
+                    }
+                    for m in matches
+                ],
+            }
+        )
 
     return results

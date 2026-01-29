@@ -1,0 +1,36 @@
+[Unit]
+Description=Carl AI Full Batch Content Generation
+After=network.target ollama.service
+Wants=ollama.service
+
+[Service]
+Type=oneshot
+User=azureuser
+Group=azureuser
+WorkingDirectory=/opt/civitas
+
+# No timeout - runs until complete
+TimeoutStartSec=infinity
+
+# Environment
+EnvironmentFile=/opt/civitas/.env
+Environment=PYTHON_BIN=/opt/civitas/.venv/bin/python
+Environment=OLLAMA_MODEL=llama3.1:8b-instruct-q8_0
+Environment=BATCH_SIZE=25
+Environment=SLEEP_BETWEEN=5
+Environment=MAX_BATCHES=0
+Environment=LOG_FILE=/var/log/civitas/carl_batch.log
+
+ExecStart=/opt/civitas/scripts/carl_batch_generation.sh
+
+# Restart on failure with backoff
+Restart=on-failure
+RestartSec=60
+
+# Resource limits
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=5
+
+[Install]
+WantedBy=multi-user.target

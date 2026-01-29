@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from civitas.api.schemas import JusticeBase, JusticeDetail, JusticeList
+from civitas.api.schemas import JusticeBase, JusticeDetail, JusticeList, NotableOpinion
 from civitas.db.models import Justice, JusticeOpinion, JusticeProfile
 
 router = APIRouter()
@@ -42,6 +42,27 @@ def _parse_json_object(value: str | None) -> dict:
     except json.JSONDecodeError:
         return {}
     return parsed if isinstance(parsed, dict) else {}
+
+
+def _parse_notable_opinions(value: str | None) -> list[NotableOpinion]:
+    """Parse notable opinions JSON into NotableOpinion objects."""
+    if not value:
+        return []
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [
+        NotableOpinion(
+            case_name=item.get("case_name", "Unknown"),
+            citation=item.get("citation"),
+            decision_date=item.get("decision_date"),
+        )
+        for item in parsed
+        if isinstance(item, dict)
+    ]
 
 
 def _photo_url(request: Request, slug: str) -> str:
@@ -102,11 +123,17 @@ async def list_justices(
 
     items_out = []
     for item in items:
-        base = JusticeBase.model_validate(item)
-        payload = base.model_dump()
-        payload["official_photo_url"] = _photo_url(request, item.slug)
-        payload["circuit_assignments"] = _parse_json_list(item.circuit_assignments)
-        items_out.append(JusticeBase(**payload))
+        items_out.append(JusticeBase(
+            id=item.id,
+            name=item.name,
+            slug=item.slug,
+            role=item.role,
+            is_active=item.is_active,
+            start_date=item.start_date,
+            end_date=item.end_date,
+            official_photo_url=_photo_url(request, item.slug),
+            circuit_assignments=_parse_json_list(item.circuit_assignments),
+        ))
 
     return JusticeList(
         page=page,
@@ -152,22 +179,25 @@ async def get_justice(
     }
     counts["total"] = counts["majority"] + counts["dissent"] + counts["concurrence"]
 
-    base = JusticeBase.model_validate(justice)
-    payload = base.model_dump()
-    payload["official_photo_url"] = _photo_url(request, justice.slug)
-
     return JusticeDetail(
-        **payload,
+        id=justice.id,
+        name=justice.name,
+        slug=justice.slug,
+        role=justice.role,
+        is_active=justice.is_active,
+        start_date=justice.start_date,
+        end_date=justice.end_date,
+        official_photo_url=_photo_url(request, justice.slug),
+        circuit_assignments=_parse_json_list(justice.circuit_assignments),
         appointed_by=justice.appointed_by,
         official_bio_url=justice.official_bio_url,
         wikipedia_url=justice.wikipedia_url,
-        circuit_assignments=_parse_json_list(justice.circuit_assignments),
         assignments_updated_at=justice.assignments_updated_at,
         opinion_counts=counts,
         profile_summary=profile.profile_summary if profile else None,
         judicial_philosophy=profile.judicial_philosophy if profile else None,
         voting_tendencies=_parse_json_list(profile.voting_tendencies) if profile else [],
-        notable_opinions=_parse_json_list(profile.notable_opinions) if profile else [],
+        notable_opinions=_parse_notable_opinions(profile.notable_opinions) if profile else [],
         statistical_profile=_parse_json_object(profile.statistical_profile) if profile else {},
         methodology=profile.methodology if profile else None,
         disclaimer=profile.disclaimer if profile else None,

@@ -44,3 +44,16 @@ class SCOTUSListingItem(BaseModel):
     decision_date: date
     pdf_url: str
     term: str
+    opinion_type: str = "slip"  # slip, order, per_curiam
+
+
+class SCOTUSTranscript(BaseModel):
+    """Oral argument transcript from SCOTUS."""
+
+    case_name: str
+    docket_number: str
+    argument_date: date
+    pdf_url: str
+    term: str
+    transcript_text: str | None = None
+    azure_url: str | None = None

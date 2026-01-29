@@ -17,6 +17,63 @@ from rich.console import Console
 console = Console()
 
 
+# State name mappings
+STATE_NAMES = {
+    "al": "Alabama",
+    "ak": "Alaska",
+    "az": "Arizona",
+    "ar": "Arkansas",
+    "ca": "California",
+    "co": "Colorado",
+    "ct": "Connecticut",
+    "de": "Delaware",
+    "fl": "Florida",
+    "ga": "Georgia",
+    "hi": "Hawaii",
+    "id": "Idaho",
+    "il": "Illinois",
+    "in": "Indiana",
+    "ia": "Iowa",
+    "ks": "Kansas",
+    "ky": "Kentucky",
+    "la": "Louisiana",
+    "me": "Maine",
+    "md": "Maryland",
+    "ma": "Massachusetts",
+    "mi": "Michigan",
+    "mn": "Minnesota",
+    "ms": "Mississippi",
+    "mo": "Missouri",
+    "mt": "Montana",
+    "ne": "Nebraska",
+    "nv": "Nevada",
+    "nh": "New Hampshire",
+    "nj": "New Jersey",
+    "nm": "New Mexico",
+    "ny": "New York",
+    "nc": "North Carolina",
+    "nd": "North Dakota",
+    "oh": "Ohio",
+    "ok": "Oklahoma",
+    "or": "Oregon",
+    "pa": "Pennsylvania",
+    "ri": "Rhode Island",
+    "sc": "South Carolina",
+    "sd": "South Dakota",
+    "tn": "Tennessee",
+    "tx": "Texas",
+    "ut": "Utah",
+    "vt": "Vermont",
+    "va": "Virginia",
+    "wa": "Washington",
+    "wv": "West Virginia",
+    "wi": "Wisconsin",
+    "wy": "Wyoming",
+    "dc": "District of Columbia",
+    "pr": "Puerto Rico",
+}
+
+
 @dataclass
 class ScrapedBill:
     """A bill scraped from a state legislature website."""
@@ -30,6 +87,7 @@ class ScrapedBill:
     # Optional fields
     bill_type: str = "bill"  # bill, resolution, constitutional_amendment
     summary: str | None = None
+    full_text: str | None = None  # Full bill text for analysis
     subjects: list[str] = field(default_factory=list)
     sponsors: list[dict] = field(default_factory=list)
     actions: list[dict] = field(default_factory=list)
@@ -44,6 +102,22 @@ class ScrapedBill:
     # Status
     is_enacted: bool = False
     status: str | None = None  # Latest status text
+
+    # P2025 relevance (populated by matcher)
+    p2025_relevance_score: float | None = None
+    p2025_stance: str | None = None  # supports, opposes, neutral
+    p2025_matched_policies: list[int] = field(default_factory=list)
+    p2025_categories: list[str] = field(default_factory=list)
+
+    def get_searchable_text(self) -> str:
+        """Get combined text for keyword matching."""
+        parts = [self.title or ""]
+        if self.summary:
+            parts.append(self.summary)
+        if self.full_text:
+            parts.append(self.full_text)
+        parts.extend(self.subjects)
+        return " ".join(parts).lower()
 
 
 @dataclass
@@ -271,3 +345,43 @@ class StateScraper(ABC):
                 continue
 
         return None
+
+    def extract_keywords(self, text: str, max_keywords: int = 20) -> list[str]:
+        """Extract meaningful keywords from text.
+
+        Args:
+            text: Text to extract keywords from
+            max_keywords: Maximum keywords to return
+
+        Returns:
+            List of keywords
+        """
+        import re
+
+        if not text:
+            return []
+
+        # Common stopwords to filter
+        stopwords = {
+            "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+            "of", "with", "by", "from", "as", "is", "was", "are", "were", "been",
+            "be", "have", "has", "had", "do", "does", "did", "will", "would",
+            "could", "should", "may", "might", "must", "shall", "can", "this",
+            "that", "these", "those", "it", "its", "they", "their", "them",
+            "he", "she", "his", "her", "him", "we", "our", "us", "you", "your",
+            "which", "who", "whom", "what", "where", "when", "why", "how",
+            "all", "each", "every", "both", "few", "more", "most", "other",
+            "some", "such", "no", "nor", "not", "only", "own", "same", "so",
+            "than", "too", "very", "just", "also", "any", "if", "then", "because",
+            "section", "act", "bill", "chapter", "subdivision", "paragraph",
+        }
+
+        # Extract words, filter stopwords and short words
+        words = re.findall(r"\b[a-z]{3,}\b", text.lower())
+        keywords = [w for w in words if w not in stopwords]
+
+        # Count frequency and return top keywords
+        from collections import Counter
+
+        counts = Counter(keywords)
+        return [word for word, _ in counts.most_common(max_keywords)]

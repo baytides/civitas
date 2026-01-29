@@ -253,6 +253,14 @@ class CourtCaseDetail(CourtCaseBase):
 # =============================================================================
 
 
+class NotableOpinion(BaseModel):
+    """A notable opinion authored by a justice."""
+
+    case_name: str
+    citation: str | None = None
+    decision_date: str | None = None
+
+
 class JusticeBase(BaseModel):
     """Base schema for Supreme Court justices."""
 
@@ -281,7 +289,7 @@ class JusticeDetail(JusticeBase):
     profile_summary: str | None = None
     judicial_philosophy: str | None = None
     voting_tendencies: list[str] = []
-    notable_opinions: list[str] = []
+    notable_opinions: list[NotableOpinion] = []
     statistical_profile: dict[str, object] = {}
     methodology: str | None = None
     disclaimer: str | None = None

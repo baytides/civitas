@@ -244,6 +244,80 @@ class CourtListenerClient:
                 print(f"Error fetching from {court}: {e}")
                 continue
 
+    def get_scotus_opinions(
+        self,
+        days: int | None = None,
+        filed_after: date | None = None,
+        filed_before: date | None = None,
+        limit: int | None = 100,
+    ) -> Generator[CourtListenerOpinion, None, None]:
+        """Get Supreme Court opinions.
+
+        Args:
+            days: Number of days to look back (alternative to filed_after)
+            filed_after: Opinions filed after this date
+            filed_before: Opinions filed before this date
+            limit: Maximum opinions to return
+
+        Yields:
+            CourtListenerOpinion objects from SCOTUS
+        """
+        if days is not None and filed_after is None:
+            filed_after = date.today() - timedelta(days=days)
+
+        yield from self.get_opinions(
+            court="scotus",
+            filed_after=filed_after,
+            filed_before=filed_before,
+            limit=limit,
+        )
+
+    def get_scotus_opinions_by_justice(
+        self,
+        justice_name: str,
+        limit: int = 50,
+    ) -> Generator[CourtListenerOpinion, None, None]:
+        """Get opinions authored by a specific SCOTUS justice.
+
+        Args:
+            justice_name: Last name of the justice (e.g., "Roberts", "Sotomayor")
+            limit: Maximum opinions to return
+
+        Yields:
+            CourtListenerOpinion objects authored by the justice
+        """
+        # Search for opinions where the justice is listed as author
+        params = {
+            "court": "scotus",
+            "author": justice_name,
+            "page_size": min(limit, 100),
+            "order_by": "-date_filed",
+        }
+
+        remaining = limit
+        url = "/opinions/"
+        while remaining > 0:
+            try:
+                response = self._get(url, params=params if url.startswith("/") else None)
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 404:
+                    break
+                raise
+            payload = response.json()
+
+            for item in payload.get("results", []):
+                opinion = self._parse_opinion(item)
+                yield opinion
+                remaining -= 1
+                if remaining <= 0:
+                    return
+
+            next_url = payload.get("next")
+            if not next_url:
+                break
+            url = next_url
+            params = None
+
     def get_opinion(self, opinion_id: int) -> CourtListenerOpinion | None:
         """Get a specific opinion by ID.
 

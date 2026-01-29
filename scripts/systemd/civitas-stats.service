@@ -1,0 +1,19 @@
+[Unit]
+Description=Civitas Stats Check and Log
+After=network.target civitas-api.service
+
+[Service]
+Type=oneshot
+User=azureuser
+WorkingDirectory=/opt/civitas
+
+# Environment
+EnvironmentFile=/opt/civitas/.env
+Environment=LOG_FILE=/var/log/civitas/stats.log
+Environment=API_URL=http://localhost:8000/api/v1/status
+
+# Fetch stats from API and log them
+ExecStart=/opt/civitas/scripts/log_stats.sh
+
+[Install]
+WantedBy=multi-user.target

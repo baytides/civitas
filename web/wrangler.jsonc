@@ -15,5 +15,9 @@
       "binding": "NEXT_CACHE_KV",
       "id": "d3c8fe26b8e646b090c3d8310a4a79c7"
     }
-  ]
+  ],
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://api.projectcivitas.com/api/v1",
+    "NEXT_PUBLIC_SITE_URL": "https://projectcivitas.com"
+  }
 }

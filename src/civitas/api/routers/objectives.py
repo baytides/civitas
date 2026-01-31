@@ -255,6 +255,8 @@ async def get_objective(
     base = objective_to_base(obj)
     insight = get_content_insight(db, "objective", obj.id)
 
+    # Note: base.model_dump() already includes updated_at from ObjectiveBase
+    # ObjectiveDetail inherits from ObjectiveBase, so we don't need to pass updated_at again
     return ObjectiveDetail(
         **base.model_dump(),
         keywords=keywords,
@@ -263,6 +265,5 @@ async def get_objective(
         matching_legislation_ids=matching_legislation_ids,
         implementation_notes=obj.implementation_notes,
         created_at=obj.created_at,
-        updated_at=obj.updated_at,
         **insight,
     )

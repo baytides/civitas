@@ -171,6 +171,7 @@ const tableColumns: ColumnDef<APIObjective>[] = [
 function TrackerContent() {
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get("category") || "all";
+  const initialSearch = searchParams.get("search") || "";
 
   const [objectives, setObjectives] = useState<APIObjective[]>([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +185,7 @@ function TrackerContent() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedPriority, setSelectedPriority] = useState("all");
   const [selectedTimeline, setSelectedTimeline] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [sorting, setSorting] = useState<SortingState>([]);
 

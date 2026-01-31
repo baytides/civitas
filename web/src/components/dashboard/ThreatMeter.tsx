@@ -164,14 +164,15 @@ export function DynamicThreatMeter() {
           if (typeof data.completion_percentage === "number") {
             setProgress(Math.round(data.completion_percentage));
           } else {
+            // Fallback calculation - only count enacted/completed items
+            // "in_progress" just means being tracked, not 50% implemented
             const total = data.total || 0;
             const byStatus = data.by_status || {};
             const completed = byStatus.completed || 0;
             const enacted = byStatus.enacted || 0;
-            const inProgress = byStatus.in_progress || 0;
             const derived =
               total > 0
-                ? ((completed + enacted + inProgress * 0.5) / total) * 100
+                ? ((completed + enacted) / total) * 100
                 : 0;
             setProgress(Math.round(derived));
           }

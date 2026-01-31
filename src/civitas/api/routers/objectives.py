@@ -172,12 +172,16 @@ async def get_objective_stats(
     )
     by_timeline = {tl: count for tl, count in timeline_counts}
 
-    # Calculate completion percentage
+    # Calculate completion percentage - only count actually enacted/completed items
+    # "in_progress" just means the objective is being tracked, not 50% done
+    # "proposed" means not yet acted on
     completed = by_status.get("completed", 0)
     enacted = by_status.get("enacted", 0)
-    in_progress = by_status.get("in_progress", 0)
+    blocked = by_status.get("blocked", 0)
+    # Completion = enacted items as a percentage of total (excluding blocked)
+    # This represents "how much of Project 2025 has been implemented"
     completion_percentage = (
-        ((completed + enacted + in_progress * 0.5) / total * 100) if total > 0 else 0
+        ((completed + enacted) / total * 100) if total > 0 else 0
     )
 
     return ObjectiveStats(

@@ -183,6 +183,7 @@ function TrackerContent() {
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedPriority, setSelectedPriority] = useState("all");
+  const [selectedTimeline, setSelectedTimeline] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -222,6 +223,9 @@ function TrackerContent() {
         if (selectedPriority !== "all") {
           params.set("priority", selectedPriority);
         }
+        if (selectedTimeline !== "all") {
+          params.set("timeline", selectedTimeline);
+        }
 
         const response = await fetch(`${API_BASE}/objectives?${params}`);
 
@@ -242,7 +246,7 @@ function TrackerContent() {
     }
 
     fetchObjectives();
-  }, [page, selectedCategory, selectedStatus, selectedPriority]);
+  }, [page, selectedCategory, selectedStatus, selectedPriority, selectedTimeline]);
 
   // Fuse.js fuzzy search
   const fuse = useMemo(() => new Fuse(objectives, fuseOptions), [objectives]);
@@ -283,6 +287,14 @@ function TrackerContent() {
       name: snakeToTitle(slug),
     })),
   ];
+  const timelines = [
+    { slug: "all", name: "All Timelines" },
+    { slug: "day_one", name: "🚨 Day One" },
+    { slug: "first_100_days", name: "⚡ First 100 Days" },
+    { slug: "first_year", name: "📅 First Year" },
+    { slug: "long_term", name: "📆 Long Term" },
+    { slug: "unknown", name: "Timeline TBD" },
+  ];
 
   return (
     <div className="container py-8">
@@ -297,7 +309,7 @@ function TrackerContent() {
       {/* Filters */}
       <Card className="mb-8">
         <CardContent className="pt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {/* Search */}
             <div>
               <label htmlFor="tracker-search" className="text-sm font-medium mb-2 block">
@@ -374,6 +386,28 @@ function TrackerContent() {
                 {priorities.map((level) => (
                   <option key={level.slug} value={level.slug}>
                     {level.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <label htmlFor="tracker-timeline" className="text-sm font-medium mb-2 block">
+                Timeline
+              </label>
+              <select
+                id="tracker-timeline"
+                value={selectedTimeline}
+                onChange={(e) => {
+                  setSelectedTimeline(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full px-3 py-2 border rounded-md bg-background"
+              >
+                {timelines.map((t) => (
+                  <option key={t.slug} value={t.slug}>
+                    {t.name}
                   </option>
                 ))}
               </select>
@@ -516,6 +550,7 @@ function TrackerContent() {
                   setSelectedCategory("all");
                   setSelectedStatus("all");
                   setSelectedPriority("all");
+                  setSelectedTimeline("all");
                   setSearchQuery("");
                   setPage(1);
                 }}
@@ -670,6 +705,23 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
                 <Badge variant={priorityVariant === "high" ? "critical" : priorityVariant === "medium" ? "elevated" : "moderate"}>
                   {objective.priority.toUpperCase()}
                 </Badge>
+                {/* Timeline badge - prominent display */}
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs font-medium",
+                    objective.implementation_timeline === "day_one" && "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800",
+                    objective.implementation_timeline === "first_100_days" && "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-200 dark:border-orange-800",
+                    objective.implementation_timeline === "first_year" && "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-800",
+                    objective.implementation_timeline === "long_term" && "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800",
+                  )}
+                >
+                  {objective.implementation_timeline === "day_one" ? "🚨 Day One" :
+                   objective.implementation_timeline === "first_100_days" ? "⚡ First 100 Days" :
+                   objective.implementation_timeline === "first_year" ? "📅 First Year" :
+                   objective.implementation_timeline === "long_term" ? "📆 Long Term" :
+                   "Timeline TBD"}
+                </Badge>
                 <Badge variant="outline" className="text-xs">
                   {snakeToTitle(objective.action_type)}
                 </Badge>
@@ -687,22 +739,14 @@ function ObjectiveCard({ objective }: ObjectiveCardProps) {
               </p>
             </div>
 
-            {/* Right: Timeline & Confidence */}
-            <div className="w-full md:w-48 shrink-0 space-y-2 text-right">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Timeline: </span>
-                <span className="font-semibold text-xs">
-                  {objective.implementation_timeline
-                    ? snakeToTitle(objective.implementation_timeline)
-                    : "Not specified"}
-                </span>
-              </div>
-              {objective.confidence > 0 && (
+            {/* Right: Confidence */}
+            {objective.confidence > 0 && (
+              <div className="w-full md:w-32 shrink-0 text-right">
                 <p className="text-xs text-muted-foreground">
                   Confidence: {Math.round(objective.confidence * 100)}%
                 </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

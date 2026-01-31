@@ -60,11 +60,12 @@ async def get_resistance_meta() -> ResistanceMeta:
 async def get_blocked_policies(
     db: Session = Depends(get_db),
 ) -> list[BlockedPolicy]:
-    """Get policies that have been blocked."""
+    """Get policies that have been blocked by courts or state action."""
+    # First check database for blocked policies
     tracker = ImplementationTracker(db)
     blocked = tracker.get_blocked_policies()
 
-    return [
+    results = [
         BlockedPolicy(
             objective_id=p["id"],
             agency=p["agency"],
@@ -77,6 +78,25 @@ async def get_blocked_policies(
         )
         for p in blocked
     ]
+
+    # If no blocked policies in DB, use static content as fallback
+    # This ensures the UI always has something to show
+    if not results:
+        from civitas.resistance.content import BLOCKED_POLICIES
+
+        results = [
+            BlockedPolicy(
+                objective_id=p["id"],
+                agency=p["agency"],
+                proposal_summary=p["proposal_summary"],
+                blocked_by=p["blocked_by"],
+                case_or_action=p["case_or_action"],
+                blocked_date=p.get("blocked_date"),
+            )
+            for p in BLOCKED_POLICIES
+        ]
+
+    return results
 
 
 @router.get(

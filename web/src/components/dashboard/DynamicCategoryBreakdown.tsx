@@ -188,9 +188,11 @@ export function DynamicCategoryBreakdown() {
       </CardHeader>
       <CardContent className="space-y-4">
         {categories.map((category) => {
+          // Only count actually enacted items as implemented
+          // "in_progress" means being tracked, not 50% implemented
           const implementedPercent =
             category.total > 0
-              ? Math.round(((category.enacted + category.inProgress * 0.5) / category.total) * 100)
+              ? Math.round((category.enacted / category.total) * 100)
               : 0;
 
           return (

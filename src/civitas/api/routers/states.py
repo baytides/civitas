@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from civitas.analysis.categories import CATEGORIES
+from civitas.api.deps import get_db
 from civitas.api.schemas import (
     StateBase,
     StateBillBase,
@@ -19,11 +20,6 @@ from civitas.api.schemas import (
 from civitas.db.models import Legislation, Legislator, StateResistanceAction
 
 router = APIRouter()
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 # State name mapping (static, OpenStates-free)

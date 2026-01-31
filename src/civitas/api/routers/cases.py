@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import CourtCaseBase, CourtCaseDetail, CourtCaseList
 from civitas.api.utils import get_content_insight, objective_to_base
 from civitas.db.models import (
@@ -15,11 +16,6 @@ from civitas.db.models import (
 )
 
 router = APIRouter()
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 @router.get("/cases", response_model=CourtCaseList)

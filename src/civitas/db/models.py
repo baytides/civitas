@@ -958,12 +958,26 @@ def get_engine(db_url: str | None = None):
 
     Args:
         db_url: Database URL. If None, uses DATABASE_URL env var or sqlite:///civitas.db
+
+    Returns:
+        SQLAlchemy engine with connection pooling configured for multi-worker setup.
+        - pool_size: 10 connections per worker
+        - max_overflow: 20 additional connections under load
+        - pool_pre_ping: Verify connections are alive before use
+        - pool_recycle: Recycle connections after 30 minutes to avoid stale connections
     """
     url = get_database_url(db_url)
-    kwargs = {}
+    kwargs: dict = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,  # 30 minutes
+    }
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
-    return create_engine(url, pool_pre_ping=True, **kwargs)
+    else:
+        # For PostgreSQL/other databases, configure connection pool
+        kwargs["pool_size"] = 10
+        kwargs["max_overflow"] = 20
+    return create_engine(url, **kwargs)
 
 
 # =============================================================================

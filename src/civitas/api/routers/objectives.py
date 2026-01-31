@@ -6,10 +6,11 @@ import json
 import re
 from time import time
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import (
     ObjectiveDetail,
     ObjectiveList,
@@ -22,11 +23,6 @@ from civitas.db.models import Project2025Policy
 router = APIRouter()
 _METADATA_CACHE: tuple[float, ObjectiveMetadata] | None = None
 _METADATA_TTL_SECONDS = 60.0
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 @router.get("/objectives", response_model=ObjectiveList)

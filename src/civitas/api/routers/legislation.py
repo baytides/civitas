@@ -5,10 +5,11 @@ from __future__ import annotations
 import json
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import (
     LegislationActionBase,
     LegislationBase,
@@ -19,11 +20,6 @@ from civitas.api.utils import get_content_insight
 from civitas.db.models import Legislation, LegislationAction, Project2025Policy
 
 router = APIRouter()
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 @router.get("/legislation", response_model=LegislationList)

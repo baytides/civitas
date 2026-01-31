@@ -11,17 +11,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import JusticeBase, JusticeDetail, JusticeList, NotableOpinion
 from civitas.db.models import Justice, JusticeOpinion, JusticeProfile
 
 router = APIRouter()
 
 PHOTO_DIR = Path("data/justices/photos")
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 def _parse_json_list(value: str | None) -> list[str]:

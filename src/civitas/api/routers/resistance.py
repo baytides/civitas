@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from time import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import (
     BlockedPolicy,
     ProgressSummary,
@@ -27,11 +28,6 @@ router = APIRouter()
 _ANALYSIS_CACHE: dict[int, tuple[float, dict]] = {}
 _ANALYSIS_TTL_SECONDS = 60 * 60
 _ANALYSIS_DB_MAX_AGE_DAYS = 30
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 @router.get("/resistance/progress", response_model=ProgressSummary)

@@ -2,19 +2,15 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import SearchResponse, SearchResult
 from civitas.db.models import CourtCase, ExecutiveOrder, Legislation, Project2025Policy
 
 router = APIRouter()
-
-
-def get_db(request: Request) -> Session:
-    """Get database session."""
-    return Session(request.app.state.engine)
 
 
 @router.get("/search", response_model=SearchResponse)

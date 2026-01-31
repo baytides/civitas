@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from civitas.api.deps import get_db
 from civitas.api.schemas import SiteGenerationStatus
 from civitas.db.models import (
     ContentInsight,
@@ -21,11 +22,6 @@ from civitas.db.models import (
 )
 
 router = APIRouter()
-
-
-def get_db(request: Request) -> Session:
-    """Get database session from request."""
-    return Session(request.app.state.engine)
 
 
 @router.get("/status", response_model=SiteGenerationStatus)

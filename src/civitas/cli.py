@@ -1282,8 +1282,7 @@ def ingest_scrape_state(
 ):
     """Scrape state bills directly from legislature website.
 
-    This bypasses the OpenStates API entirely by scraping directly from
-    official state legislature websites.
+    Scrapes directly from official state legislature websites.
 
     Supported states: CA (California), NY (New York)
 
@@ -1303,8 +1302,6 @@ def ingest_scrape_state(
         console.print(f"[red]No scraper available for state: {state.upper()}[/red]")
         available = list_available_scrapers()
         console.print(f"Available states: {', '.join(s.upper() for s, _ in available)}")
-        console.print("\nAlternatives:")
-        console.print("  - civitas ingest openstates-bulk  (uses monthly dump, unlimited)")
         return
 
     console.print(f"[bold blue]Scraping {scraper_cls.STATE_NAME} legislature...[/bold blue]")
@@ -1528,293 +1525,8 @@ def list_state_scrapers():
         console.print()
 
 
-@ingest_app.command("openstates-bulk")
-def ingest_openstates_bulk(
-    dump_path: str = typer.Argument(..., help="Path to OpenStates PostgreSQL dump file"),
-    state: str | None = typer.Option(
-        None, "-s", "--state", help="Filter by state code (e.g., 'ca', 'ny')"
-    ),
-    limit: int | None = typer.Option(None, "-n", "--limit", help="Max bills per state"),
-    include_bills: bool = typer.Option(
-        True,
-        "--include-bills/--no-include-bills",
-        help="Include bills from bulk data",
-    ),
-    include_legislators: bool = typer.Option(
-        True,
-        "--include-legislators/--no-include-legislators",
-        help="Include state legislators from bulk data",
-    ),
-    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-):
-    """Ingest state bills from OpenStates PostgreSQL bulk dump.
-
-    This bypasses the 500/day API limit by using the monthly PostgreSQL dump
-    available from https://open.pluralpolicy.com/data/
-
-    Download the dump first:
-      scripts/download_openstates_bulk.sh
-
-    Or manually:
-      wget https://data.openstates.org/postgres/monthly/2026-01-public.pgdump
-    """
-    from sqlalchemy.orm import Session
-
-    from civitas.db.models import Legislation, Legislator, get_engine
-    from civitas.states import OpenStatesBulkIngester
-
-    dump_file = Path(dump_path)
-    if not dump_file.exists():
-        console.print(f"[red]Dump file not found: {dump_path}[/red]")
-        console.print("\nDownload with:")
-        console.print("  scripts/download_openstates_bulk.sh")
-        console.print("\nOr manually from:")
-        console.print("  https://data.openstates.org/postgres/monthly/")
-        return
-
-    console.print("[bold blue]Ingesting from OpenStates bulk dump...[/bold blue]")
-    console.print(f"File: {dump_file}")
-    console.print(f"Size: {dump_file.stat().st_size / 1024 / 1024 / 1024:.1f} GB")
-
-    if state:
-        console.print(f"State filter: {state.upper()}")
-    console.print()
-
-    engine = get_engine(db_path)
-    counts = {"bills": 0, "skipped": 0, "errors": 0}
-
-    try:
-        with OpenStatesBulkIngester(dump_path) as ingester:
-            # Show statistics first
-            console.print("[dim]Loading statistics...[/dim]")
-            stats = ingester.get_statistics()
-            if stats.get("bills_by_state"):
-                console.print(f"Total bills in dump: {stats['total_bills']:,}")
-                if state:
-                    state_count = stats["bills_by_state"].get(state.upper(), 0)
-                    console.print(f"Bills for {state.upper()}: {state_count:,}")
-                console.print()
-
-            # Ingest bills (state-by-state to keep query sizes manageable)
-            if state:
-                states_to_ingest = [state.lower()]
-            else:
-                states_to_ingest = sorted(ingester.STATE_JURISDICTIONS.keys())
-
-            def flush_batch(db_session: Session, batch: list) -> None:
-                if not batch:
-                    return
-
-                bill_ids = [b.id for b in batch]
-                existing_ids = {
-                    row[0]
-                    for row in db_session.query(Legislation.source_id)
-                    .filter(Legislation.source_id.in_(bill_ids))
-                    .all()
-                }
-
-                to_insert = []
-                for bill in batch:
-                    if bill.id in existing_ids:
-                        counts["skipped"] += 1
-                        continue
-
-                    # Extract state code from jurisdiction
-                    state_code = (
-                        bill.jurisdiction_id.split("/state:")[1].split("/")[0]
-                        if bill.jurisdiction_id and "/state:" in bill.jurisdiction_id
-                        else "us"
-                    )
-
-                    # Determine chamber from organization
-                    chamber = "assembly"  # Default
-                    if bill.from_organization_id and "senate" in bill.from_organization_id.lower():
-                        chamber = "senate"
-
-                    # Parse bill number
-                    number = 0
-                    for part in bill.identifier.split():
-                        if part.isdigit():
-                            number = int(part)
-                            break
-
-                    # Determine bill type
-                    bill_type = "bill"
-                    for cls in bill.classification:
-                        if "resolution" in cls.lower():
-                            bill_type = "resolution"
-                            break
-
-                    to_insert.append(
-                        Legislation(
-                            jurisdiction=state_code.lower(),
-                            source_id=bill.id,
-                            legislation_type=bill_type,
-                            chamber=chamber,
-                            number=number,
-                            session=bill.session,
-                            citation=bill.identifier or bill.id,
-                            title=bill.title[:1000] if bill.title else None,
-                            is_enacted=False,
-                        )
-                    )
-
-                if not to_insert:
-                    return
-
-                try:
-                    db_session.add_all(to_insert)
-                    db_session.commit()
-                    counts["bills"] += len(to_insert)
-                    if counts["bills"] % 1000 == 0:
-                        console.print(f"  Processed {counts['bills']:,} bills...")
-                except Exception as e:
-                    db_session.rollback()
-                    counts["errors"] += len(to_insert)
-                    if counts["errors"] <= 5:
-                        console.print(f"[yellow]Error: {e}[/yellow]")
-                finally:
-                    db_session.expunge_all()
-
-            batch_size = 1000
-            if include_bills:
-                for state_code in states_to_ingest:
-                    with Session(engine) as db_session:
-                        batch: list = []
-                        for bill in ingester.get_bills(state=state_code, limit=limit):
-                            batch.append(bill)
-                            if len(batch) >= batch_size:
-                                flush_batch(db_session, batch)
-                                batch = []
-                        flush_batch(db_session, batch)
-
-            if include_legislators:
-                console.print("\n[dim]Ingesting legislators...[/dim]")
-
-                def flush_legislator_batch(db_session: Session, batch: list) -> None:
-                    if not batch:
-                        return
-
-                    person_ids = [p.id for p in batch]
-                    existing_ids = {
-                        row[0]
-                        for row in db_session.query(Legislator.source_id)
-                        .filter(Legislator.source_id.in_(person_ids))
-                        .all()
-                    }
-
-                    to_insert = []
-                    for person in batch:
-                        if person.id in existing_ids:
-                            counts["skipped"] += 1
-                            continue
-
-                        state_code = (
-                            person.jurisdiction_id.split("/state:")[1].split("/")[0]
-                            if person.jurisdiction_id and "/state:" in person.jurisdiction_id
-                            else None
-                        )
-                        party = person.party or ""
-                        party_code = (
-                            "D"
-                            if "democrat" in party.lower()
-                            else ("R" if "republican" in party.lower() else "I")
-                        )
-
-                        to_insert.append(
-                            Legislator(
-                                jurisdiction=(state_code or "us").lower(),
-                                source_id=person.id,
-                                full_name=person.name,
-                                chamber=None,
-                                district=None,
-                                party=party_code,
-                                state=state_code.upper() if state_code else None,
-                            )
-                        )
-
-                    if not to_insert:
-                        return
-
-                    try:
-                        db_session.add_all(to_insert)
-                        db_session.commit()
-                    except Exception as e:
-                        db_session.rollback()
-                        counts["errors"] += len(to_insert)
-                        if counts["errors"] <= 5:
-                            console.print(f"[yellow]Error: {e}[/yellow]")
-                    finally:
-                        db_session.expunge_all()
-
-                for state_code in states_to_ingest:
-                    with Session(engine) as db_session:
-                        batch = []
-                        for person in ingester.get_legislators(state=state_code, limit=None):
-                            batch.append(person)
-                            if len(batch) >= batch_size:
-                                flush_legislator_batch(db_session, batch)
-                                batch = []
-                        flush_legislator_batch(db_session, batch)
-
-    except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
-        console.print("\nMake sure PostgreSQL is installed:")
-        console.print("  brew install postgresql  # macOS")
-        console.print("  apt install postgresql   # Ubuntu/Debian")
-        return
-
-    console.print("\n[bold green]OpenStates bulk ingestion complete![/bold green]")
-    console.print(f"  Bills added: {counts['bills']:,}")
-    console.print(f"  Skipped (existing): {counts['skipped']:,}")
-    console.print(f"  Errors: {counts['errors']:,}")
-
-
-@ingest_app.command("download-openstates")
-def download_openstates(
-    output_dir: str = typer.Option(
-        "/opt/civitas/data/openstates", "-o", "--output", help="Output directory"
-    ),
-    month: str | None = typer.Option(
-        None, "-m", "--month", help="Month in YYYY-MM format (default: current)"
-    ),
-):
-    """Download OpenStates bulk PostgreSQL dump.
-
-    Downloads the monthly PostgreSQL dump (~9GB) from:
-    https://data.openstates.org/postgres/monthly/
-
-    This bypasses the 500/day API rate limit.
-    """
-    from civitas.states import download_bulk_data
-
-    console.print("[bold blue]Downloading OpenStates bulk data...[/bold blue]")
-
-    try:
-        output_path = download_bulk_data(output_dir=output_dir, year_month=month)
-        console.print(f"\n[green]Download complete: {output_path}[/green]")
-        console.print("\nNext steps:")
-        console.print(f"  civitas ingest openstates-bulk {output_path}")
-    except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
-
-
-@ingest_app.command("openstates-scheduler")
-def ingest_openstates_scheduler(
-    db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
-    limit_per_state: int = typer.Option(50, "--limit", help="Max bills per state"),
-    lookback_days: int = typer.Option(7, "--lookback-days", help="Days to look back"),
-    max_states: int = typer.Option(8, "--max-states", help="Max states per run"),
-    state_file: str = typer.Option(
-        "data/openstates_scheduler.json", "--state-file", help="Scheduler state file"
-    ),
-):
-    """Smart OpenStates ingestion (disabled)."""
-    console.print("[yellow]OpenStates scheduler is disabled.[/yellow]")
-    console.print("Use one of these instead:")
-    console.print("  - civitas ingest scrape-state  (direct scrape)")
-    console.print("  - civitas ingest openstates-bulk  (monthly dump)")
-    return
+# OpenStates commands removed - use direct state scrapers instead
+# See: civitas ingest scrape-state --state ca
 
 
 @ingest_app.command("all-states")
@@ -1825,40 +1537,38 @@ def ingest_all_states(
     bills_limit: int = typer.Option(200, "--bills", help="Bills per state"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
-    """Ingest bills and legislators from multiple states.
+    """Ingest bills and legislators from multiple states using direct scrapers.
 
-    Default states: CA, NY, TX, FL, IL, PA, OH, GA, NC, MI
+    Currently available: CA (California)
+    Use: civitas ingest scrape-state --state ca
     """
-    from civitas.states import OpenStatesClient
+    from civitas.states.scrapers import get_scraper, list_available_scrapers
 
-    # Default to key states
+    available = list_available_scrapers()
+    available_codes = {s[0] for s in available}
+
+    # Default to available scrapers
     if states:
         state_list = [s.strip().lower() for s in states.split(",")]
     else:
-        state_list = ["ca", "ny", "tx", "fl", "il", "pa", "oh", "ga", "nc", "mi"]
+        state_list = list(available_codes)
 
-    console.print(f"[bold blue]Ingesting data from {len(state_list)} states...[/bold blue]")
-    console.print(f"States: {', '.join(s.upper() for s in state_list)}\n")
+    console.print("[bold blue]Ingesting data from states with available scrapers...[/bold blue]")
+    console.print(f"Available scrapers: {', '.join(s.upper() for s in available_codes)}\n")
 
     for state in state_list:
-        console.print(f"\n[cyan]━━━ {OpenStatesClient.STATES.get(state, state).upper()} ━━━[/cyan]")
+        if state not in available_codes:
+            console.print(f"[yellow]Skipping {state.upper()} - no scraper available[/yellow]")
+            continue
 
-        # Ingest legislators
-        console.print("  [dim]Legislators...[/dim]", end="")
-        try:
-            # Call the ingest function (simulated inline for brevity)
-            console.print(" [green]✓[/green]")
-        except Exception as e:
-            console.print(f" [red]✗ {str(e)[:30]}[/red]")
+        scraper_cls = get_scraper(state)
+        console.print(f"\n[cyan]━━━ {scraper_cls.STATE_NAME} ━━━[/cyan]")
 
-        # Ingest bills
-        console.print("  [dim]Bills...[/dim]", end="")
-        try:
-            console.print(" [green]✓[/green]")
-        except Exception as e:
-            console.print(f" [red]✗ {str(e)[:30]}[/red]")
+        # Ingest via direct scraper
+        console.print("  [dim]Using direct scraper...[/dim]")
+        console.print("  Run: civitas ingest scrape-state --state", state)
 
-    console.print("\n[bold green]Multi-state ingestion complete![/bold green]")
+    console.print("\n[bold green]Use 'civitas ingest scrape-state' for each state[/bold green]")
 
 
 @ingest_app.command("us-constitution")

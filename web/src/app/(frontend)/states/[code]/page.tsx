@@ -21,6 +21,8 @@ interface StateBill {
   introduced_date: string | null;
   p2025_category?: string | null;
   p2025_stance?: string | null;
+  p2025_impact?: string | null;
+  p2025_scope?: string | null;
 }
 
 interface StateLegislator {
@@ -176,7 +178,7 @@ export default function StateDetailPage() {
                               {bill.title}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
                             <Badge variant="outline" className="text-xs">
                               {bill.chamber}
                             </Badge>
@@ -188,31 +190,51 @@ export default function StateDetailPage() {
                                 {formatDate(bill.introduced_date)}
                               </span>
                             )}
+                            {bill.p2025_impact && (
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${
+                                  bill.p2025_impact === "high"
+                                    ? "border-red-500 text-red-600"
+                                    : bill.p2025_impact === "medium"
+                                      ? "border-orange-500 text-orange-600"
+                                      : "border-gray-500 text-gray-600"
+                                }`}
+                              >
+                                {bill.p2025_impact} impact
+                              </Badge>
+                            )}
+                            {bill.p2025_scope && (
+                              <Badge variant="outline" className="text-xs">
+                                {bill.p2025_scope} scope
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                        {bill.status && (
-                          <Badge variant="outline" className="shrink-0 text-xs">
-                            {bill.status}
-                          </Badge>
-                        )}
-                        {bill.p2025_stance && (
-                          <Badge
-                            variant={
-                              bill.p2025_stance === "oppose"
-                                ? "enacted"
+                        <div className="flex flex-col gap-1 shrink-0">
+                          {bill.status && (
+                            <Badge variant="outline" className="text-xs">
+                              {bill.status}
+                            </Badge>
+                          )}
+                          {bill.p2025_stance && (
+                            <Badge
+                              variant={
+                                bill.p2025_stance === "oppose"
+                                  ? "enacted"
+                                  : bill.p2025_stance === "support"
+                                    ? "blocked"
+                                    : "outline"
+                              }
+                              className="text-xs"
+                            >
+                              {bill.p2025_stance === "oppose"
+                                ? "Opposes P2025"
                                 : bill.p2025_stance === "support"
-                                  ? "blocked"
-                                  : "outline"
-                            }
-                            className="shrink-0 text-xs"
-                          >
-                            {bill.p2025_stance === "oppose"
-                              ? "Opposes P2025"
-                              : bill.p2025_stance === "support"
-                                ? "Supports P2025"
-                                : "P2025 Related"}
-                          </Badge>
-                        )}
+                                  ? "Supports P2025"
+                                  : "P2025 Related"}
+                            </Badge>
+                          )}
                       </div>
                     </div>
                   ))}
@@ -334,7 +356,7 @@ export default function StateDetailPage() {
                 </Button>
               </Link>
               <a
-                href={`https://openstates.org/${code.toLowerCase()}/`}
+                href={`https://www.congress.gov/members/find-your-member`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

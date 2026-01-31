@@ -16,8 +16,8 @@ Usage:
         print(f"{state}: {scraper_cls.STATE_NAME}")
 
 Credits:
-- OpenStates Project (GPL-3.0)
 - Spatula scraping library (MIT)
+- California Legislature public data
 """
 
 from .base import STATE_NAMES, ScrapedBill, ScrapedLegislator, ScrapedVote, StateScraper

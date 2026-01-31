@@ -22,7 +22,7 @@ from civitas.db.models import Legislation, Legislator, StateResistanceAction
 router = APIRouter()
 
 
-# State name mapping (static, OpenStates-free)
+# State name mapping (static)
 STATE_NAMES = {
     "al": "Alabama",
     "ak": "Alaska",
@@ -108,8 +108,8 @@ def jurisdiction_aliases(code: str) -> list[str]:
 P2025_CATEGORIES = [cat for cat in CATEGORIES if cat.p2025_related]
 
 
-def classify_bill(text: str) -> tuple[str | None, str | None]:
-    """Return (p2025_category, stance) using keyword heuristics."""
+def classify_bill(text: str) -> tuple[str | None, str | None, str | None, str | None]:
+    """Return (p2025_category, stance, impact, scope) using keyword heuristics."""
     text_lower = text.lower()
     best_category = None
     best_score = 0
@@ -131,11 +131,29 @@ def classify_bill(text: str) -> tuple[str | None, str | None]:
             stance = "oppose"
 
     if best_score == 0:
-        return None, None
+        return None, None, None, None
 
     if stance is None:
         stance = "neutral"
-    return best_category, stance
+
+    # Determine impact based on keyword matches
+    impact = "medium"  # Default
+    if best_score >= 5:
+        impact = "high"
+    elif best_score <= 2:
+        impact = "low"
+
+    # Determine scope based on content keywords
+    scope = "state"  # Default for state legislation
+    national_keywords = ["federal", "national", "interstate", "nationwide", "compact"]
+    local_keywords = ["county", "municipal", "city", "local", "district"]
+
+    if any(kw in text_lower for kw in national_keywords):
+        scope = "national"
+    elif any(kw in text_lower for kw in local_keywords):
+        scope = "local"
+
+    return best_category, stance, impact, scope
 
 
 @router.get("/states", response_model=StateList)
@@ -233,9 +251,9 @@ async def get_state(
     recent_bills = []
     for bill in recent_bills_raw:
         text = f"{bill.title or ''} {bill.summary or ''}".strip()
-        category, stance = classify_bill(text)
+        category, stance, impact, scope = classify_bill(text)
         if category:
-            recent_bills.append((bill, category, stance))
+            recent_bills.append((bill, category, stance, impact, scope))
         if len(recent_bills) >= 10:
             break
 
@@ -269,8 +287,10 @@ async def get_state(
                 introduced_date=bill.introduced_date,
                 p2025_category=category,
                 p2025_stance=stance,
+                p2025_impact=impact,
+                p2025_scope=scope,
             )
-            for bill, category, stance in recent_bills
+            for bill, category, stance, impact, scope in recent_bills
         ],
         legislators=[
             StateLegislatorBase(
@@ -322,9 +342,9 @@ async def get_state_bills(
     bills = []
     for bill in bills_raw:
         text = f"{bill.title or ''} {bill.summary or ''}".strip()
-        category, stance = classify_bill(text)
+        category, stance, impact, scope = classify_bill(text)
         if category:
-            bills.append((bill, category, stance))
+            bills.append((bill, category, stance, impact, scope))
 
     return {
         "page": page,
@@ -346,8 +366,10 @@ async def get_state_bills(
                 introduced_date=bill.introduced_date,
                 p2025_category=category,
                 p2025_stance=stance,
+                p2025_impact=impact,
+                p2025_scope=scope,
             ).model_dump()
-            for bill, category, stance in bills
+            for bill, category, stance, impact, scope in bills
         ],
     }
 

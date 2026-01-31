@@ -336,6 +336,8 @@ class StateBillBase(BaseModel):
     introduced_date: date | None = None
     p2025_category: str | None = None
     p2025_stance: str | None = None  # support, oppose, neutral
+    p2025_impact: str | None = None  # low, medium, high
+    p2025_scope: str | None = None  # local, state, national
 
 
 class StateLegislatorBase(BaseModel):

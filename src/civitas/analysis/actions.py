@@ -119,7 +119,7 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             action_type=ActionType.CONTACT,
             title="Contact Elected Officials About Immigration Policy",
             description="Urge your representatives to protect immigrant communities.",
-            how_to="1. Find your state legislators at openstates.org\n2. Call during business hours\n3. Be specific: mention bill numbers\n4. Share personal stories if comfortable\n5. Follow up with email",
+            how_to="1. Find your state legislators at your state legislature website\n2. Call during business hours\n3. Be specific: mention bill numbers\n4. Share personal stories if comfortable\n5. Follow up with email",
             effective_for=["state", "federal"],
         ),
         ResistanceAction(
@@ -501,7 +501,7 @@ CATEGORY_ACTIONS: dict[str, list[ResistanceAction]] = {
             action_type=ActionType.CONTACT,
             title="Contact State Legislators on Gun Bills",
             description="Advocate for gun safety legislation.",
-            how_to="1. Find your state legislators at openstates.org\n2. Call during business hours\n3. Reference specific bill numbers\n4. Share personal connection to issue",
+            how_to="1. Find your state legislators at your state legislature website\n2. Call during business hours\n3. Reference specific bill numbers\n4. Share personal connection to issue",
             effective_for=["state"],
         ),
         ResistanceAction(
@@ -554,8 +554,8 @@ DEFAULT_ACTIONS: list[ResistanceAction] = [
         action_type=ActionType.CONTACT,
         title="Contact Your State Legislators",
         description="Reach your state representatives and senators.",
-        how_to="1. Find your legislators at openstates.org\n2. Call during business hours (9am-5pm)\n3. Ask to speak to the staffer handling this issue\n4. Be polite, brief, and specific\n5. Leave your name, address, and callback number\n6. Follow up with email",
-        resources=["https://openstates.org/find_your_legislator/"],
+        how_to="1. Find your legislators at your state legislature website\n2. Call during business hours (9am-5pm)\n3. Ask to speak to the staffer handling this issue\n4. Be polite, brief, and specific\n5. Leave your name, address, and callback number\n6. Follow up with email",
+        resources=["https://www.congress.gov/members/find-your-member"],
         effective_for=["state"],
     ),
     ResistanceAction(

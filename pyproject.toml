@@ -64,10 +64,10 @@ azure = [
 civic = [
     "us>=3.0",
 ]
-# Open Civic Data tools
-openstates = [
-    "pyopenstates>=2.0",
-]
+# Open Civic Data tools (deprecated - use direct scrapers)
+# openstates = [
+#     "pyopenstates>=2.0",
+# ]
 # Document processing
 processing = [
     "PyMuPDF>=1.23",
@@ -94,7 +94,7 @@ all = [
     "us>=3.0",
     "pandas>=2.0",
     "networkx>=3.0",
-    "pyopenstates>=2.0",
+    # "pyopenstates>=2.0",  # Deprecated - use direct scrapers
     "PyMuPDF>=1.23",
     "ocrmypdf>=16.0",
     "trafilatura>=1.6",

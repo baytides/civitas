@@ -3,7 +3,7 @@
 # Civitas Full Data Ingestion Script
 # =============================================================================
 # This script ingests data from all available sources:
-# - OpenStates API (all 50 states + DC + PR)
+# - Direct state scrapers (California, etc.)
 # - CourtListener (federal court opinions)
 # - Congress.gov (federal legislation)
 # - Federal Register (executive orders)
@@ -11,7 +11,6 @@
 # - Project 2025 PDF
 #
 # Required Environment Variables:
-#   OPENSTATES_API_KEY - Get from https://open.pluralpolicy.com/accounts/profile/
 #   COURTLISTENER_TOKEN - Get from https://www.courtlistener.com/sign-in/
 #   CONGRESS_API_KEY - Get from https://api.congress.gov/sign-up/
 #
@@ -80,28 +79,20 @@ for term in 2024 2023 2022; do
 done
 
 # -----------------------------------------------------------------------------
-# 4. STATE LEGISLATURES (OpenStates API)
+# 4. STATE LEGISLATURES (Direct Scrapers)
 # -----------------------------------------------------------------------------
 log ""
-log "=== STATE LEGISLATURES (OpenStates) ==="
+log "=== STATE LEGISLATURES (Direct Scrapers) ==="
 
-if [ -z "$OPENSTATES_API_KEY" ]; then
-    log "WARNING: OPENSTATES_API_KEY not set, skipping state legislature ingestion"
-    log "Get a key at: https://open.pluralpolicy.com/accounts/profile/"
-else
-    # All 50 states + DC + PR
-    ALL_STATES="AL,AK,AZ,AR,CA,CO,CT,DE,FL,GA,HI,ID,IL,IN,IA,KS,KY,LA,ME,MD,MA,MI,MN,MS,MO,MT,NE,NV,NH,NJ,NM,NY,NC,ND,OH,OK,OR,PA,RI,SC,SD,TN,TX,UT,VT,VA,WA,WV,WI,WY,DC,PR"
+# Use direct scrapers for available states
+log "Checking available state scrapers..."
+civitas ingest list-scrapers || log "WARNING: Could not list scrapers"
 
-    log "Ingesting bills and legislators from all states..."
-    civitas ingest all-states --states "$ALL_STATES" --bills 500 || log "WARNING: All-states ingestion failed"
-
-    # Also try individual state ingestion for major states with more bills
-    for state in CA NY TX FL IL PA OH GA NC MI WA; do
-        log "Extended ingestion for $state (1000 bills)..."
-        civitas ingest state-bills --state $state --per-page 100 --max-pages 10 || log "WARNING: $state bills failed"
-        civitas ingest state-legislators --state $state || log "WARNING: $state legislators failed"
-    done
-fi
+# Scrape available states
+for state in CA; do
+    log "Scraping $state legislature..."
+    civitas ingest scrape-state --state $state --limit 1000 || log "WARNING: $state scraping failed"
+done
 
 # -----------------------------------------------------------------------------
 # 5. FEDERAL COURTS (CourtListener)

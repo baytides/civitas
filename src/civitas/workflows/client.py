@@ -48,7 +48,7 @@ async def start_full_ingestion(
         congress_numbers: Congress sessions to ingest (e.g., [118, 119])
         california_years: California session years (e.g., [2023, 2024])
         eo_years: Executive order years (e.g., [2024, 2025])
-        states: State abbreviations for OpenStates (e.g., ["CA", "TX"])
+        states: State abbreviations for direct scrapers (e.g., ["CA"])
         laws_only: Only ingest enacted laws (not all bills)
         wait: If True, wait for workflow completion and return result
 

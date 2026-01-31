@@ -115,6 +115,34 @@ def classify_bill(text: str) -> tuple[str | None, str | None, str | None, str | 
     best_score = 0
     stance = None
 
+    # Additional keywords that typically indicate opposition to P2025 agenda
+    # These match common progressive state legislation language
+    progressive_keywords = [
+        "reproductive health", "reproductive rights", "abortion access",
+        "climate action", "climate change", "climate resilience", "global warming",
+        "clean energy", "renewable", "emissions reduction",
+        "immigrant protection", "immigrant rights", "sanctuary",
+        "voting access", "voter protection", "election security",
+        "expand medicaid", "healthcare access", "affordable care",
+        "gun safety", "firearm regulation", "assault weapon",
+        "worker protection", "minimum wage increase", "labor rights",
+        "lgbtq", "gender affirming", "anti-discrimination",
+        "police accountability", "criminal justice reform",
+        "tenant protection", "affordable housing", "rent control",
+        "environmental justice", "environmental protection",
+    ]
+
+    # Keywords that typically indicate support for P2025 agenda
+    conservative_keywords = [
+        "parental rights", "school choice", "voucher",
+        "religious liberty", "religious freedom",
+        "second amendment", "gun rights", "constitutional carry",
+        "border security", "illegal immigration", "deportation",
+        "election integrity", "voter id", "citizenship verification",
+        "reduce regulations", "deregulation",
+        "protect life", "pro-life", "unborn",
+    ]
+
     for category in P2025_CATEGORIES:
         score = sum(1 for kw in category.keywords if kw.lower() in text_lower)
         if score > best_score:
@@ -130,17 +158,26 @@ def classify_bill(text: str) -> tuple[str | None, str | None, str | None, str | 
         ):
             stance = "oppose"
 
+    # Additional stance detection using common bill language
+    if stance is None:
+        if any(kw in text_lower for kw in progressive_keywords):
+            stance = "oppose"
+        elif any(kw in text_lower for kw in conservative_keywords):
+            stance = "support"
+
     if best_score == 0:
         return None, None, None, None
 
     if stance is None:
         stance = "neutral"
 
-    # Determine impact based on keyword matches
+    # Determine impact based on keyword matches and key legislation indicators
     impact = "medium"  # Default
-    if best_score >= 5:
+    high_impact_keywords = ["constitutional", "fundamental", "statewide", "emergency",
+                           "comprehensive", "historic", "landmark", "major reform"]
+    if best_score >= 4 or any(kw in text_lower for kw in high_impact_keywords):
         impact = "high"
-    elif best_score <= 2:
+    elif best_score <= 1:
         impact = "low"
 
     # Determine scope based on content keywords

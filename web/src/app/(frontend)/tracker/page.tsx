@@ -96,7 +96,7 @@ const tableColumns: ColumnDef<APIObjective>[] = [
         href={`/tracker/${row.original.id}`}
         className="font-medium text-primary hover:underline line-clamp-2"
       >
-        {row.original.title_full ||
+        {row.original.title_short ||
           row.original.title ||
           row.original.proposal_summary ||
           row.original.proposal_text}
@@ -636,8 +636,9 @@ export default function TrackerPage() {
 }
 
 function getObjectiveTitle(objective: APIObjective) {
+  // Prefer the short title over the full title for better readability
   return (
-    objective.title_full ||
+    objective.title_short ||
     objective.title ||
     objective.proposal_summary ||
     objective.proposal_text

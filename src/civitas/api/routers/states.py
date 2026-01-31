@@ -109,38 +109,58 @@ P2025_CATEGORIES = [cat for cat in CATEGORIES if cat.p2025_related]
 
 
 def classify_bill(text: str) -> tuple[str | None, str | None, str | None, str | None]:
-    """Return (p2025_category, stance, impact, scope) using keyword heuristics."""
+    """Return (p2025_category, stance, impact, scope) using keyword heuristics.
+
+    Stance detection uses action verbs combined with topics to determine intent:
+    - "protect reproductive" vs "restrict reproductive" indicates different stances
+    - Topic keywords alone are ambiguous and result in 'neutral'
+    """
     text_lower = text.lower()
     best_category = None
     best_score = 0
     stance = None
 
-    # Additional keywords that typically indicate opposition to P2025 agenda
-    # These match common progressive state legislation language
-    progressive_keywords = [
-        "reproductive health", "reproductive rights", "abortion access",
-        "climate action", "climate change", "climate resilience", "global warming",
-        "clean energy", "renewable", "emissions reduction",
-        "immigrant protection", "immigrant rights", "sanctuary",
-        "voting access", "voter protection", "election security",
-        "expand medicaid", "healthcare access", "affordable care",
-        "gun safety", "firearm regulation", "assault weapon",
-        "worker protection", "minimum wage increase", "labor rights",
-        "lgbtq", "gender affirming", "anti-discrimination",
-        "police accountability", "criminal justice reform",
-        "tenant protection", "affordable housing", "rent control",
-        "environmental justice", "environmental protection",
+    # Action + topic phrases that clearly indicate OPPOSITION to P2025
+    # (progressive/protective legislation)
+    oppose_phrases = [
+        # Protective actions
+        "protect reproductive", "protect abortion", "protect immigrant",
+        "protect voting", "protect worker", "protect tenant", "protect climate",
+        "protect medicaid", "protect healthcare", "protect lgbtq", "protect trans",
+        # Expansion actions
+        "expand medicaid", "expand voting", "expand access", "expand rights",
+        "expand healthcare", "expand coverage", "expand sanctuary",
+        # Strengthening actions
+        "strengthen environmental", "strengthen labor", "strengthen civil rights",
+        # Specific progressive policies
+        "sanctuary city", "sanctuary state", "codify roe", "reproductive freedom",
+        "climate action", "emissions reduction", "clean energy transition",
+        "gun safety", "assault weapon ban", "universal background",
+        "raise minimum wage", "living wage", "worker rights",
+        "police accountability", "police reform", "end qualified immunity",
+        "affordable housing", "rent control", "tenant rights",
+        "lgbtq rights", "gender affirming care", "anti-discrimination",
     ]
 
-    # Keywords that typically indicate support for P2025 agenda
-    conservative_keywords = [
-        "parental rights", "school choice", "voucher",
-        "religious liberty", "religious freedom",
-        "second amendment", "gun rights", "constitutional carry",
-        "border security", "illegal immigration", "deportation",
-        "election integrity", "voter id", "citizenship verification",
-        "reduce regulations", "deregulation",
-        "protect life", "pro-life", "unborn",
+    # Action + topic phrases that clearly indicate SUPPORT for P2025
+    # (restrictive/conservative legislation)
+    support_phrases = [
+        # Restrictive actions
+        "ban abortion", "restrict abortion", "restrict reproductive",
+        "restrict immigration", "restrict voting", "restrict trans",
+        "ban gender", "ban sanctuary", "ban dei", "ban crt",
+        # Elimination actions
+        "eliminate dei", "eliminate sanctuary", "defund",
+        "repeal environmental", "repeal climate",
+        # P2025-aligned policies
+        "parental rights in education", "parents bill of rights",
+        "school choice", "education voucher", "school voucher",
+        "election integrity", "voter id requirement", "citizenship verification",
+        "religious liberty", "religious exemption", "conscience protection",
+        "constitutional carry", "second amendment sanctuary",
+        "border security", "illegal immigration", "mass deportation",
+        "fetal personhood", "life at conception", "heartbeat bill",
+        "work requirements medicaid", "work requirements snap",
     ]
 
     for category in P2025_CATEGORIES:
@@ -158,16 +178,17 @@ def classify_bill(text: str) -> tuple[str | None, str | None, str | None, str | 
         ):
             stance = "oppose"
 
-    # Additional stance detection using common bill language
+    # Additional stance detection using action+topic phrases
     if stance is None:
-        if any(kw in text_lower for kw in progressive_keywords):
+        if any(phrase in text_lower for phrase in oppose_phrases):
             stance = "oppose"
-        elif any(kw in text_lower for kw in conservative_keywords):
+        elif any(phrase in text_lower for phrase in support_phrases):
             stance = "support"
 
     if best_score == 0:
         return None, None, None, None
 
+    # If we still can't determine stance, it's truly neutral/ambiguous
     if stance is None:
         stance = "neutral"
 

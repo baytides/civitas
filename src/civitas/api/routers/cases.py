@@ -111,7 +111,6 @@ async def get_case(
         docket_number=case.docket_number,
         holding=case.holding,
         majority_author=case.majority_author,
-        dissent_author=case.dissent_author,
         source_url=case.source_url,
         linked_objectives=[objective_to_base(obj) for obj in linked_objectives],
         **insight,

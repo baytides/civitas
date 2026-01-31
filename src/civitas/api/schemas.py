@@ -239,7 +239,6 @@ class CourtCaseDetail(CourtCaseBase):
     docket_number: str | None = None
     holding: str | None = None
     majority_author: str | None = None
-    dissent_author: str | None = None
     source_url: str | None = None
     linked_objectives: list[ObjectiveBase] = []
     plain_summary: str | None = None

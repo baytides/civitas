@@ -11,7 +11,6 @@ Uses the internetarchive Python library for downloads and the
 scrape/metadata APIs for discovery.
 """
 
-import json
 import os
 from collections.abc import Generator
 from dataclasses import dataclass, field
@@ -135,7 +134,8 @@ class InternetArchiveClient:
         """Search the Internet Archive using Advanced Search API.
 
         Args:
-            query: Lucene-style query (e.g., "collection:pub_united-states-supreme-court-cases-adjudged")
+            query: Lucene-style query
+                (e.g., "collection:pub_united-states-supreme-court-cases-adjudged")
             fields: Fields to return (default: identifier, title, mediatype, year)
             rows: Number of results per page (max 10000)
             max_results: Maximum total results to return (None for all)
@@ -156,13 +156,13 @@ class InternetArchiveClient:
                 "output": "json",
             }
             # Add each field as a separate fl[] parameter
-            for field in fields:
-                params[f"fl[]"] = field
+            for f in fields:
+                params["fl[]"] = f
 
             # Build URL with proper field encoding
             url = f"{self.SEARCH_API}?q={query}&rows={rows}&start={start}&output=json"
-            for field in fields:
-                url += f"&fl[]={field}"
+            for f in fields:
+                url += f"&fl[]={f}"
 
             response = self._client.get(url)
             response.raise_for_status()
@@ -472,7 +472,9 @@ class InternetArchiveClient:
     # Congressional Record
     # =========================================================================
 
-    def list_congressional_records(self, max_results: int | None = None) -> Generator[IAItem, None, None]:
+    def list_congressional_records(
+        self, max_results: int | None = None
+    ) -> Generator[IAItem, None, None]:
         """List available Congressional Record volumes.
 
         Args:
@@ -579,7 +581,9 @@ class InternetArchiveClient:
     # Federal Register
     # =========================================================================
 
-    def list_federal_register(self, max_results: int | None = None) -> Generator[IAItem, None, None]:
+    def list_federal_register(
+        self, max_results: int | None = None
+    ) -> Generator[IAItem, None, None]:
         """List available Federal Register volumes.
 
         Args:

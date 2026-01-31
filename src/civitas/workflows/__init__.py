@@ -11,26 +11,26 @@ Workflows are designed to be:
 """
 
 from civitas.workflows.activities import (
+    generate_insights,
+    generate_justice_profiles,
+    generate_resistance_analyses,
+    generate_resistance_recommendations,
     ingest_california,
     ingest_executive_orders,
     ingest_federal_congress,
     ingest_scotus_opinions,
     ingest_state_bills,
-    generate_justice_profiles,
-    generate_resistance_analyses,
-    generate_resistance_recommendations,
-    generate_insights,
-)
-from civitas.workflows.ingestion import (
-    FullIngestionWorkflow,
-    FederalIngestionWorkflow,
-    SCOTUSIngestionWorkflow,
-    StateIngestionWorkflow,
 )
 from civitas.workflows.content import (
     ContentGenerationWorkflow,
     JusticeProfileWorkflow,
     ResistanceAnalysisWorkflow,
+)
+from civitas.workflows.ingestion import (
+    FederalIngestionWorkflow,
+    FullIngestionWorkflow,
+    SCOTUSIngestionWorkflow,
+    StateIngestionWorkflow,
 )
 from civitas.workflows.worker import create_worker, run_worker
 

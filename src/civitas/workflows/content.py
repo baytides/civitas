@@ -18,10 +18,10 @@ from temporalio.common import RetryPolicy
 with workflow.unsafe.imports_passed_through():
     from civitas.workflows.activities import (
         GenerationResult,
+        generate_insights,
         generate_justice_profiles,
         generate_resistance_analyses,
         generate_resistance_recommendations,
-        generate_insights,
     )
 
 

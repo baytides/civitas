@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -83,7 +82,6 @@ class FullIngestionWorkflow:
         congress_numbers = params.congress_numbers or [118, 119]
         california_years = params.california_years or [2023, 2024]
         eo_years = params.eo_years or [2024, 2025]
-        scotus_terms = params.scotus_terms or ["24", "25"]
 
         workflow.logger.info("Starting full ingestion workflow")
 
@@ -127,11 +125,12 @@ class FullIngestionWorkflow:
                 errors.append(f"EO {year} failed: {e!s}")
 
         # Phase 3: SCOTUS opinions
-        workflow.logger.info("Ingesting SCOTUS opinions")
+        scotus_terms = params.scotus_terms or ["24", "25"]
+        workflow.logger.info(f"Ingesting SCOTUS opinions (terms={scotus_terms})")
         try:
             result = await workflow.execute_activity(
                 ingest_scotus_opinions,
-                args=[None, False],  # Will use recent terms
+                args=[scotus_terms, False],  # Use configured terms
                 start_to_close_timeout=timedelta(hours=2),
                 retry_policy=INGESTION_RETRY_POLICY,
                 heartbeat_timeout=timedelta(minutes=5),

@@ -3099,6 +3099,7 @@ def start_worker():
       TEMPORAL_TASK_QUEUE: Task queue (default: civitas-tasks)
     """
     import asyncio
+
     from civitas.workflows.worker import run_worker
 
     console.print("[bold blue]Starting Civitas Temporal Worker...[/bold blue]")
@@ -3128,6 +3129,7 @@ def workflow_ingest(
         civitas workflow ingest --congress 119 --wait
     """
     import asyncio
+
     from civitas.workflows.client import start_full_ingestion
 
     congress_nums = [int(c.strip()) for c in congress.split(",") if c.strip()]
@@ -3183,6 +3185,7 @@ def workflow_generate(
         civitas workflow generate --analyses --recs --batch-size 10 --wait
     """
     import asyncio
+
     from civitas.workflows.client import start_content_generation
 
     console.print("[bold blue]Starting Content Generation Workflow...[/bold blue]")
@@ -3233,6 +3236,7 @@ def workflow_resistance(
         civitas workflow resistance --batch-size 10 --max-batches 5 --wait
     """
     import asyncio
+
     from civitas.workflows.client import start_resistance_analysis
 
     console.print("[bold blue]Starting Resistance Analysis Workflow...[/bold blue]")
@@ -3269,6 +3273,7 @@ def workflow_list(
 ):
     """List recent workflows."""
     import asyncio
+
     from civitas.workflows.client import list_workflows
 
     workflows = asyncio.run(list_workflows(workflow_type, status, limit))
@@ -3307,6 +3312,7 @@ def workflow_status(
 ):
     """Get status of a specific workflow."""
     import asyncio
+
     from civitas.workflows.client import get_workflow_status
 
     try:
@@ -3330,6 +3336,7 @@ def workflow_cancel(
 ):
     """Cancel a running workflow."""
     import asyncio
+
     from civitas.workflows.client import cancel_workflow
 
     try:
@@ -3361,8 +3368,9 @@ def bnav_full_sync(
     """
     import asyncio
     from uuid import uuid4
-    from civitas.workflows.worker import create_client, get_task_queue
+
     from civitas.workflows.baynavigator import BayNavigatorFullSyncWorkflow
+    from civitas.workflows.worker import create_client, get_task_queue
 
     async def run():
         client = await create_client()
@@ -3414,8 +3422,9 @@ def bnav_civic_scrape(
     """
     import asyncio
     from uuid import uuid4
-    from civitas.workflows.worker import create_client, get_task_queue
+
     from civitas.workflows.baynavigator import CivicDataWorkflow
+    from civitas.workflows.worker import create_client, get_task_queue
 
     async def run():
         client = await create_client()
@@ -3461,8 +3470,9 @@ def bnav_open_data(
     """
     import asyncio
     from uuid import uuid4
-    from civitas.workflows.worker import create_client, get_task_queue
+
     from civitas.workflows.baynavigator import OpenDataSyncWorkflow
+    from civitas.workflows.worker import create_client, get_task_queue
 
     async def run():
         client = await create_client()
@@ -3506,8 +3516,9 @@ def bnav_generate_api(
     """
     import asyncio
     from uuid import uuid4
-    from civitas.workflows.worker import create_client, get_task_queue
+
     from civitas.workflows.baynavigator import APIGenerationWorkflow
+    from civitas.workflows.worker import create_client, get_task_queue
 
     async def run():
         client = await create_client()
@@ -3552,8 +3563,9 @@ def bnav_validate(
     """
     import asyncio
     from uuid import uuid4
-    from civitas.workflows.worker import create_client, get_task_queue
+
     from civitas.workflows.baynavigator import ValidationWorkflow
+    from civitas.workflows.worker import create_client, get_task_queue
 
     async def run():
         client = await create_client()

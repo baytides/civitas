@@ -81,7 +81,7 @@ class DocumentCloudClient:
         self.username = username or os.getenv("DC_USERNAME")
         self.password = password or os.getenv("DC_PASSWORD")
         self.azure = azure_client
-        self._client: "DCClient | None" = None
+        self._client: DCClient | None = None
 
     @property
     def client(self) -> "DCClient":

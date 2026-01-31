@@ -8,70 +8,68 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Any
 
 from temporalio.client import Client
 from temporalio.worker import Worker
 
 from civitas.workflows.activities import (
+    generate_insights,
+    generate_justice_profiles,
+    generate_resistance_analyses,
+    generate_resistance_recommendations,
     ingest_california,
     ingest_executive_orders,
     ingest_federal_congress,
     ingest_scotus_opinions,
     ingest_state_bills,
-    generate_justice_profiles,
-    generate_resistance_analyses,
-    generate_resistance_recommendations,
-    generate_insights,
 )
-from civitas.workflows.ingestion import (
-    FullIngestionWorkflow,
-    FederalIngestionWorkflow,
-    SCOTUSIngestionWorkflow,
-    StateIngestionWorkflow,
+from civitas.workflows.baynavigator import (
+    APIGenerationWorkflow,
+    # Workflows
+    BayNavigatorFullSyncWorkflow,
+    CivicDataWorkflow,
+    OpenDataSyncWorkflow,
+    ValidationWorkflow,
+    check_data_freshness,
+    check_duplicates,
+    consolidate_scraped_data,
+    fetch_carbon_stats,
+    generate_api,
+    generate_city_contacts_api,
+    generate_geojson,
+    generate_search_index,
+    generate_simple_language,
+    scrape_211_bayarea,
+    scrape_blocked_councils,
+    scrape_civicplus_councils,
+    scrape_granicus_councils,
+    scrape_legistar_councils,
+    scrape_proudcity_councils,
+    scrape_wikipedia_councils,
+    sync_california_codes,
+    sync_imls_museums,
+    sync_nps_parks,
+    sync_open_data_cache,
+    sync_recreation_gov,
+    sync_throughline_helplines,
+    # Activities
+    sync_transit_data,
+    sync_usagov_benefits,
+    validate_data,
+    validate_links,
+    validate_map_coordinates,
 )
 from civitas.workflows.content import (
     ContentGenerationWorkflow,
     JusticeProfileWorkflow,
     ResistanceAnalysisWorkflow,
 )
-from civitas.workflows.baynavigator import (
-    # Workflows
-    BayNavigatorFullSyncWorkflow,
-    CivicDataWorkflow,
-    OpenDataSyncWorkflow,
-    APIGenerationWorkflow,
-    ValidationWorkflow,
-    # Activities
-    sync_transit_data,
-    sync_open_data_cache,
-    sync_nps_parks,
-    sync_recreation_gov,
-    sync_imls_museums,
-    sync_usagov_benefits,
-    sync_california_codes,
-    sync_throughline_helplines,
-    fetch_carbon_stats,
-    scrape_211_bayarea,
-    scrape_civicplus_councils,
-    scrape_granicus_councils,
-    scrape_proudcity_councils,
-    scrape_legistar_councils,
-    scrape_wikipedia_councils,
-    scrape_blocked_councils,
-    consolidate_scraped_data,
-    validate_data,
-    check_duplicates,
-    validate_links,
-    check_data_freshness,
-    validate_map_coordinates,
-    generate_api,
-    generate_geojson,
-    generate_search_index,
-    generate_simple_language,
-    generate_city_contacts_api,
+from civitas.workflows.ingestion import (
+    FederalIngestionWorkflow,
+    FullIngestionWorkflow,
+    SCOTUSIngestionWorkflow,
+    StateIngestionWorkflow,
 )
-
 
 # Default configuration
 DEFAULT_TEMPORAL_HOST = "localhost:7233"
@@ -193,7 +191,7 @@ async def run_worker() -> None:
     client = await create_client()
     worker = await create_worker(client)
 
-    print(f"Starting Civitas Temporal worker...")
+    print("Starting Civitas Temporal worker...")
     print(f"  Host: {get_temporal_host()}")
     print(f"  Namespace: {get_namespace()}")
     print(f"  Task Queue: {get_task_queue()}")

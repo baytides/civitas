@@ -99,7 +99,7 @@ class MuckRockClient:
         self.username = username or os.getenv("MUCKROCK_USERNAME")
         self.password = password or os.getenv("MUCKROCK_PASSWORD")
         self.azure = azure_client
-        self._client: "MRClient | None" = None
+        self._client: MRClient | None = None
 
     @property
     def client(self) -> "MRClient":
@@ -148,12 +148,16 @@ class MuckRockClient:
             if status and getattr(req, "status", "") != status:
                 continue
 
+            jurisdiction_attr = getattr(req, "jurisdiction", {})
+            jurisdiction_name = (
+                jurisdiction_attr.get("name") if hasattr(req, "jurisdiction") else None
+            )
             results.append(FOIARequest(
                 id=req.id,
                 title=getattr(req, "title", ""),
                 status=getattr(req, "status", ""),
                 agency=getattr(req, "agency", {}).get("name") if hasattr(req, "agency") else None,
-                jurisdiction=getattr(req, "jurisdiction", {}).get("name") if hasattr(req, "jurisdiction") else None,
+                jurisdiction=jurisdiction_name,
                 user=getattr(req, "user", {}).get("username") if hasattr(req, "user") else None,
                 date_submitted=str(getattr(req, "date_submitted", "")),
                 date_due=str(getattr(req, "date_due", "")),
@@ -179,12 +183,16 @@ class MuckRockClient:
         """
         try:
             req = self.client.requests.retrieve(request_id)
+            jurisdiction_attr = getattr(req, "jurisdiction", {})
+            jurisdiction_name = (
+                jurisdiction_attr.get("name") if hasattr(req, "jurisdiction") else None
+            )
             return FOIARequest(
                 id=req.id,
                 title=getattr(req, "title", ""),
                 status=getattr(req, "status", ""),
                 agency=getattr(req, "agency", {}).get("name") if hasattr(req, "agency") else None,
-                jurisdiction=getattr(req, "jurisdiction", {}).get("name") if hasattr(req, "jurisdiction") else None,
+                jurisdiction=jurisdiction_name,
                 user=getattr(req, "user", {}).get("username") if hasattr(req, "user") else None,
                 date_submitted=str(getattr(req, "date_submitted", "")),
                 date_due=str(getattr(req, "date_due", "")),

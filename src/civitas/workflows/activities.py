@@ -9,7 +9,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
 
 from temporalio import activity
 
@@ -63,9 +62,11 @@ async def ingest_federal_congress(
         IngestionResult with counts and any errors
     """
     import time
+
+    from sqlalchemy.orm import Session
+
     from civitas.congress.client import CongressClient
     from civitas.db import DataIngester, get_engine
-    from sqlalchemy.orm import Session
 
     start = time.time()
     errors = []
@@ -122,9 +123,11 @@ async def ingest_california(session_year: int) -> IngestionResult:
         IngestionResult with counts and any errors
     """
     import time
+
+    from sqlalchemy.orm import Session
+
     from civitas.california.client import CaliforniaLegislatureClient
     from civitas.db import DataIngester, get_engine
-    from sqlalchemy.orm import Session
 
     start = time.time()
     errors = []
@@ -174,10 +177,12 @@ async def ingest_executive_orders(year: int) -> IngestionResult:
         IngestionResult with counts and any errors
     """
     import time
-    from civitas.executive.client import FederalRegisterClient
+
+    from sqlalchemy.orm import Session
+
     from civitas.db import get_engine
     from civitas.db.models import ExecutiveOrder
-    from sqlalchemy.orm import Session
+    from civitas.executive.client import FederalRegisterClient
 
     start = time.time()
     errors = []
@@ -235,9 +240,11 @@ async def ingest_scotus_opinions(
         IngestionResult with counts and any errors
     """
     import time
-    from civitas.scotus.client import SCOTUSClient
-    from civitas.db import get_engine
+
     from sqlalchemy.orm import Session
+
+    from civitas.db import get_engine
+    from civitas.scotus.client import SCOTUSClient
 
     start = time.time()
     errors = []
@@ -293,9 +300,11 @@ async def ingest_state_bills(
         IngestionResult with counts and any errors
     """
     import time
-    from civitas.states.openstates import OpenStatesClient
-    from civitas.db import get_engine
+
     from sqlalchemy.orm import Session as DBSession
+
+    from civitas.db import get_engine
+    from civitas.states.openstates import OpenStatesClient
 
     start = time.time()
     errors = []
@@ -350,9 +359,11 @@ async def generate_justice_profiles(
         GenerationResult with counts and any errors
     """
     import time
-    from civitas.scotus.profiles import JusticeProfileGenerator
-    from civitas.db import get_engine
+
     from sqlalchemy.orm import Session
+
+    from civitas.db import get_engine
+    from civitas.scotus.profiles import JusticeProfileGenerator
 
     start = time.time()
     errors = []
@@ -412,9 +423,11 @@ async def generate_resistance_analyses(
         GenerationResult with counts and any errors
     """
     import time
-    from civitas.resistance.analyzer import ResistanceAnalyzer
-    from civitas.db import get_engine
+
     from sqlalchemy.orm import Session
+
+    from civitas.db import get_engine
+    from civitas.resistance.analyzer import ResistanceAnalyzer
 
     start = time.time()
     errors = []
@@ -476,9 +489,11 @@ async def generate_resistance_recommendations(
         GenerationResult with counts and any errors
     """
     import time
-    from civitas.resistance.recommender import ResistanceRecommender
-    from civitas.db import get_engine
+
     from sqlalchemy.orm import Session
+
+    from civitas.db import get_engine
+    from civitas.resistance.recommender import ResistanceRecommender
 
     start = time.time()
     errors = []
@@ -542,9 +557,11 @@ async def generate_insights(
         GenerationResult with counts and any errors
     """
     import time
-    from civitas.insights.generator import InsightGenerator
-    from civitas.db import get_engine
+
     from sqlalchemy.orm import Session
+
+    from civitas.db import get_engine
+    from civitas.insights.generator import InsightGenerator
 
     start = time.time()
     errors = []

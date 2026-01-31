@@ -75,6 +75,7 @@
     "@aws-sdk/credential-provider-sso": "3.972.2",
     "@aws-sdk/token-providers": "3.975.0",
     "@smithy/config-resolver": "^4.4.6",
-    "@smithy/util-defaults-mode-node": "^4.2.29"
+    "@smithy/util-defaults-mode-node": "^4.2.29",
+    "fast-xml-parser": "^5.3.4"
   }
 }

@@ -165,7 +165,9 @@ export function DynamicThreatMeter() {
             setProgress(Math.round(data.completion_percentage));
           } else {
             // Fallback calculation - only count enacted/completed items
-            // "in_progress" just means being tracked, not 50% implemented
+            // "not_started" means policy exists but no action taken
+            // "in_progress" means active implementation underway
+            // Only "completed" or "enacted" count as implemented
             const total = data.total || 0;
             const byStatus = data.by_status || {};
             const completed = byStatus.completed || 0;

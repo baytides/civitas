@@ -80,11 +80,17 @@ export function DynamicCategoryBreakdown() {
           const stats: ObjectiveStats = await response.json();
 
           // Store global status breakdown
+          // Map database statuses to display statuses:
+          // not_started -> proposed (policy exists but no action taken)
+          // in_progress -> in progress (active implementation underway)
+          // completed -> enacted (fully implemented)
+          // blocked -> blocked (stopped by courts/legislation)
+          // reversed -> blocked (overturned)
           setGlobalStats({
-            proposed: stats.by_status.proposed || 0,
-            enacted: stats.by_status.enacted || 0,
+            proposed: (stats.by_status.proposed || 0) + (stats.by_status.not_started || 0),
+            enacted: (stats.by_status.enacted || 0) + (stats.by_status.completed || 0),
             inProgress: stats.by_status.in_progress || 0,
-            blocked: stats.by_status.blocked || 0,
+            blocked: (stats.by_status.blocked || 0) + (stats.by_status.reversed || 0),
           });
 
           // Convert by_category to array format
@@ -92,11 +98,15 @@ export function DynamicCategoryBreakdown() {
           const categoryList: CategoryData[] = Object.entries(stats.by_category).map(
             ([slug, total]) => {
               const statusCounts = stats.by_category_status?.[slug] || {};
-              const enacted = statusCounts.enacted || statusCounts.completed || 0;
+              // Map completed -> enacted for display
+              const enacted = (statusCounts.enacted || 0) + (statusCounts.completed || 0);
               const inProgress = statusCounts.in_progress || 0;
-              const blocked = statusCounts.blocked || 0;
+              // Map reversed -> blocked for display
+              const blocked = (statusCounts.blocked || 0) + (statusCounts.reversed || 0);
+              // Map not_started -> proposed for display
               const proposed =
-                statusCounts.proposed || Math.max((total as number) - enacted - inProgress - blocked, 0);
+                (statusCounts.proposed || 0) + (statusCounts.not_started || 0) ||
+                Math.max((total as number) - enacted - inProgress - blocked, 0);
 
               return {
                 name:

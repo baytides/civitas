@@ -3081,6 +3081,516 @@ def export_p2025_for_storm(
 
 
 # =============================================================================
+# Temporal Workflow Commands
+# =============================================================================
+
+workflow_app = typer.Typer(help="Temporal workflow orchestration commands")
+app.add_typer(workflow_app, name="workflow")
+
+
+@workflow_app.command("worker")
+def start_worker():
+    """Start the Temporal worker to process workflows.
+
+    The worker must be running for workflows to execute.
+    Configure via environment variables:
+      TEMPORAL_HOST: Temporal server address (default: localhost:7233)
+      TEMPORAL_NAMESPACE: Namespace (default: default)
+      TEMPORAL_TASK_QUEUE: Task queue (default: civitas-tasks)
+    """
+    import asyncio
+    from civitas.workflows.worker import run_worker
+
+    console.print("[bold blue]Starting Civitas Temporal Worker...[/bold blue]")
+    asyncio.run(run_worker())
+
+
+@workflow_app.command("ingest")
+def workflow_ingest(
+    congress: str = typer.Option(
+        "118,119", "--congress", "-c", help="Congress numbers (comma-separated)"
+    ),
+    california: str = typer.Option(
+        "2023,2024", "--california", "-ca", help="CA years (comma-separated)"
+    ),
+    eos: str = typer.Option(
+        "2024,2025", "--eos", "-e", help="EO years (comma-separated)"
+    ),
+    states: str = typer.Option(
+        None, "--states", "-s", help="State abbreviations (comma-separated)"
+    ),
+    laws_only: bool = typer.Option(True, "--laws-only/--all-bills"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Start a full data ingestion workflow via Temporal.
+
+    Example:
+        civitas workflow ingest --congress 119 --wait
+    """
+    import asyncio
+    from civitas.workflows.client import start_full_ingestion
+
+    congress_nums = [int(c.strip()) for c in congress.split(",") if c.strip()]
+    ca_years = [int(y.strip()) for y in california.split(",") if y.strip()]
+    eo_years = [int(y.strip()) for y in eos.split(",") if y.strip()]
+    state_list = [s.strip() for s in states.split(",")] if states else None
+
+    console.print("[bold blue]Starting Full Ingestion Workflow...[/bold blue]")
+    console.print(f"  Congress: {congress_nums}")
+    console.print(f"  California: {ca_years}")
+    console.print(f"  Executive Orders: {eo_years}")
+    if state_list:
+        console.print(f"  States: {state_list}")
+
+    result = asyncio.run(
+        start_full_ingestion(
+            congress_numbers=congress_nums,
+            california_years=ca_years,
+            eo_years=eo_years,
+            states=state_list,
+            laws_only=laws_only,
+            wait=wait,
+        )
+    )
+
+    if wait:
+        console.print("\n[bold green]Workflow Complete![/bold green]")
+        console.print(f"  Sources processed: {result.total_sources}")
+        console.print(f"  Successful: {result.successful_sources}")
+        console.print(f"  Failed: {result.failed_sources}")
+        console.print(f"  Total records: {result.total_records}")
+        if result.errors:
+            console.print(f"\n[yellow]Errors ({len(result.errors)}):[/yellow]")
+            for err in result.errors[:5]:
+                console.print(f"  - {err}")
+    else:
+        console.print("\n[green]Workflow started. Use 'workflow status' to check progress.[/green]")
+
+
+@workflow_app.command("generate")
+def workflow_generate(
+    profiles: bool = typer.Option(True, "--profiles/--no-profiles", help="Generate justice profiles"),
+    analyses: bool = typer.Option(True, "--analyses/--no-analyses", help="Generate resistance analyses"),
+    recommendations: bool = typer.Option(True, "--recs/--no-recs", help="Generate recommendations"),
+    insights: bool = typer.Option(False, "--insights/--no-insights", help="Generate insights"),
+    batch_size: int = typer.Option(25, "--batch-size", "-b", help="Items per batch"),
+    max_batches: int = typer.Option(None, "--max-batches", "-m", help="Maximum batches"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Start AI content generation workflow via Temporal.
+
+    Example:
+        civitas workflow generate --analyses --recs --batch-size 10 --wait
+    """
+    import asyncio
+    from civitas.workflows.client import start_content_generation
+
+    console.print("[bold blue]Starting Content Generation Workflow...[/bold blue]")
+    console.print(f"  Profiles: {profiles}")
+    console.print(f"  Analyses: {analyses}")
+    console.print(f"  Recommendations: {recommendations}")
+    console.print(f"  Insights: {insights}")
+    console.print(f"  Batch size: {batch_size}")
+
+    result = asyncio.run(
+        start_content_generation(
+            generate_profiles=profiles,
+            generate_analyses=analyses,
+            generate_recommendations=recommendations,
+            generate_insights=insights,
+            analysis_batch_size=batch_size,
+            max_batches=max_batches,
+            wait=wait,
+        )
+    )
+
+    if wait:
+        console.print("\n[bold green]Workflow Complete![/bold green]")
+        console.print(f"  Profiles generated: {result.profiles_generated}")
+        console.print(f"  Analyses generated: {result.analyses_generated}")
+        console.print(f"  Recommendations generated: {result.recommendations_generated}")
+        console.print(f"  Insights generated: {result.insights_generated}")
+        console.print(f"  Total items: {result.total_items}")
+        console.print(f"  Total failures: {result.total_failures}")
+    else:
+        console.print("\n[green]Workflow started. Use 'workflow status' to check progress.[/green]")
+
+
+@workflow_app.command("resistance")
+def workflow_resistance(
+    batch_size: int = typer.Option(25, "--batch-size", "-b", help="Policies per batch"),
+    refresh_days: int = typer.Option(30, "--refresh-days", "-r", help="Refresh analyses older than N days"),
+    max_batches: int = typer.Option(None, "--max-batches", "-m", help="Maximum batches (None=all)"),
+    include_recs: bool = typer.Option(True, "--recs/--no-recs", help="Include recommendations"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Start resistance analysis workflow via Temporal.
+
+    This workflow generates expert-level constitutional analyses
+    and resistance recommendations for Project 2025 policies.
+
+    Example:
+        civitas workflow resistance --batch-size 10 --max-batches 5 --wait
+    """
+    import asyncio
+    from civitas.workflows.client import start_resistance_analysis
+
+    console.print("[bold blue]Starting Resistance Analysis Workflow...[/bold blue]")
+    console.print(f"  Batch size: {batch_size}")
+    console.print(f"  Refresh days: {refresh_days}")
+    console.print(f"  Max batches: {max_batches or 'unlimited'}")
+    console.print(f"  Include recommendations: {include_recs}")
+
+    result = asyncio.run(
+        start_resistance_analysis(
+            batch_size=batch_size,
+            refresh_days=refresh_days,
+            max_batches=max_batches,
+            include_recommendations=include_recs,
+            wait=wait,
+        )
+    )
+
+    if wait:
+        console.print("\n[bold green]Workflow Complete![/bold green]")
+        console.print(f"  Analyses generated: {result.analyses_generated}")
+        console.print(f"  Recommendations generated: {result.recommendations_generated}")
+        console.print(f"  Total items: {result.total_items}")
+        console.print(f"  Failures: {result.total_failures}")
+    else:
+        console.print("\n[green]Workflow started. Use 'workflow status' to check progress.[/green]")
+
+
+@workflow_app.command("list")
+def workflow_list(
+    workflow_type: str = typer.Option(None, "--type", "-t", help="Filter by workflow type"),
+    status: str = typer.Option(None, "--status", "-s", help="Filter by status (Running, Completed, Failed)"),
+    limit: int = typer.Option(20, "--limit", "-n", help="Maximum workflows to list"),
+):
+    """List recent workflows."""
+    import asyncio
+    from civitas.workflows.client import list_workflows
+
+    workflows = asyncio.run(list_workflows(workflow_type, status, limit))
+
+    if not workflows:
+        console.print("[yellow]No workflows found.[/yellow]")
+        return
+
+    table = Table(title="Recent Workflows")
+    table.add_column("Workflow ID", style="cyan")
+    table.add_column("Type", style="magenta")
+    table.add_column("Status", style="green")
+    table.add_column("Started", style="dim")
+
+    for wf in workflows:
+        status_style = {
+            "Running": "yellow",
+            "Completed": "green",
+            "Failed": "red",
+            "Cancelled": "dim",
+        }.get(wf["status"], "white")
+
+        table.add_row(
+            wf["workflow_id"],
+            wf["type"] or "-",
+            f"[{status_style}]{wf['status']}[/{status_style}]",
+            wf["start_time"][:19] if wf["start_time"] else "-",
+        )
+
+    console.print(table)
+
+
+@workflow_app.command("status")
+def workflow_status(
+    workflow_id: str = typer.Argument(..., help="Workflow ID to check"),
+):
+    """Get status of a specific workflow."""
+    import asyncio
+    from civitas.workflows.client import get_workflow_status
+
+    try:
+        status = asyncio.run(get_workflow_status(workflow_id))
+
+        console.print(Panel(
+            f"[bold]Workflow:[/bold] {status['workflow_id']}\n"
+            f"[bold]Type:[/bold] {status['workflow_type']}\n"
+            f"[bold]Status:[/bold] {status['status']}\n"
+            f"[bold]Started:[/bold] {status['start_time'] or 'N/A'}\n"
+            f"[bold]Completed:[/bold] {status['close_time'] or 'In Progress'}",
+            title="Workflow Status",
+        ))
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+@workflow_app.command("cancel")
+def workflow_cancel(
+    workflow_id: str = typer.Argument(..., help="Workflow ID to cancel"),
+):
+    """Cancel a running workflow."""
+    import asyncio
+    from civitas.workflows.client import cancel_workflow
+
+    try:
+        asyncio.run(cancel_workflow(workflow_id))
+        console.print(f"[green]Cancelled workflow: {workflow_id}[/green]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+
+# =============================================================================
+# Bay Navigator Workflow Commands
+# =============================================================================
+
+bnav_app = typer.Typer(help="Bay Navigator workflow commands")
+workflow_app.add_typer(bnav_app, name="bnav")
+
+
+@bnav_app.command("sync")
+def bnav_full_sync(
+    civic: bool = typer.Option(False, "--civic/--no-civic", help="Include civic council scraping"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Run full Bay Navigator data sync via Temporal.
+
+    Syncs transit, open data, parks, benefits, and optionally civic councils.
+
+    Example:
+        civitas workflow bnav sync --civic --wait
+    """
+    import asyncio
+    from uuid import uuid4
+    from civitas.workflows.worker import create_client, get_task_queue
+    from civitas.workflows.baynavigator import BayNavigatorFullSyncWorkflow
+
+    async def run():
+        client = await create_client()
+        workflow_id = f"bnav-sync-{uuid4().hex[:8]}"
+
+        handle = await client.start_workflow(
+            BayNavigatorFullSyncWorkflow.run,
+            civic,
+            id=workflow_id,
+            task_queue=get_task_queue(),
+        )
+
+        console.print(f"[green]Started workflow: {workflow_id}[/green]")
+
+        if wait:
+            result = await handle.result()
+            return result
+        return None
+
+    console.print("[bold blue]Starting Bay Navigator Full Sync...[/bold blue]")
+    console.print(f"  Include civic scraping: {civic}")
+
+    result = asyncio.run(run())
+
+    if result:
+        console.print("\n[bold green]Sync Complete![/bold green]")
+        console.print(f"  Scripts run: {result.total_scripts}")
+        console.print(f"  Successful: {result.successful}")
+        console.print(f"  Failed: {result.failed}")
+        if result.errors:
+            console.print(f"\n[yellow]Errors ({len(result.errors)}):[/yellow]")
+            for err in result.errors[:5]:
+                console.print(f"  - {err[:100]}")
+    else:
+        console.print("\n[green]Workflow started. Use 'workflow list' to check progress.[/green]")
+
+
+@bnav_app.command("civic")
+def bnav_civic_scrape(
+    blocked: bool = typer.Option(False, "--blocked/--no-blocked", help="Include slow Playwright scraping"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Scrape city council data from multiple platforms.
+
+    Scrapes: CivicPlus, Granicus, ProudCity, Legistar, Wikipedia.
+
+    Example:
+        civitas workflow bnav civic --wait
+    """
+    import asyncio
+    from uuid import uuid4
+    from civitas.workflows.worker import create_client, get_task_queue
+    from civitas.workflows.baynavigator import CivicDataWorkflow
+
+    async def run():
+        client = await create_client()
+        workflow_id = f"bnav-civic-{uuid4().hex[:8]}"
+
+        handle = await client.start_workflow(
+            CivicDataWorkflow.run,
+            blocked,
+            id=workflow_id,
+            task_queue=get_task_queue(),
+        )
+
+        console.print(f"[green]Started workflow: {workflow_id}[/green]")
+
+        if wait:
+            return await handle.result()
+        return None
+
+    console.print("[bold blue]Starting Civic Data Collection...[/bold blue]")
+    console.print(f"  Include blocked sites: {blocked}")
+
+    result = asyncio.run(run())
+
+    if result:
+        console.print("\n[bold green]Civic Scraping Complete![/bold green]")
+        console.print(f"  Scrapers run: {result.total_scripts}")
+        console.print(f"  Successful: {result.successful}")
+        console.print(f"  Failed: {result.failed}")
+    else:
+        console.print("\n[green]Workflow started.[/green]")
+
+
+@bnav_app.command("opendata")
+def bnav_open_data(
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Sync open data from Bay Area city portals.
+
+    Daily sync from Socrata-powered open data portals.
+
+    Example:
+        civitas workflow bnav opendata --wait
+    """
+    import asyncio
+    from uuid import uuid4
+    from civitas.workflows.worker import create_client, get_task_queue
+    from civitas.workflows.baynavigator import OpenDataSyncWorkflow
+
+    async def run():
+        client = await create_client()
+        workflow_id = f"bnav-opendata-{uuid4().hex[:8]}"
+
+        handle = await client.start_workflow(
+            OpenDataSyncWorkflow.run,
+            id=workflow_id,
+            task_queue=get_task_queue(),
+        )
+
+        console.print(f"[green]Started workflow: {workflow_id}[/green]")
+
+        if wait:
+            return await handle.result()
+        return None
+
+    console.print("[bold blue]Starting Open Data Sync...[/bold blue]")
+
+    result = asyncio.run(run())
+
+    if result:
+        console.print("\n[bold green]Open Data Sync Complete![/bold green]")
+        console.print(f"  Steps: {result.total_scripts}")
+        console.print(f"  Successful: {result.successful}")
+    else:
+        console.print("\n[green]Workflow started.[/green]")
+
+
+@bnav_app.command("api")
+def bnav_generate_api(
+    simple: bool = typer.Option(False, "--simple/--no-simple", help="Include AI simple language generation"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Generate Bay Navigator API files.
+
+    Generates: programs.json, GeoJSON, search index, city contacts.
+
+    Example:
+        civitas workflow bnav api --simple --wait
+    """
+    import asyncio
+    from uuid import uuid4
+    from civitas.workflows.worker import create_client, get_task_queue
+    from civitas.workflows.baynavigator import APIGenerationWorkflow
+
+    async def run():
+        client = await create_client()
+        workflow_id = f"bnav-api-{uuid4().hex[:8]}"
+
+        handle = await client.start_workflow(
+            APIGenerationWorkflow.run,
+            simple,
+            id=workflow_id,
+            task_queue=get_task_queue(),
+        )
+
+        console.print(f"[green]Started workflow: {workflow_id}[/green]")
+
+        if wait:
+            return await handle.result()
+        return None
+
+    console.print("[bold blue]Starting API Generation...[/bold blue]")
+    console.print(f"  Include simple language: {simple}")
+
+    result = asyncio.run(run())
+
+    if result:
+        console.print("\n[bold green]API Generation Complete![/bold green]")
+        console.print(f"  Files generated: {result.successful}")
+    else:
+        console.print("\n[green]Workflow started.[/green]")
+
+
+@bnav_app.command("validate")
+def bnav_validate(
+    links: bool = typer.Option(False, "--links/--no-links", help="Include link validation (slow)"),
+    wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
+):
+    """Run Bay Navigator data validation.
+
+    Validates: schema, duplicates, freshness, coordinates, and optionally links.
+
+    Example:
+        civitas workflow bnav validate --links --wait
+    """
+    import asyncio
+    from uuid import uuid4
+    from civitas.workflows.worker import create_client, get_task_queue
+    from civitas.workflows.baynavigator import ValidationWorkflow
+
+    async def run():
+        client = await create_client()
+        workflow_id = f"bnav-validate-{uuid4().hex[:8]}"
+
+        handle = await client.start_workflow(
+            ValidationWorkflow.run,
+            links,
+            id=workflow_id,
+            task_queue=get_task_queue(),
+        )
+
+        console.print(f"[green]Started workflow: {workflow_id}[/green]")
+
+        if wait:
+            return await handle.result()
+        return None
+
+    console.print("[bold blue]Starting Validation...[/bold blue]")
+    console.print(f"  Include link validation: {links}")
+
+    result = asyncio.run(run())
+
+    if result:
+        console.print("\n[bold green]Validation Complete![/bold green]")
+        console.print(f"  Checks run: {result.total_scripts}")
+        console.print(f"  Passed: {result.successful}")
+        console.print(f"  Failed: {result.failed}")
+        if result.errors:
+            console.print(f"\n[yellow]Issues ({len(result.errors)}):[/yellow]")
+            for err in result.errors[:5]:
+                console.print(f"  - {err[:100]}")
+    else:
+        console.print("\n[green]Workflow started.[/green]")
+
+
+# =============================================================================
 # Main
 # =============================================================================
 

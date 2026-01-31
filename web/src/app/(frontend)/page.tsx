@@ -7,29 +7,48 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function HomePage() {
   return (
-    <div className="container py-8 space-y-8">
-        {/* Hero Section */}
-        <section className="text-center py-8">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Protecting American Democracy
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Fighting Project 2025 implementation through transparency,
-            accountability, and collective action.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/tracker">
-              <Button size="lg" variant="action">
-                Explore Tracker
-              </Button>
-            </Link>
-            <Link href="/resistance">
-              <Button size="lg" variant="outline">
-                Take Action
-              </Button>
-            </Link>
+    <div className="space-y-8">
+        {/* Hero Section with Video Background */}
+        <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+          {/* Video Background */}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/videos/hero-background.webm" type="video/webm" />
+          </video>
+
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-black/60" />
+
+          {/* Content */}
+          <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6 text-white drop-shadow-lg">
+              Protecting American Democracy
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto mb-8 drop-shadow">
+              Fighting Project 2025 implementation through transparency,
+              accountability, and collective action.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/tracker">
+                <Button size="lg" variant="action" className="text-lg px-8 py-6">
+                  Explore Tracker
+                </Button>
+              </Link>
+              <Link href="/resistance">
+                <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-white/10 hover:bg-white/20 text-white border-white/30">
+                  Take Action
+                </Button>
+              </Link>
+            </div>
           </div>
         </section>
+
+        <div className="container py-8 space-y-8">
 
         {/* What is Project 2025 */}
         <section>
@@ -214,6 +233,7 @@ export default function HomePage() {
             </CardHeader>
           </Card>
         </section>
+        </div>
       </div>
   );
 }

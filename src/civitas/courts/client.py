@@ -119,12 +119,15 @@ class CourtListenerClient:
             "page_size": min(limit, 100),
         }
 
+        # Use cluster__docket__court for the opinions endpoint
+        # See: https://www.courtlistener.com/help/api/rest/case-law/
         if court:
-            params["court"] = court
+            params["cluster__docket__court"] = court
+        # Use date_created filters as date_filed is not a valid filter
         if filed_after:
-            params["date_filed__gte"] = filed_after.isoformat()
+            params["date_created__gte"] = filed_after.isoformat()
         if filed_before:
-            params["date_filed__lte"] = filed_before.isoformat()
+            params["date_created__lte"] = filed_before.isoformat()
 
         response = self._get("/search/", params=params)
 
@@ -167,15 +170,18 @@ class CourtListenerClient:
         """Get opinions within a date range."""
         params = {
             "page_size": min(page_size, 100),
-            "order_by": "-date_filed",
+            "order_by": "-date_created",
         }
 
+        # Use cluster__docket__court for the opinions endpoint
+        # See: https://www.courtlistener.com/help/api/rest/case-law/
         if court:
-            params["court"] = court
+            params["cluster__docket__court"] = court
+        # Use date_created filters as date_filed is not a valid filter on opinions
         if filed_after:
-            params["date_filed__gte"] = filed_after.isoformat()
+            params["date_created__gte"] = filed_after.isoformat()
         if filed_before:
-            params["date_filed__lte"] = filed_before.isoformat()
+            params["date_created__lte"] = filed_before.isoformat()
 
         remaining = limit if limit is not None else None
         url = "/opinions/"
@@ -287,11 +293,12 @@ class CourtListenerClient:
             CourtListenerOpinion objects authored by the justice
         """
         # Search for opinions where the justice is listed as author
+        # Use cluster__docket__court for court filtering
         params = {
-            "court": "scotus",
+            "cluster__docket__court": "scotus",
             "author": justice_name,
             "page_size": min(limit, 100),
-            "order_by": "-date_filed",
+            "order_by": "-date_created",
         }
 
         remaining = limit

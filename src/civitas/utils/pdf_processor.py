@@ -12,7 +12,6 @@ import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import BinaryIO
 
 
 def has_ocrmypdf() -> bool:

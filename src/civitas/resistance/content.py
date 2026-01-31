@@ -8,7 +8,7 @@ I'm calling to urge [REP NAME] to oppose [SPECIFIC POLICY/ACTION].
 
 [ONE SENTENCE: Why this matters to you personally]
 
-I'd like to know the [Senator/Representative]'s position on this issue. Can someone call me back at [PHONE]?
+I'd like to know [Senator/Representative]'s position. Can someone call me back at [PHONE]?
 
 Thank you for your time.""",
     "support_bill": """Hi, my name is [NAME] and I'm a constituent from [CITY/ZIP].
@@ -188,7 +188,7 @@ RESISTANCE_TIERS = [
                 "urgency": "medium",
                 "how_to": [
                     "Research candidates running in competitive districts",
-                    "Small donations ($10-50) early in campaign matter MORE than big donations later",
+                    "Small early donations ($10-50) matter MORE than big donations later",
                     "Sign up to volunteer - door knocking and phone banking win elections",
                     "Host or attend house parties for candidates you support",
                 ],

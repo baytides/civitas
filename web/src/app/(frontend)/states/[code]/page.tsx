@@ -235,6 +235,7 @@ export default function StateDetailPage() {
                                   : "P2025 Related"}
                             </Badge>
                           )}
+                        </div>
                       </div>
                     </div>
                   ))}

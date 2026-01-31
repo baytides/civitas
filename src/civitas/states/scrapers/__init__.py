@@ -1,10 +1,6 @@
 """State legislature scrapers for Civitas.
 
-This module provides direct scraping of state legislature websites,
-bypassing the OpenStates API rate limits.
-
-Architecture mirrors OpenStates scrapers (GPL-3.0) but reimplemented
-for direct Civitas integration.
+This module provides direct scraping of state legislature websites.
 
 Usage:
     from civitas.states.scrapers import get_scraper, list_available_scrapers

@@ -1396,11 +1396,10 @@ def ingest_state_bills(
     limit: int = typer.Option(500, "-n", "--limit", help="Max bills to fetch"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
-    """Ingest state bills from Open States API (disabled)."""
-    console.print("[yellow]OpenStates API ingestion is disabled.[/yellow]")
-    console.print("Use one of these instead:")
-    console.print("  - civitas ingest scrape-state  (direct scrape)")
-    console.print("  - civitas ingest openstates-bulk  (monthly dump)")
+    """Ingest state bills (use state-specific commands)."""
+    console.print("[yellow]Use state-specific ingestion:[/yellow]")
+    console.print("  - civitas ingest california <year>  (California)")
+    console.print("  - civitas ingest scrape-state  (other states)")
     return
 
 
@@ -1409,11 +1408,10 @@ def ingest_state_legislators(
     state: str = typer.Argument(..., help="Two-letter state code (e.g., 'ca', 'ny')"),
     db_path: str = typer.Option("civitas.db", "--db", help="Database path"),
 ):
-    """Ingest state legislators from Open States API (disabled)."""
-    console.print("[yellow]OpenStates API ingestion is disabled.[/yellow]")
-    console.print("Use one of these instead:")
-    console.print("  - civitas ingest scrape-state  (direct scrape)")
-    console.print("  - civitas ingest openstates-bulk  (monthly dump)")
+    """Ingest state legislators (use state-specific commands)."""
+    console.print("[yellow]Use state-specific ingestion:[/yellow]")
+    console.print("  - civitas ingest california <year>  (California)")
+    console.print("  - civitas ingest scrape-state  (other states)")
     return
 
 

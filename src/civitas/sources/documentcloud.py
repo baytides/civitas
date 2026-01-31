@@ -301,11 +301,7 @@ class DocumentCloudClient:
         Returns:
             True if authentication method is available
         """
-        return bool(
-            (self.username and self.password)
-            or self._access_token
-            or self._refresh_token
-        )
+        return bool((self.username and self.password) or self._access_token or self._refresh_token)
 
     def test_connection(self) -> bool:
         """Test the connection to DocumentCloud.

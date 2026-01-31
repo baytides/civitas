@@ -174,14 +174,14 @@ async def get_objective_stats(
 
     # Calculate completion percentage - only count actually enacted/completed items
     # "in_progress" just means the objective is being tracked, not 50% done
-    # "proposed" means not yet acted on
+    # "not_started" means not yet acted on
     completed = by_status.get("completed", 0)
     enacted = by_status.get("enacted", 0)
-    blocked = by_status.get("blocked", 0)
-    # Completion = enacted items as a percentage of total (excluding blocked)
+    # Completion = enacted OR completed items (they're synonymous, don't double count)
     # This represents "how much of Project 2025 has been implemented"
+    implemented = max(completed, enacted)  # Use max to avoid double counting
     completion_percentage = (
-        ((completed + enacted) / total * 100) if total > 0 else 0
+        (implemented / total * 100) if total > 0 else 0
     )
 
     return ObjectiveStats(

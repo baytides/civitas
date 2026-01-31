@@ -319,9 +319,7 @@ def update_database(policies: list[Policy], db_path: str = None):
             implementation_timeline=p.timeline,
             status=p.status,
             confidence=p.confidence,
-            title=p.title,
-            title_short=p.title[:100] if p.title else None,
-            title_full=p.title,
+            short_title=p.title[:300] if p.title else None,
         )
         session.add(db_policy)
 

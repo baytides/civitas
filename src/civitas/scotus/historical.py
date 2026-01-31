@@ -155,9 +155,7 @@ class HistoricalSCOTUSScraper:
             return int(match.group(1)), int(match.group(2))
         return None, None
 
-    def _extract_authors_from_text(
-        self, text: str | None
-    ) -> dict[str, list[str]]:
+    def _extract_authors_from_text(self, text: str | None) -> dict[str, list[str]]:
         """Extract author names from opinion text."""
         if not text:
             return {"majority": [], "dissent": [], "concurrence": []}
@@ -453,9 +451,7 @@ class HistoricalSCOTUSScraper:
         self.session.flush()  # Get the ID
 
         # Link opinions to justices
-        self._link_opinions_to_case(
-            court_case.id, majority_author, authors, opinion.opinion_type
-        )
+        self._link_opinions_to_case(court_case.id, majority_author, authors, opinion.opinion_type)
 
         return "inserted"
 
@@ -476,9 +472,7 @@ class HistoricalSCOTUSScraper:
         # Link majority author
         if majority_author:
             justice_id = self._find_justice_id(majority_author)
-            if self._create_opinion_link(
-                case_id, justice_id, majority_author, "majority"
-            ):
+            if self._create_opinion_link(case_id, justice_id, majority_author, "majority"):
                 linked += 1
 
         # Link dissenting justices
@@ -547,9 +541,7 @@ class HistoricalSCOTUSScraper:
         self._load_justice_cache()
 
         unlinked = (
-            self.session.query(JusticeOpinion)
-            .filter(JusticeOpinion.justice_id.is_(None))
-            .all()
+            self.session.query(JusticeOpinion).filter(JusticeOpinion.justice_id.is_(None)).all()
         )
 
         linked = 0
@@ -574,9 +566,7 @@ class HistoricalSCOTUSScraper:
             Dict with counts
         """
         total_cases = (
-            self.session.query(CourtCase)
-            .filter(CourtCase.court_level == "scotus")
-            .count()
+            self.session.query(CourtCase).filter(CourtCase.court_level == "scotus").count()
         )
 
         with_author = (
@@ -590,9 +580,7 @@ class HistoricalSCOTUSScraper:
 
         total_opinions = self.session.query(JusticeOpinion).count()
         linked_opinions = (
-            self.session.query(JusticeOpinion)
-            .filter(JusticeOpinion.justice_id.isnot(None))
-            .count()
+            self.session.query(JusticeOpinion).filter(JusticeOpinion.justice_id.isnot(None)).count()
         )
 
         # Date range

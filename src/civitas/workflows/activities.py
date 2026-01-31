@@ -141,6 +141,7 @@ async def ingest_california(session_year: int) -> IngestionResult:
         ingester = DataIngester()
 
         with Session(engine) as session:
+
             def progress_callback(current: int, total: int, message: str = ""):
                 activity.heartbeat(f"CA {session_year}: {current}/{total} - {message}")
 
@@ -200,9 +201,11 @@ async def ingest_executive_orders(year: int) -> IngestionResult:
 
             for eo_data in eos:
                 # Check if exists
-                existing = session.query(ExecutiveOrder).filter_by(
-                    document_number=eo_data.get("document_number")
-                ).first()
+                existing = (
+                    session.query(ExecutiveOrder)
+                    .filter_by(document_number=eo_data.get("document_number"))
+                    .first()
+                )
 
                 if not existing:
                     eo = ExecutiveOrder(**eo_data)
@@ -377,9 +380,7 @@ async def generate_justice_profiles(
         generator = JusticeProfileGenerator()
 
         with Session(engine) as session:
-            justices = generator.get_justices_needing_profiles(
-                session, force=force, limit=limit
-            )
+            justices = generator.get_justices_needing_profiles(session, force=force, limit=limit)
             total = len(justices)
             activity.heartbeat(f"Found {total} justices needing profiles")
 

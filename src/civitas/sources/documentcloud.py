@@ -90,9 +90,7 @@ class DocumentCloudClient:
             try:
                 from documentcloud import DocumentCloud
             except ImportError:
-                raise ImportError(
-                    "documentcloud not installed. pip install documentcloud"
-                )
+                raise ImportError("documentcloud not installed. pip install documentcloud")
 
             if self.username and self.password:
                 self._client = DocumentCloud(self.username, self.password)
@@ -100,8 +98,7 @@ class DocumentCloudClient:
             else:
                 self._client = DocumentCloud()
                 console.print(
-                    "[yellow]Using DocumentCloud without authentication "
-                    "(limited access)[/yellow]"
+                    "[yellow]Using DocumentCloud without authentication (limited access)[/yellow]"
                 )
 
         return self._client
@@ -142,10 +139,12 @@ class DocumentCloudClient:
             mentions = []
             if include_mentions and hasattr(doc, "mentions"):
                 for m in doc.mentions:
-                    mentions.append({
-                        "page": m.page,
-                        "text": m.text,
-                    })
+                    mentions.append(
+                        {
+                            "page": m.page,
+                            "text": m.text,
+                        }
+                    )
 
             results.append(DCSearchResult(document=dc_doc, mentions=mentions))
 

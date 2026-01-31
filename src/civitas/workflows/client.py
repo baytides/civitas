@@ -299,13 +299,15 @@ async def list_workflows(
 
     workflows = []
     async for workflow in client.list_workflows(query=query):
-        workflows.append({
-            "workflow_id": workflow.id,
-            "run_id": workflow.run_id,
-            "type": workflow.workflow_type,
-            "status": workflow.status.name,
-            "start_time": workflow.start_time.isoformat() if workflow.start_time else None,
-        })
+        workflows.append(
+            {
+                "workflow_id": workflow.id,
+                "run_id": workflow.run_id,
+                "type": workflow.workflow_type,
+                "status": workflow.status.name,
+                "start_time": workflow.start_time.isoformat() if workflow.start_time else None,
+            }
+        )
         if len(workflows) >= limit:
             break
 

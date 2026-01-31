@@ -212,10 +212,7 @@ class ContentGenerationWorkflow:
 
         # Calculate totals
         total_items = (
-            profiles_generated
-            + analyses_generated
-            + recommendations_generated
-            + insights_generated
+            profiles_generated + analyses_generated + recommendations_generated + insights_generated
         )
         total_failures = sum(r.items_failed for r in results)
 

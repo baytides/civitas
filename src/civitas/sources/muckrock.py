@@ -108,9 +108,7 @@ class MuckRockClient:
             try:
                 from muckrock import MuckRock
             except ImportError:
-                raise ImportError(
-                    "python-muckrock not installed. pip install python-muckrock"
-                )
+                raise ImportError("python-muckrock not installed. pip install python-muckrock")
 
             if not self.username or not self.password:
                 raise ValueError(
@@ -152,19 +150,23 @@ class MuckRockClient:
             jurisdiction_name = (
                 jurisdiction_attr.get("name") if hasattr(req, "jurisdiction") else None
             )
-            results.append(FOIARequest(
-                id=req.id,
-                title=getattr(req, "title", ""),
-                status=getattr(req, "status", ""),
-                agency=getattr(req, "agency", {}).get("name") if hasattr(req, "agency") else None,
-                jurisdiction=jurisdiction_name,
-                user=getattr(req, "user", {}).get("username") if hasattr(req, "user") else None,
-                date_submitted=str(getattr(req, "date_submitted", "")),
-                date_due=str(getattr(req, "date_due", "")),
-                date_done=str(getattr(req, "date_done", "")),
-                tracking_id=getattr(req, "tracking_id", None),
-                tags=getattr(req, "tags", []),
-            ))
+            results.append(
+                FOIARequest(
+                    id=req.id,
+                    title=getattr(req, "title", ""),
+                    status=getattr(req, "status", ""),
+                    agency=getattr(req, "agency", {}).get("name")
+                    if hasattr(req, "agency")
+                    else None,
+                    jurisdiction=jurisdiction_name,
+                    user=getattr(req, "user", {}).get("username") if hasattr(req, "user") else None,
+                    date_submitted=str(getattr(req, "date_submitted", "")),
+                    date_due=str(getattr(req, "date_due", "")),
+                    date_done=str(getattr(req, "date_done", "")),
+                    tracking_id=getattr(req, "tracking_id", None),
+                    tags=getattr(req, "tags", []),
+                )
+            )
 
             count += 1
             if count >= limit:
@@ -221,14 +223,16 @@ class MuckRockClient:
 
             for comm in comms:
                 for f in comm.get_files():
-                    files.append(FOIAFile(
-                        id=getattr(f, "id", 0),
-                        title=getattr(f, "title", ""),
-                        file_url=getattr(f, "ffile", ""),
-                        doc_id=getattr(f, "doc_id", None),
-                        pages=getattr(f, "pages", 0),
-                        date=str(getattr(f, "date", "")),
-                    ))
+                    files.append(
+                        FOIAFile(
+                            id=getattr(f, "id", 0),
+                            title=getattr(f, "title", ""),
+                            file_url=getattr(f, "ffile", ""),
+                            doc_id=getattr(f, "doc_id", None),
+                            pages=getattr(f, "pages", 0),
+                            date=str(getattr(f, "date", "")),
+                        )
+                    )
 
         except Exception as e:
             console.print(f"[red]Error fetching files for request {request_id}: {e}[/red]")

@@ -738,9 +738,7 @@ def scrape_all_scotus_historical(
         console.print(
             "[yellow]Warning: No COURT_LISTENER_TOKEN set. Rate limits will be restricted.[/yellow]"
         )
-        console.print(
-            "[yellow]Get a token at: https://www.courtlistener.com/sign-in/[/yellow]"
-        )
+        console.print("[yellow]Get a token at: https://www.courtlistener.com/sign-in/[/yellow]")
         console.print()
 
     end = end_year or date.today().year
@@ -788,7 +786,9 @@ def scrape_all_scotus_historical(
     console.print("[bold]Final database stats:[/bold]")
     console.print(f"  Total SCOTUS cases: {final_stats['total_scotus_cases']}")
     console.print(f"  Cases with author: {final_stats['cases_with_author']}")
-    console.print(f"  Date range: {final_stats['oldest_case_date']} to {final_stats['newest_case_date']}")
+    console.print(
+        f"  Date range: {final_stats['oldest_case_date']} to {final_stats['newest_case_date']}"
+    )
 
 
 @scotus_app.command("stats")
@@ -815,10 +815,8 @@ def show_scotus_stats(
     console.print(f"  Justice opinion links: {stats['total_justice_opinions']}")
     console.print(f"  Linked to justices: {stats['linked_justice_opinions']}")
     console.print()
-    if stats['oldest_case_date']:
-        console.print(
-            f"  Date range: {stats['oldest_case_date']} to {stats['newest_case_date']}"
-        )
+    if stats["oldest_case_date"]:
+        console.print(f"  Date range: {stats['oldest_case_date']} to {stats['newest_case_date']}")
 
 
 @ingest_app.command("executive-orders")
@@ -3114,9 +3112,7 @@ def workflow_ingest(
     california: str = typer.Option(
         "2023,2024", "--california", "-ca", help="CA years (comma-separated)"
     ),
-    eos: str = typer.Option(
-        "2024,2025", "--eos", "-e", help="EO years (comma-separated)"
-    ),
+    eos: str = typer.Option("2024,2025", "--eos", "-e", help="EO years (comma-separated)"),
     states: str = typer.Option(
         None, "--states", "-s", help="State abbreviations (comma-separated)"
     ),
@@ -3171,8 +3167,12 @@ def workflow_ingest(
 
 @workflow_app.command("generate")
 def workflow_generate(
-    profiles: bool = typer.Option(True, "--profiles/--no-profiles", help="Generate justice profiles"),
-    analyses: bool = typer.Option(True, "--analyses/--no-analyses", help="Generate resistance analyses"),
+    profiles: bool = typer.Option(
+        True, "--profiles/--no-profiles", help="Generate justice profiles"
+    ),
+    analyses: bool = typer.Option(
+        True, "--analyses/--no-analyses", help="Generate resistance analyses"
+    ),
     recommendations: bool = typer.Option(True, "--recs/--no-recs", help="Generate recommendations"),
     insights: bool = typer.Option(False, "--insights/--no-insights", help="Generate insights"),
     batch_size: int = typer.Option(25, "--batch-size", "-b", help="Items per batch"),
@@ -3222,7 +3222,9 @@ def workflow_generate(
 @workflow_app.command("resistance")
 def workflow_resistance(
     batch_size: int = typer.Option(25, "--batch-size", "-b", help="Policies per batch"),
-    refresh_days: int = typer.Option(30, "--refresh-days", "-r", help="Refresh analyses older than N days"),
+    refresh_days: int = typer.Option(
+        30, "--refresh-days", "-r", help="Refresh analyses older than N days"
+    ),
     max_batches: int = typer.Option(None, "--max-batches", "-m", help="Maximum batches (None=all)"),
     include_recs: bool = typer.Option(True, "--recs/--no-recs", help="Include recommendations"),
     wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
@@ -3268,7 +3270,9 @@ def workflow_resistance(
 @workflow_app.command("list")
 def workflow_list(
     workflow_type: str = typer.Option(None, "--type", "-t", help="Filter by workflow type"),
-    status: str = typer.Option(None, "--status", "-s", help="Filter by status (Running, Completed, Failed)"),
+    status: str = typer.Option(
+        None, "--status", "-s", help="Filter by status (Running, Completed, Failed)"
+    ),
     limit: int = typer.Option(20, "--limit", "-n", help="Maximum workflows to list"),
 ):
     """List recent workflows."""
@@ -3318,14 +3322,16 @@ def workflow_status(
     try:
         status = asyncio.run(get_workflow_status(workflow_id))
 
-        console.print(Panel(
-            f"[bold]Workflow:[/bold] {status['workflow_id']}\n"
-            f"[bold]Type:[/bold] {status['workflow_type']}\n"
-            f"[bold]Status:[/bold] {status['status']}\n"
-            f"[bold]Started:[/bold] {status['start_time'] or 'N/A'}\n"
-            f"[bold]Completed:[/bold] {status['close_time'] or 'In Progress'}",
-            title="Workflow Status",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Workflow:[/bold] {status['workflow_id']}\n"
+                f"[bold]Type:[/bold] {status['workflow_type']}\n"
+                f"[bold]Status:[/bold] {status['status']}\n"
+                f"[bold]Started:[/bold] {status['start_time'] or 'N/A'}\n"
+                f"[bold]Completed:[/bold] {status['close_time'] or 'In Progress'}",
+                title="Workflow Status",
+            )
+        )
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
 
@@ -3410,7 +3416,9 @@ def bnav_full_sync(
 
 @bnav_app.command("civic")
 def bnav_civic_scrape(
-    blocked: bool = typer.Option(False, "--blocked/--no-blocked", help="Include slow Playwright scraping"),
+    blocked: bool = typer.Option(
+        False, "--blocked/--no-blocked", help="Include slow Playwright scraping"
+    ),
     wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
 ):
     """Scrape city council data from multiple platforms.
@@ -3504,7 +3512,9 @@ def bnav_open_data(
 
 @bnav_app.command("api")
 def bnav_generate_api(
-    simple: bool = typer.Option(False, "--simple/--no-simple", help="Include AI simple language generation"),
+    simple: bool = typer.Option(
+        False, "--simple/--no-simple", help="Include AI simple language generation"
+    ),
     wait: bool = typer.Option(False, "--wait", "-w", help="Wait for completion"),
 ):
     """Generate Bay Navigator API files.

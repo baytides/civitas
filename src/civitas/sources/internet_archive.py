@@ -341,17 +341,13 @@ class InternetArchiveClient:
                     # Find text file
                     text_files = full_item.text_files
                     if not text_files:
-                        console.print(
-                            f"[yellow]No text file for {item.identifier}[/yellow]"
-                        )
+                        console.print(f"[yellow]No text file for {item.identifier}[/yellow]")
                         progress.advance(task)
                         continue
 
                     # Download text
                     text_file = text_files[0]
-                    text_content = self.download_text(
-                        item.identifier, text_file["name"]
-                    )
+                    text_content = self.download_text(item.identifier, text_file["name"])
 
                     # Save locally
                     dest_dir = self.data_dir / "us-reports"
@@ -413,9 +409,7 @@ class InternetArchiveClient:
         Yields:
             DownloadedDocument objects
         """
-        console.print(
-            "[bold blue]Fetching Historical Executive Orders...[/bold blue]"
-        )
+        console.print("[bold blue]Fetching Historical Executive Orders...[/bold blue]")
 
         # The main EO collection
         identifier = "PresidentialExecutiveOrdersVolume1"
@@ -518,9 +512,7 @@ class InternetArchiveClient:
             task = progress.add_task("Downloading...", total=len(items))
 
             for item in items:
-                progress.update(
-                    task, description=f"Downloading {item.identifier[:40]}..."
-                )
+                progress.update(task, description=f"Downloading {item.identifier[:40]}...")
 
                 try:
                     full_item = self.get_item_metadata(item.identifier)
@@ -531,9 +523,7 @@ class InternetArchiveClient:
                         continue
 
                     text_file = text_files[0]
-                    text_content = self.download_text(
-                        item.identifier, text_file["name"]
-                    )
+                    text_content = self.download_text(item.identifier, text_file["name"])
 
                     dest_dir = self.data_dir / "congressional-record"
                     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -571,9 +561,7 @@ class InternetArchiveClient:
                     )
 
                 except Exception as e:
-                    console.print(
-                        f"[red]Error downloading {item.identifier}: {e}[/red]"
-                    )
+                    console.print(f"[red]Error downloading {item.identifier}: {e}[/red]")
 
                 progress.advance(task)
 

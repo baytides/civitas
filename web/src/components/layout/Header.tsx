@@ -16,7 +16,7 @@ const navigation = [
   { name: "Timeline", href: "/timeline" },
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
 function useThreatLevel() {
   const [threat, setThreat] = React.useState({ label: "...", color: "bg-muted text-muted-foreground" });

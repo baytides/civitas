@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CsvExport } from "@/components/CsvExport";
 import { cn, snakeToTitle } from "@/lib/utils";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
 interface APIObjective {
   id: number;

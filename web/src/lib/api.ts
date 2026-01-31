@@ -4,7 +4,7 @@
  * from Congress.gov, state legislatures, courts, etc.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
 // Types matching FastAPI schemas
 export interface ObjectiveBase {

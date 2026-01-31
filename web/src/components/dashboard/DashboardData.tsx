@@ -5,7 +5,7 @@ import Link from "next/link";
 import { StatsGrid } from "./StatsGrid";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://api.projectcivitas.com/api/v1";
 
 interface DashboardStats {
   totalPolicies: number;

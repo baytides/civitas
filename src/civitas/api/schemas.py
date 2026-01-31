@@ -420,13 +420,21 @@ class BlockedPolicy(BaseModel):
     blocked_date: date | None = None
 
 
+class ResistanceResource(BaseModel):
+    """Resource link for resistance actions."""
+
+    name: str
+    url: str
+
+
 class ResistanceTierAction(BaseModel):
     """General action used in tier overviews."""
 
     title: str
     description: str
     urgency: str
-    resources: list[str]
+    how_to: list[str] = []
+    resources: list[ResistanceResource] = []
 
 
 class ResistanceTier(BaseModel):

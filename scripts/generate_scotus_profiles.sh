@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generate SCOTUS justice profiles via Carl (Ollama).
+# Generate SCOTUS justice profiles via Ollama (Bay Tides).
 # Required env:
-#   OLLAMA_HOST (Carl VM, e.g. http://20.98.70.48:11434)
+#   OLLAMA_HOST (e.g. https://ollama.baytides.org)
 # Optional env:
 #   OLLAMA_MODEL (default: llama3.2)
 #   DATABASE_URL (or pass --db)

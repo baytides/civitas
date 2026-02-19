@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from civitas.ai.prompts import load_prompt
 
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 
 
@@ -167,8 +167,8 @@ Output must be a JSON array of objects. Each object must contain:
 
 Respond in JSON format with an array of recommendations."""
         system_prompt = load_prompt(
-            path_env="CARL_RESISTANCE_RECOMMEND_PROMPT_PATH",
-            inline_env="CARL_RESISTANCE_RECOMMEND_PROMPT",
+            path_env="BAYTIDES_RESISTANCE_RECOMMEND_PROMPT_PATH",
+            inline_env="BAYTIDES_RESISTANCE_RECOMMEND_PROMPT",
             fallback=default_system_prompt,
         )
 

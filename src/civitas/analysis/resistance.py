@@ -95,7 +95,7 @@ class ResistanceContent:
 class ResistanceGenerator:
     """Generate detailed resistance content using Ollama/Llama AI.
 
-    Uses Azure-hosted Ollama to generate:
+    Uses Ollama via Bay Tides API to generate:
     - Legal challenge outlines
     - Organizing guides
     - Advocacy strategies
@@ -108,7 +108,7 @@ class ResistanceGenerator:
         model: str | None = None,
         timeout: float = 180.0,  # Longer timeout for detailed content
     ):
-        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.2")
         self.timeout = timeout
         self._client = httpx.Client(timeout=timeout)

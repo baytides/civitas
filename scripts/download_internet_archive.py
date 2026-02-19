@@ -8,7 +8,7 @@ This script downloads:
 - Federal Register volumes
 
 All documents are uploaded to Azure Blob Storage and can optionally be
-sent to Carl (Ollama server) for AI analysis.
+sent to Ollama (via Bay Tides) for AI analysis.
 
 Usage:
     # Download everything
@@ -17,8 +17,8 @@ Usage:
     # Download only US Reports
     python scripts/download_internet_archive.py --us-reports-only
 
-    # Download and immediately process with Carl
-    python scripts/download_internet_archive.py --process-with-carl
+    # Download and immediately process with AI
+    python scripts/download_internet_archive.py --process-with-ai
 
     # Dry run (list what would be downloaded)
     python scripts/download_internet_archive.py --dry-run
@@ -76,9 +76,9 @@ def main():
         help="Limit number of Federal Register volumes (default: 50)",
     )
     parser.add_argument(
-        "--process-with-carl",
+        "--process-with-ai",
         action="store_true",
-        help="Send downloaded documents to Carl for AI analysis",
+        help="Send downloaded documents to Bay Tides AI for analysis",
     )
     parser.add_argument(
         "--dry-run",
@@ -249,16 +249,16 @@ def main():
 
     console.print(table)
 
-    # Process with Carl if requested
-    if args.process_with_carl and downloaded_docs:
-        console.print("\n[bold blue]═══ Processing with Carl ═══[/bold blue]")
-        process_with_carl(downloaded_docs)
+    # Process with AI if requested
+    if args.process_with_ai and downloaded_docs:
+        console.print("\n[bold blue]═══ Processing with Bay Tides AI ═══[/bold blue]")
+        process_with_ai(downloaded_docs)
 
     client.close()
 
 
-def process_with_carl(documents):
-    """Send documents to Carl (Ollama) for AI analysis.
+def process_with_ai(documents):
+    """Send documents to Ollama (via Bay Tides) for AI analysis.
 
     This extracts key information like:
     - Case citations and holdings (for US Reports)
@@ -267,10 +267,10 @@ def process_with_carl(documents):
     """
     import os
 
-    ollama_host = os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+    ollama_host = os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
     ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
 
-    console.print(f"Connecting to Carl at {ollama_host}...")
+    console.print(f"Connecting to Bay Tides AI at {ollama_host}...")
     console.print(f"Using model: {ollama_model}")
 
     try:
@@ -279,12 +279,12 @@ def process_with_carl(documents):
         # Test connection
         response = httpx.get(f"{ollama_host}/api/tags", timeout=10)
         if response.status_code != 200:
-            console.print("[red]Could not connect to Carl[/red]")
+            console.print("[red]Could not connect to Bay Tides AI[/red]")
             return
-        console.print("[green]Connected to Carl[/green]")
+        console.print("[green]Connected to Bay Tides AI[/green]")
 
     except Exception as e:
-        console.print(f"[red]Error connecting to Carl: {e}[/red]")
+        console.print(f"[red]Error connecting to Bay Tides AI: {e}[/red]")
         return
 
     # Process documents based on type
@@ -355,7 +355,7 @@ Provide a structured analysis."""
             prompt = f"""Analyze this legal document and provide a summary:
 {text_sample}"""
 
-        # Send to Carl
+        # Send to Bay Tides AI
         try:
             response = httpx.post(
                 f"{ollama_host}/api/generate",

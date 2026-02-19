@@ -1,5 +1,5 @@
 [Unit]
-Description=Carl AI Full Batch Content Generation
+Description=Bay Tides AI Full Batch Content Generation
 After=network.target ollama.service
 Wants=ollama.service
 
@@ -19,9 +19,9 @@ Environment=OLLAMA_MODEL=llama3.1:8b-instruct-q8_0
 Environment=BATCH_SIZE=25
 Environment=SLEEP_BETWEEN=5
 Environment=MAX_BATCHES=0
-Environment=LOG_FILE=/var/log/civitas/carl_batch.log
+Environment=LOG_FILE=/var/log/civitas/batch.log
 
-ExecStart=/opt/civitas/scripts/carl_batch_generation.sh
+ExecStart=/opt/civitas/scripts/batch_generation.sh
 
 # Restart on failure with backoff
 Restart=on-failure

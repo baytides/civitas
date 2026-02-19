@@ -16,8 +16,8 @@ from datetime import UTC, date, datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-# Default Ollama configuration (Carl AI VM on Azure)
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+# Default Ollama configuration (Bay Tides AI)
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 
 
@@ -83,7 +83,7 @@ class ImplementationTracker:
 
         Args:
             session: SQLAlchemy database session
-            ollama_host: Ollama server URL (default: Carl AI VM)
+            ollama_host: Ollama server URL (default: Bay Tides AI)
             ollama_model: Model name (default: llama3.2)
         """
         self.session = session

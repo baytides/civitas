@@ -14,8 +14,8 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Default Ollama configuration (Carl AI VM on Azure)
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+# Default Ollama configuration (Bay Tides AI)
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 
 
@@ -365,7 +365,7 @@ class Project2025Parser:
 class EnhancedProject2025Parser(Project2025Parser):
     """Enhanced parser with AI-assisted extraction and categorization.
 
-    Uses Carl (Ollama/Llama on Azure) for deeper analysis including:
+    Uses Ollama/Llama via Bay Tides API for deeper analysis including:
     - Better proposal extraction from complex paragraphs
     - Category classification (immigration, environment, etc.)
     - Constitutional concern identification
@@ -440,7 +440,7 @@ class EnhancedProject2025Parser(Project2025Parser):
 
         Args:
             pdf_path: Path to the Mandate for Leadership PDF
-            ollama_host: Ollama server URL (default: Carl AI VM)
+            ollama_host: Ollama server URL (default: Bay Tides AI)
             ollama_model: Model name (default: llama3.2)
         """
         super().__init__(pdf_path)

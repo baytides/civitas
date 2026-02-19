@@ -56,7 +56,7 @@ export default function CaseDetailPage() {
         if (response.ok) {
           setCourtCase(await response.json());
         } else if (response.status === 404) {
-          setError("This item is still being processed by Carl. Check back soon.");
+          setError("This item is still being processed. Check back soon.");
         } else {
           setError("Failed to load court case");
         }

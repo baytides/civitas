@@ -36,7 +36,7 @@ except ImportError:
 
 
 # Ollama configuration
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b-instruct-q8_0")
 
 

@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from civitas.db.models import CourtCase, JusticeOpinion
 
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"

@@ -1,7 +1,7 @@
 """Document processing pipeline.
 
 Converts various document formats to AI-ready markdown with OCR support.
-Heavy processing is offloaded to Carl (Ollama on Azure).
+Heavy processing is offloaded to Ollama (via Bay Tides).
 """
 
 from .chunker import DocumentChunker

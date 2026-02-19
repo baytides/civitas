@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from civitas.ai.prompts import load_prompt
 from civitas.db.models import CourtCase, Justice, JusticeOpinion, JusticeProfile
 
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -134,8 +134,8 @@ class JusticeProfileGenerator:
         # fmt: on
 
         system = load_prompt(
-            path_env="CARL_JUSTICE_PROFILE_PROMPT_PATH",
-            inline_env="CARL_JUSTICE_PROFILE_PROMPT",
+            path_env="BAYTIDES_JUSTICE_PROFILE_PROMPT_PATH",
+            inline_env="BAYTIDES_JUSTICE_PROFILE_PROMPT",
             fallback=default_system,
         )
         user = f"Justice profile input: {json.dumps(payload, ensure_ascii=True)}"

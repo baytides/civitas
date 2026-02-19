@@ -1,4 +1,4 @@
-"""Generate short titles for Project 2025 objectives using Carl (Ollama)."""
+"""Generate short titles for Project 2025 objectives using Ollama via Bay Tides."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from civitas.ai.prompts import load_prompt
 from civitas.db.models import Project2025Policy
 
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 
 
@@ -43,8 +43,8 @@ class Project2025TitleGenerator:
             'Return JSON only: {"titles": [{"id": 1, "short_title": "..."}]}'
         )
         system = load_prompt(
-            path_env="CARL_OBJECTIVE_TITLE_PROMPT_PATH",
-            inline_env="CARL_OBJECTIVE_TITLE_PROMPT",
+            path_env="BAYTIDES_OBJECTIVE_TITLE_PROMPT_PATH",
+            inline_env="BAYTIDES_OBJECTIVE_TITLE_PROMPT",
             fallback=default_system,
         )
         payload = [

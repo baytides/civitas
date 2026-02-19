@@ -124,7 +124,7 @@ def backfill_p2025_metadata(
             import ollama
         except ImportError as exc:
             raise ImportError("Install ollama: pip install ollama") from exc
-        ollama_client = ollama.Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
+        ollama_client = ollama.Client(host=os.getenv("OLLAMA_HOST", "https://ollama.baytides.org"))
         ollama_model = os.getenv("OLLAMA_MODEL", "llama3.2")
 
     updated = 0
@@ -920,7 +920,7 @@ def ingest_project2025(
     console.print("[bold blue]Parsing Project 2025 document...[/bold blue]")
 
     if enhanced:
-        console.print("[dim]Using AI-enhanced extraction (Carl/Ollama)...[/dim]")
+        console.print("[dim]Using AI-enhanced extraction (Ollama via Bay Tides)...[/dim]")
         parser = EnhancedProject2025Parser(pdf_file)
         proposal_generator = parser.extract_proposals_with_ai(use_ai=True, batch_size=batch_size)
     else:
@@ -1052,7 +1052,7 @@ def generate_project2025_titles(
         help="Ollama model name",
     ),
 ):
-    """Generate short objective titles using Carl (Ollama)."""
+    """Generate short objective titles using Ollama (via Bay Tides)."""
     from sqlalchemy.orm import Session
 
     from civitas.db.models import get_engine
@@ -1948,7 +1948,7 @@ def resistance_analyze(
     engine = get_engine(db_path)
 
     console.print(f"[bold blue]Analyzing P2025 policy {policy_id}...[/bold blue]")
-    console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
+    console.print("[dim]Using Bay Tides AI (Ollama/Llama)...[/dim]\n")
 
     with Session(engine) as session:
         analyzer = ResistanceAnalyzer(session)
@@ -2013,7 +2013,7 @@ def resistance_analyze_batch(
     console.print(
         f"[bold blue]Generating expert analyses (limit={limit}, refresh_days={refresh_days})...[/bold blue]"
     )
-    console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
+    console.print("[dim]Using Bay Tides AI (Ollama/Llama)...[/dim]\n")
 
     with Session(engine) as session:
         analyzer = ResistanceAnalyzer(session)
@@ -2044,7 +2044,7 @@ def resistance_recommend(
     console.print(
         f"[bold blue]Generating resistance recommendations for policy {policy_id}...[/bold blue]"
     )
-    console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
+    console.print("[dim]Using Bay Tides AI (Ollama/Llama)...[/dim]\n")
 
     with Session(engine) as session:
         recommender = ResistanceRecommender(session)
@@ -2131,7 +2131,7 @@ def resistance_recommend_batch(
     engine = get_engine(db_path)
 
     console.print("[bold blue]Generating resistance recommendations in batch...[/bold blue]")
-    console.print("[dim]Using Carl AI (Ollama/Llama on Azure)...[/dim]\n")
+    console.print("[dim]Using Bay Tides AI (Ollama/Llama)...[/dim]\n")
 
     with Session(engine) as session:
         recommender = ResistanceRecommender(session)

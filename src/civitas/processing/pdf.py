@@ -29,24 +29,24 @@ class PDFProcessor:
     """Process PDFs with OCR and text extraction.
 
     Uses ocrmypdf for OCR and PyMuPDF for text extraction.
-    Heavy OCR work can be offloaded to Carl (Azure VM).
+    Heavy OCR work can be offloaded to Bay Tides AI.
     """
 
     def __init__(
         self,
         azure_client: AzureStorageClient | None = None,
-        carl_url: str | None = None,
+        ai_url: str | None = None,
         output_dir: Path | None = None,
     ):
         """Initialize PDF processor.
 
         Args:
             azure_client: Azure storage client for uploading results.
-            carl_url: URL for Carl AI (for offloading heavy OCR).
+            ai_url: URL for Bay Tides AI server (for offloading heavy OCR).
             output_dir: Local directory for processed files.
         """
         self.azure_client = azure_client
-        self.carl_url = carl_url or os.getenv("CARL_URL", "http://20.98.70.48:11434")
+        self.ai_url = ai_url or os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
         self.output_dir = output_dir or Path("data/processed")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 

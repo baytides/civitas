@@ -2,17 +2,17 @@
 set -euo pipefail
 
 # =============================================================================
-# Carl AI Batch Content Generation
+# Bay Tides AI Batch Content Generation
 # =============================================================================
 # Generates all missing content in batches with progress tracking.
 # Designed for long-running operation with recovery support.
 #
 # Usage:
-#   ./carl_batch_generation.sh [--analyses-only|--recommendations-only]
+#   ./batch_generation.sh [--analyses-only|--recommendations-only]
 #
 # Environment:
 #   DATABASE_URL       - Database path (default: civitas.db)
-#   OLLAMA_HOST        - Ollama server (default: http://localhost:11434)
+#   OLLAMA_HOST        - Ollama server (default: https://ollama.baytides.org)
 #   OLLAMA_MODEL       - Model to use (default: llama3.1:8b-instruct-q8_0)
 #   BATCH_SIZE         - Items per batch (default: 25)
 #   SLEEP_BETWEEN      - Seconds between batches (default: 5)
@@ -22,7 +22,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CIVITAS_ROOT="${SCRIPT_DIR}/.."
 PYTHON_BIN="${PYTHON_BIN:-/opt/civitas/.venv/bin/python}"
-LOG_FILE="${LOG_FILE:-/var/log/civitas/carl_batch.log}"
+LOG_FILE="${LOG_FILE:-/var/log/civitas/batch.log}"
 
 # Defaults
 BATCH_SIZE="${BATCH_SIZE:-25}"
@@ -73,7 +73,7 @@ print(f'{total},{analyzed},{with_recs}')
 }
 
 log "=============================================="
-log "Carl AI Batch Content Generation"
+log "Bay Tides AI Batch Content Generation"
 log "=============================================="
 log "Model: ${OLLAMA_MODEL}"
 log "Batch size: ${BATCH_SIZE}"

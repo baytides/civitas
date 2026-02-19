@@ -4,7 +4,7 @@
 This script addresses the major discrepancies between vision and implementation:
 1. Fetch full text for Executive Orders
 2. Run P2025 tracker to match objectives to EOs
-3. Generate resistance recommendations via Carl
+3. Generate resistance recommendations via Bay Tides AI
 4. Populate legal challenges from real court data
 5. Populate state resistance actions
 6. Generate content insights
@@ -185,25 +185,25 @@ def run_p2025_matcher():
 
 
 def generate_recommendations(limit: int = 50):
-    """Generate resistance recommendations via Carl."""
+    """Generate resistance recommendations via Bay Tides AI."""
     from civitas.db.models import Project2025Policy, ResistanceRecommendation
     from civitas.resistance.recommender import ResistanceRecommender
 
     console.print("\n[bold blue]═══ Generating Resistance Recommendations ═══[/bold blue]\n")
 
-    # Check Carl connection
-    ollama_host = os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
-    console.print(f"Using Carl at: {ollama_host}")
+    # Check AI connection
+    ollama_host = os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
+    console.print(f"Using Bay Tides AI at: {ollama_host}")
 
     try:
         import httpx
         resp = httpx.get(f"{ollama_host}/api/tags", timeout=10)
         if resp.status_code != 200:
-            console.print("[red]Cannot connect to Carl. Skipping recommendations.[/red]")
+            console.print("[red]Cannot connect to Bay Tides AI. Skipping recommendations.[/red]")
             return 0
-        console.print("[green]Carl connected[/green]")
+        console.print("[green]Bay Tides AI connected[/green]")
     except Exception as e:
-        console.print(f"[red]Cannot connect to Carl: {e}[/red]")
+        console.print(f"[red]Cannot connect to Bay Tides AI: {e}[/red]")
         return 0
 
     session = get_session()
@@ -508,17 +508,17 @@ def generate_content_insights(limit: int = 50):
 
     console.print("\n[bold blue]═══ Generating Content Insights ═══[/bold blue]\n")
 
-    # Check Carl connection
-    ollama_host = os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+    # Check AI connection
+    ollama_host = os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
 
     try:
         import httpx
         resp = httpx.get(f"{ollama_host}/api/tags", timeout=10)
         if resp.status_code != 200:
-            console.print("[red]Cannot connect to Carl. Skipping insights.[/red]")
+            console.print("[red]Cannot connect to Bay Tides AI. Skipping insights.[/red]")
             return 0
     except Exception as e:
-        console.print(f"[red]Cannot connect to Carl: {e}[/red]")
+        console.print(f"[red]Cannot connect to Bay Tides AI: {e}[/red]")
         return 0
 
     session = get_session()

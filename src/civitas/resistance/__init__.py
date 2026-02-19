@@ -1,6 +1,6 @@
 """Resistance analysis and recommendation engine.
 
-Uses Carl (Ollama/Llama on Azure) to analyze legal data and
+Uses Ollama/Llama (via Bay Tides) to analyze legal data and
 generate strategies for countering Project 2025 implementations.
 """
 

@@ -113,7 +113,7 @@ export default function ObjectiveDetailPage() {
             }
           }
         } else if (response.status === 404) {
-          setError("This item is still being processed by Carl. Check back soon.");
+          setError("This item is still being processed. Check back soon.");
         } else {
           setError("Failed to load policy details");
         }

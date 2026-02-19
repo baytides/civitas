@@ -1,7 +1,7 @@
 """P2025 policy matcher for state legislation.
 
 Identifies state bills that relate to Project 2025 policies and uses
-AI (Carl/Ollama) to determine whether they support or oppose each policy.
+AI (Ollama via Bay Tides) to determine whether they support or oppose each policy.
 
 Usage:
     from civitas.states.p2025_matcher import P2025Matcher
@@ -21,8 +21,8 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.orm import Session
 
-# Default Ollama configuration (Carl AI VM on Azure)
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+# Default Ollama configuration (Bay Tides AI)
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.1:8b-instruct-q8_0"
 
 
@@ -227,7 +227,7 @@ class P2025Matcher:
 
         Args:
             session: SQLAlchemy database session
-            ollama_host: Ollama server URL (default: Carl AI VM)
+            ollama_host: Ollama server URL (default: Bay Tides AI)
             ollama_model: Model name (default: llama3.1:8b-instruct-q8_0)
             use_ai: Whether to use AI for stance detection
         """

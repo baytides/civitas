@@ -1,7 +1,7 @@
 """AI-powered natural language query interface for the Civitas database.
 
 Supports multiple AI backends:
-- Ollama (self-hosted Llama) - default, runs on Azure
+- Ollama (self-hosted Llama) - default, via Bay Tides API
 - Anthropic Claude (API-based)
 - OpenAI (API-based)
 """
@@ -23,8 +23,8 @@ from civitas.db.models import (
     Vote,
 )
 
-# Default Ollama configuration (Carl AI VM on Azure)
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+# Default Ollama configuration (Bay Tides AI)
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 
 
@@ -89,7 +89,7 @@ class CivitasAI:
             db_path: Path to the SQLite database
             ai_provider: AI provider ("ollama", "anthropic", or "openai")
             api_key: API key for AI provider (or from env)
-            ollama_host: Ollama server URL (default: Azure Carl VM)
+            ollama_host: Ollama server URL (default: Bay Tides AI)
             ollama_model: Ollama model name (default: llama3.2)
         """
         self.db_path = db_path
@@ -100,7 +100,7 @@ class CivitasAI:
         self.ai_provider = ai_provider or os.getenv("CIVITAS_AI_PROVIDER", "ollama")
         self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY") or os.getenv("OPENAI_API_KEY")
 
-        # Ollama configuration (default to Carl AI VM on Azure)
+        # Ollama configuration (default to Bay Tides AI)
         self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
         self.ollama_model = ollama_model or os.getenv("OLLAMA_MODEL", DEFAULT_OLLAMA_MODEL)
 
@@ -377,7 +377,7 @@ class CivitasAI:
         """Ask a natural language question about legislation.
 
         This method uses AI to interpret the question and query the database.
-        Default provider is Ollama (Llama on Azure), but will fall back to
+        Default provider is Ollama (Llama via Bay Tides), but will fall back to
         keyword search if AI is unavailable.
 
         Args:
@@ -471,9 +471,7 @@ Try asking about specific topics like 'water', 'climate', 'housing', etc."""
             raise ValueError(f"Unknown AI provider: {self.ai_provider}")
 
     def _ollama_query(self, question: str) -> str:
-        """Query using Ollama with Llama model (self-hosted on Azure).
-
-        Uses the Ollama API running on Carl AI VM (20.98.70.48).
+        """Query using Ollama with Llama model via Bay Tides API.
         """
         try:
             import ollama

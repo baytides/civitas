@@ -1,10 +1,10 @@
 #!/bin/bash
-# Civitas Deployment Script for Carl AI Server (20.98.70.48)
+# Civitas Deployment Script for Bay Tides Server
 # This script deploys the FastAPI backend and populates the database
 set -e
 
-CARL_HOST="20.98.70.48"
-CARL_USER="azureuser"
+DEPLOY_HOST="${DEPLOY_HOST:?Set DEPLOY_HOST to your server IP/hostname}"
+DEPLOY_USER="${DEPLOY_USER:-azureuser}"
 DEPLOY_DIR="/opt/civitas"
 CONGRESS_API_KEY="${CONGRESS_API_KEY:-}"
 
@@ -14,35 +14,35 @@ if [[ -z "${CONGRESS_API_KEY}" ]]; then
 fi
 
 echo "=========================================="
-echo "Civitas Deployment to Carl AI Server"
+echo "Civitas Deployment to Bay Tides Server"
 echo "=========================================="
 
 # Check SSH access
-echo "[1/8] Checking SSH access to Carl..."
-if ! ssh -o BatchMode=yes -o ConnectTimeout=5 ${CARL_USER}@${CARL_HOST} "echo 'SSH OK'" 2>/dev/null; then
-    echo "ERROR: Cannot SSH to ${CARL_USER}@${CARL_HOST}"
+echo "[1/8] Checking SSH access to server..."
+if ! ssh -o BatchMode=yes -o ConnectTimeout=5 ${DEPLOY_USER}@${DEPLOY_HOST} "echo 'SSH OK'" 2>/dev/null; then
+    echo "ERROR: Cannot SSH to ${DEPLOY_USER}@${DEPLOY_HOST}"
     echo "Make sure you have SSH key access configured"
     exit 1
 fi
 
-# Create deployment directory on Carl
-echo "[2/8] Creating deployment directory on Carl..."
-ssh ${CARL_USER}@${CARL_HOST} << 'REMOTE_SETUP'
+# Create deployment directory on server
+echo "[2/8] Creating deployment directory on server..."
+ssh ${DEPLOY_USER}@${DEPLOY_HOST} << 'REMOTE_SETUP'
 sudo mkdir -p /opt/civitas
 sudo chown $USER:$USER /opt/civitas
 mkdir -p /opt/civitas/{data,logs}
 REMOTE_SETUP
 
-# Sync codebase to Carl
-echo "[3/8] Syncing codebase to Carl..."
+# Sync codebase to server
+echo "[3/8] Syncing codebase to server..."
 rsync -avz --exclude '.git' --exclude '.venv' --exclude 'venv' --exclude '__pycache__' \
     --exclude 'node_modules' --exclude '.next' --exclude 'out' --exclude '*.db' \
     --exclude 'web' --exclude '.pytest_cache' --exclude '.ruff_cache' \
-    /Users/steven/Github/civitas/ ${CARL_USER}@${CARL_HOST}:${DEPLOY_DIR}/
+    /Users/steven/Github/civitas/ ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DIR}/
 
-# Install dependencies and set up on Carl
-echo "[4/8] Setting up Python environment on Carl..."
-ssh ${CARL_USER}@${CARL_HOST} << REMOTE_INSTALL
+# Install dependencies and set up on server
+echo "[4/8] Setting up Python environment on server..."
+ssh ${DEPLOY_USER}@${DEPLOY_HOST} << REMOTE_INSTALL
 set -e
 cd ${DEPLOY_DIR}
 
@@ -61,7 +61,7 @@ pip install -e ".[all]"
 # Create .env file
 cat > .env << 'ENV'
 CONGRESS_API_KEY=${CONGRESS_API_KEY}
-OLLAMA_HOST=http://localhost:11434
+OLLAMA_HOST=https://ollama.baytides.org
 OLLAMA_MODEL=llama3.2
 CIVITAS_AI_PROVIDER=ollama
 DATABASE_URL=sqlite:///civitas.db
@@ -72,7 +72,7 @@ REMOTE_INSTALL
 
 # Initialize database and ingest data
 echo "[5/8] Initializing database and ingesting data..."
-ssh ${CARL_USER}@${CARL_HOST} << 'REMOTE_INGEST'
+ssh ${DEPLOY_USER}@${DEPLOY_HOST} << 'REMOTE_INGEST'
 set -e
 cd /opt/civitas
 source .venv/bin/activate
@@ -110,7 +110,7 @@ REMOTE_INGEST
 
 # Set up systemd service
 echo "[6/8] Setting up systemd service..."
-ssh ${CARL_USER}@${CARL_HOST} << 'REMOTE_SERVICE'
+ssh ${DEPLOY_USER}@${DEPLOY_HOST} << 'REMOTE_SERVICE'
 sudo tee /etc/systemd/system/civitas-api.service > /dev/null << 'SERVICE'
 [Unit]
 Description=Civitas FastAPI Backend
@@ -137,7 +137,7 @@ REMOTE_SERVICE
 
 # Set up Nginx reverse proxy
 echo "[7/8] Configuring Nginx..."
-ssh ${CARL_USER}@${CARL_HOST} << 'REMOTE_NGINX'
+ssh ${DEPLOY_USER}@${DEPLOY_HOST} << 'REMOTE_NGINX'
 sudo tee /etc/nginx/sites-available/civitas > /dev/null << 'NGINX'
 server {
     listen 80;
@@ -169,7 +169,7 @@ REMOTE_NGINX
 
 # Verify deployment
 echo "[8/8] Verifying deployment..."
-ssh ${CARL_USER}@${CARL_HOST} << 'REMOTE_VERIFY'
+ssh ${DEPLOY_USER}@${DEPLOY_HOST} << 'REMOTE_VERIFY'
 echo "Checking services..."
 sudo systemctl status civitas-api --no-pager | head -10
 
@@ -189,8 +189,8 @@ echo "DEPLOYMENT COMPLETE!"
 echo "=========================================="
 echo ""
 echo "API Endpoints:"
-echo "  Health: http://${CARL_HOST}:8000/api/health"
-echo "  Docs:   http://${CARL_HOST}:8000/api/docs"
-echo "  API:    http://${CARL_HOST}:8000/api/v1/"
+echo "  Health: http://${DEPLOY_HOST}:8000/api/health"
+echo "  Docs:   http://${DEPLOY_HOST}:8000/api/docs"
+echo "  API:    http://${DEPLOY_HOST}:8000/api/v1/"
 echo ""
-echo "Next: Update frontend to use API at http://${CARL_HOST}:8000"
+echo "Next: Update frontend to use API at http://${DEPLOY_HOST}:8000"

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generates expert-mode resistance content via Carl (Ollama).
+# Generates expert-mode resistance content via Ollama (Bay Tides).
 # Required env:
 #   DATABASE_URL (or pass --db)
-#   OLLAMA_HOST (Carl VM, e.g. http://20.98.70.48:11434)
+#   OLLAMA_HOST (e.g. https://ollama.baytides.org)
 # Optional env:
 #   OLLAMA_MODEL (default: llama3.2)
 #   ANALYZE_LIMIT (default: 100)

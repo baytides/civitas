@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from civitas.ai.prompts import load_prompt
 
 # Default configuration
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -23,7 +23,7 @@ DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
 class ResistanceAnalyzer:
     """Analyzes P2025 policies for legal vulnerabilities.
 
-    Uses Carl (Llama on Ollama) to:
+    Uses Llama on Ollama (via Bay Tides) to:
     1. Identify constitutional issues
     2. Find relevant court precedents
     3. Suggest legal challenge strategies
@@ -145,7 +145,7 @@ class ResistanceAnalyzer:
 
         Args:
             session: SQLAlchemy database session
-            ollama_host: Ollama server URL (default: Carl AI VM)
+            ollama_host: Ollama server URL (default: Bay Tides AI)
             ollama_model: Model name (default: llama3.2)
             use_openai: Use OpenAI API instead of Ollama (default: auto-detect from OPENAI_API_KEY)
         """
@@ -457,8 +457,8 @@ RULES:
 - Focus on actionable legal strategies
 """
         system_prompt = load_prompt(
-            path_env="CARL_RESISTANCE_ANALYSIS_PROMPT_PATH",
-            inline_env="CARL_RESISTANCE_ANALYSIS_PROMPT",
+            path_env="BAYTIDES_RESISTANCE_ANALYSIS_PROMPT_PATH",
+            inline_env="BAYTIDES_RESISTANCE_ANALYSIS_PROMPT",
             fallback=default_system_prompt,
         )
 

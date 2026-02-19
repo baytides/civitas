@@ -1,4 +1,4 @@
-"""Prompt loading helpers for Carl/Ollama."""
+"""Prompt loading helpers for Ollama/Bay Tides AI."""
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Background script for comprehensive historical SCOTUS scraping.
 
-This script is designed to run on Carl (Azure VM) overnight to fetch
+This script is designed to run overnight to fetch
 all Supreme Court cases from 1789 to present using the Court Listener API.
 
 Usage:

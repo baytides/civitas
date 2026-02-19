@@ -80,7 +80,7 @@ export default function LegislationDetailPage() {
             // ignore objective fetch failures
           }
         } else if (response.status === 404) {
-          setError("This item is still being processed by Carl. Check back soon.");
+          setError("This item is still being processed. Check back soon.");
         } else {
           setError("Failed to load legislation");
         }

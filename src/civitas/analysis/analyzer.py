@@ -44,8 +44,8 @@ class AnalysisResult:
 class LegislationAnalyzer:
     """Analyze legislation using Ollama/Llama AI.
 
-    Uses Azure-hosted Ollama for AI processing:
-    - Endpoint: http://20.98.70.48:11434 (or OLLAMA_HOST env var)
+    Uses Ollama via Bay Tides for AI processing:
+    - Endpoint: https://ollama.baytides.org (or OLLAMA_HOST env var)
     - Model: llama3.2 (or OLLAMA_MODEL env var)
     """
 
@@ -55,7 +55,7 @@ class LegislationAnalyzer:
         model: str | None = None,
         timeout: float = 120.0,
     ):
-        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+        self.ollama_host = ollama_host or os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
         self.model = model or os.getenv("OLLAMA_MODEL", "llama3.2")
         self.timeout = timeout
         self._client = httpx.Client(timeout=timeout)
@@ -393,7 +393,7 @@ IMPORTANT:
 
 def check_ollama_connection(host: str | None = None) -> bool:
     """Check if Ollama is accessible."""
-    host = host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+    host = host or os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
     try:
         response = httpx.get(f"{host}/api/tags", timeout=5.0)
         return response.status_code == 200
@@ -403,7 +403,7 @@ def check_ollama_connection(host: str | None = None) -> bool:
 
 def list_ollama_models(host: str | None = None) -> list[str]:
     """List available models on Ollama."""
-    host = host or os.getenv("OLLAMA_HOST", "http://20.98.70.48:11434")
+    host = host or os.getenv("OLLAMA_HOST", "https://ollama.baytides.org")
     try:
         response = httpx.get(f"{host}/api/tags", timeout=5.0)
         response.raise_for_status()

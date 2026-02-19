@@ -17,7 +17,7 @@ from civitas.db.models import (
     Project2025Policy,
 )
 
-DEFAULT_OLLAMA_HOST = "http://20.98.70.48:11434"
+DEFAULT_OLLAMA_HOST = "https://ollama.baytides.org"
 DEFAULT_OLLAMA_MODEL = "llama3.2"
 MAX_SOURCE_CHARS = 3200
 
@@ -58,8 +58,8 @@ class InsightGenerator:
             "No markdown, no extra keys."
         )
         system = load_prompt(
-            path_env="CARL_INSIGHT_PROMPT_PATH",
-            inline_env="CARL_INSIGHT_PROMPT",
+            path_env="BAYTIDES_INSIGHT_PROMPT_PATH",
+            inline_env="BAYTIDES_INSIGHT_PROMPT",
             fallback=default_system,
         )
         user = f"Content type: {content_type}\nData: {json.dumps(payload, ensure_ascii=True)}"
